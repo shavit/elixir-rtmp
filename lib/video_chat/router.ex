@@ -13,7 +13,7 @@ defmodule VideoChat.Router do
   post "/videos/stream" do
     # stream to the clients
     conn
-    |> send_repo(200, "Wait")
+    |> send_resp(200, "Wait")
   end
 
   # Stream video
