@@ -1,5 +1,6 @@
 defmodule VideoChat.Router do
   use Plug.Router
+  alias Plug.Static
 
   plug :match
   plug :dispatch
@@ -20,7 +21,7 @@ defmodule VideoChat.Router do
 
   # Stream video
   get "/videos/live" do
-    video_file = "videos/2.mp4"
+    video_file = "videos/2.m4v"
     file_path = Path.join(System.cwd, video_file)
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
