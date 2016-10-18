@@ -8,7 +8,7 @@ defmodule VideoChat do
 
     # Define workers and child supervisors to be supervised
     children = [
-      Plug.Adapters.Cowboy.child_spec(:http, VideoChat.Router, [], [port: 4001]),
+      Plug.Adapters.Cowboy.child_spec(:http, VideoChat.Router, [], [port: 3000]),
       # Starts a worker by calling: VideoChat.Worker.start_link(arg1, arg2, arg3)
       # worker(VideoChat.Worker, [arg1, arg2, arg3]),
     ]
