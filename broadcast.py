@@ -1,9 +1,12 @@
 import os
 import socket
+import time
 
 videos = []
 client = socket.socket()
 client.connect((socket.gethostbyname('localhost'), 3000))
+
+wait_time = 3
 
 # Append the video files paths into array
 def load_videos():
@@ -31,6 +34,10 @@ def main():
 
             i += 1
             print('---> Reading from buffer {}'.format(i))
+
+            # Wait between sends
+            time.sleep(wait_time)
+            print('---> Waiting {} seconds'.format(wait_time))
 
     pass
 
