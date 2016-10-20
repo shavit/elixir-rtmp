@@ -33,6 +33,13 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
+  # The stream from another media server
+  get "/stream/live" do
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, "<video autoplay controls><source src=\"rtmp://localhost:3001/stream/live\" type=\"video/mp4\"/> </video>")
+  end
+
   match _ do
     conn
     |> send_resp(404, "Not found")
