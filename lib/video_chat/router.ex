@@ -1,6 +1,6 @@
 defmodule VideoChat.Router do
   use Plug.Router
-  alias Plug.Static
+  import VideoChat.Template
 
   plug :match
   plug :dispatch
@@ -37,7 +37,7 @@ defmodule VideoChat.Router do
   get "/stream/live" do
     conn
     |> put_resp_content_type("text/html")
-    |> send_resp(200, "<video autoplay controls><source src=\"rtmp://localhost:3001/stream/live\" type=\"video/mp4\"/> </video>")
+    |> send_resp(200, render("live"))
   end
 
   match _ do
