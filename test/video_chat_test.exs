@@ -2,7 +2,9 @@ defmodule VideoChatTest do
   use ExUnit.Case
   doctest VideoChat
 
-  test "the truth" do
-    assert 1 + 1 == 2
+  test "render template" do
+    VideoChat.Template.render("live")
+    |> String.length
+    |> assert > 200
   end
 end

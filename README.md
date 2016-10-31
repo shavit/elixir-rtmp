@@ -22,3 +22,15 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     end
     ```
 
+
+Compile and run
+````
+$ erl
+erl> c("server").
+erl> server:run().
+````
+
+Build
+-----
+
+    $ rebar3 compile

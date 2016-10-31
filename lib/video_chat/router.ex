@@ -29,7 +29,9 @@ defmodule VideoChat.Router do
 
     conn
     |> put_resp_content_type("video/mp4")
-    |> put_resp_header("content-range", "bytes #{offset}-#{size-1}/#{size}")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> put_resp_header("Content-Length", "#{size}")
+    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
     |> send_file(206, file_path, offset, size-offset)
   end
 
