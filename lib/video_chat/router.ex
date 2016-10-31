@@ -5,6 +5,14 @@ defmodule VideoChat.Router do
   plug :match
   plug :dispatch
 
+  def init(options) do
+    options
+  end
+
+  def start_link(_type, _args) do
+    {:ok, _} = Plug.Adapters.Cowboy.http VideoChat.Router, []
+  end
+
   # Render a page with a player
   get "/" do
     conn
