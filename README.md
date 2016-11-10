@@ -1,6 +1,6 @@
 # VideoChat
 
-**TODO: Add description**
+https://github.com/shavit/verbose-parakeet/raw/master/doc/meme.gif?raw=true
 
 ## Installation
 
