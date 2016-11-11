@@ -1,0 +1,11 @@
+#!/bin/sh
+
+DIR=`dirname $BASH_SOURCE[0]`
+VIDEO_DIR="${DIR}/../videos"
+MEDIA_FILE="${VIDEO_DIR}/1.m4v"
+
+ffmpeg \
+  -i $MEDIA_FILE  \
+  -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k -r 30 \
+  -s 640x480 -ss 00.000 -f flv \
+  rtmp://localhost:3001/live/1
