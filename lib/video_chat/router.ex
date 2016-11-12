@@ -20,6 +20,11 @@ defmodule VideoChat.Router do
     |> send_resp(200, "<video autoplay controls><source src=\"/videos/live\" type=\"video/mp4\"/> </video>")
   end
 
+  get "/playlists/.m3u8" do
+    conn
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
+  end
+
   # Accept video stream
   post "/videos/stream" do
     # stream to the clients
