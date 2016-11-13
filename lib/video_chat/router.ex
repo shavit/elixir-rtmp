@@ -20,9 +20,21 @@ defmodule VideoChat.Router do
     |> send_resp(200, "<video autoplay controls><source src=\"/videos/live\" type=\"video/mp4\"/> </video>")
   end
 
-  get "/playlists/.m3u8" do
+  # get "/playlists/.m3u8" do
+  get "/playlists/:slug" do
+    IO.inspect slug
+
+    video_file = "tmp/video_stream.mp4"
+    file_path = Path.join(System.cwd, video_file)
+    offset = get_offset(conn.req_headers)
+    size = get_file_size(file_path)
+
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> put_resp_header("Content-Length", "#{size}")
+    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
+    |> send_file(206, file_path, offset, size-offset)
   end
 
   # Accept video stream
