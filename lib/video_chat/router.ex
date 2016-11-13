@@ -25,7 +25,6 @@ defmodule VideoChat.Router do
   #
   # Return a playlist file
   #
-  # get "/playlists/.m3u8" do
   get "/playlists/:slug" do
     # Check the file extension
     ext = slug
