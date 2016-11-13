@@ -53,7 +53,8 @@ defmodule VideoChat.Router do
 
 
     conn
-    |> put_resp_content_type("video/mp4")
+    # |> put_resp_content_type("video/mp4")
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
     |> put_resp_header("Content-Length", "#{size}")
     |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
