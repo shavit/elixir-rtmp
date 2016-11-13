@@ -20,11 +20,24 @@ defmodule VideoChat.Router do
     |> send_resp(200, "<video autoplay controls><source src=\"/videos/live\" type=\"video/mp4\"/> </video>")
   end
 
+  #
+  # GET /playlists/:slug
+  #
+  # Return a playlist file
+  #
   # get "/playlists/.m3u8" do
   get "/playlists/:slug" do
-    IO.inspect slug
+    # Check the file extension
+    ext = slug
+      |> String.split(".")
+    |> List.last
 
-    video_file = "tmp/video_stream.mp4"
+    video_file = cond do
+      ext == "m3u8" -> "tmp/ts/320x180.m3u8"
+      ext == "ts" -> "tmp/ts/#{slug}"
+      true -> "tmp/ts/320x180.m3u8"
+    end
+
     file_path = Path.join(System.cwd, video_file)
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
@@ -39,6 +52,8 @@ defmodule VideoChat.Router do
 
   # Accept video stream
   post "/videos/stream" do
+
+
     # stream to the clients
     conn
     |> send_resp(200, "Wait")

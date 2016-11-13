@@ -3,11 +3,12 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
 MEDIA_FILE="${TMP_DIR}/video.mp4"
-MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+
+# rtmp://localhost:3001/live/video
 
 echo "---> Streaming video ${MEDIA_FILE} to the server"
 ffmpeg \
   -i $MEDIA_FILE \
   -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k -r 30 \
-  -s 640x480 -ss 00.000 -f hls \
-  http://localhost:3000/videos/stream
+  -s 640x480 -ss 00.000 -f flv \
+  rtmp://localhost:3001/live/video
