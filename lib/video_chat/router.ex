@@ -21,9 +21,20 @@ defmodule VideoChat.Router do
   end
 
   get "/playlists" do
-    conn
-    |> put_resp_header("Location", "/playlists/1")
-    |> send_resp(301, "")
+    # Start encoding the video
+    cmd = "sh bin/create_sequence tmp/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+    port = Port.open({:spawn, cmd}, [:eof])
+
+    receive do
+      {^port, {:data, res}} ->
+        IO.puts "Reading data #{IO.inspect res}"
+
+        # Rediredct to the video
+        conn
+        |> put_resp_header("Location", "/playlists/1")
+        |> send_resp(301, "")
+    end
+
   end
 
   #

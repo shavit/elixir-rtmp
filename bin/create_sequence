@@ -3,7 +3,7 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
 TRANSPORT_STREAM_DIR="${TMP_DIR}/ts"
-VIDEO_FILE=$1 
+VIDEO_FILE=$1
 FRAMERATE="$($DIR/get_framerate $VIDEO_FILE)"
 
 echo "---> Creating a ts directory at ${TRANSPORT_STREAM_DIR}"
