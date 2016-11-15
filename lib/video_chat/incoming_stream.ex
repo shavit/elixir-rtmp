@@ -14,7 +14,7 @@ defmodule VideoChat.IncomingStream do
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # message = packet(data)
     # IO.inspect message
-    # IO.inspect data
+    IO.inspect data
 
     {:noreply, state}
   end

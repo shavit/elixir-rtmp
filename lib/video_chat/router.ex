@@ -17,7 +17,7 @@ defmodule VideoChat.Router do
   get "/" do
     conn
     |> put_resp_content_type("text/html")
-    |> send_resp(200, "<video autoplay controls><source src=\"/videos/live\" type=\"video/mp4\"/> </video>")
+    |> send_resp(200, render("live"))
   end
 
   #
@@ -75,11 +75,22 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
-  # The stream from another media server
+  # Live stream of incoming data from webcam
   get "/stream/live" do
+    # Create protocol communcation
+
+    # Respond with data
+
+    video_file = "videos/video.mp4"
+    file_path = Path.join(System.cwd, video_file)
+    offset = get_offset(conn.req_headers)
+    size = get_file_size(file_path)
+
+
     conn
-    |> put_resp_content_type("text/html")
-    |> send_resp(200, render("live"))
+    # |> put_resp_content_type("video/mp4")
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> send_file(206, file_path, offset, size-offset)
   end
 
   match _ do
