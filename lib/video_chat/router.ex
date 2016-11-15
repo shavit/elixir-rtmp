@@ -78,19 +78,44 @@ defmodule VideoChat.Router do
   # Live stream of incoming data from webcam
   get "/stream/live" do
     # Create protocol communcation
+    # video_fifo = System.cwd <> "/tmp/video.pipe"
+    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+
+    # :erlang.open_port(video_fifo, [EOF])
+    cmd = "cat #{video_fifo}"
+    # port = Port.open({:spawn, cmd}, [:binary])
+    # port = Port.open({:spawn, cmd}, [:eof]))
+
+    port = Port.open({:spawn, cmd}, [:eof])
 
     # Respond with data
+    receive do
+      {^port, {:data, res}} ->
+        IO.puts "Reading data #{IO.inspect res}"
 
-    video_file = "videos/video.mp4"
-    file_path = Path.join(System.cwd, video_file)
-    offset = get_offset(conn.req_headers)
-    size = get_file_size(file_path)
+        conn
+        # |> put_resp_content_type("video/mp4")
+        |> put_resp_content_type("application/vnd.apple.mpegurl")
+        |> send_file(206, video_fifo)
+    end
+
+    # Port.open({:spawn, cmd}, [:eof])
+    #   |> wait_for_data
+
+    #
+    #   Original video file
+    #
+
+    # video_file = "videos/video.mp4"
+    # file_path = Path.join(System.cwd, video_file)
+    # offset = get_offset(conn.req_headers)
+    # size = get_file_size(file_path)
 
 
-    conn
-    # |> put_resp_content_type("video/mp4")
-    |> put_resp_content_type("application/vnd.apple.mpegurl")
-    |> send_file(206, file_path, offset, size-offset)
+    # conn
+    # # |> put_resp_content_type("video/mp4")
+    # |> put_resp_content_type("application/vnd.apple.mpegurl")
+    # |> send_file(206, file_path, offset, size-offset)
   end
 
   match _ do
@@ -116,6 +141,13 @@ defmodule VideoChat.Router do
         |> String.to_integer
     nil ->
       0
+    end
+  end
+
+  def wait_for_data(port) do
+    receive do
+      {^port, {:data, res}} ->
+        IO.puts "Reading data #{IO.inspect res}"
     end
   end
 

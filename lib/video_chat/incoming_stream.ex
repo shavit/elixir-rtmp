@@ -14,6 +14,15 @@ defmodule VideoChat.IncomingStream do
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # message = packet(data)
     # IO.inspect message
+
+    # video_fifo = System.cwd <> "/tmp/video.pipe"
+    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+    # cmd = "echo -n -e #{data} > #{video_fifo}"
+    # Port.open({:spawn, cmd}, [:eof])
+
+    :ok = File.write(video_fifo, data)
+    IO.puts "---> Writing data"
+
     IO.inspect data
 
     {:noreply, state}
