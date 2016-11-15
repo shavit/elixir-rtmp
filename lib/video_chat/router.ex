@@ -96,7 +96,8 @@ defmodule VideoChat.Router do
   get "/stream/live" do
     # Create protocol communcation
     # video_fifo = System.cwd <> "/tmp/video.pipe"
-    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+    # video_fifo = System.cwd <> "/tmp/video-1.tmp"
+    video_fifo = System.cwd <> "/tmp/video.mp4"
 
     # :erlang.open_port(video_fifo, [EOF])
     cmd = "cat #{video_fifo}"
