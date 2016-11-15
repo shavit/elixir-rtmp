@@ -88,6 +88,10 @@ defmodule VideoChat.Router do
 
     port = Port.open({:spawn, cmd}, [:eof])
 
+    #
+    #   Should create a playlist with time sequence files
+    #
+
     # Respond with data
     receive do
       {^port, {:data, res}} ->
