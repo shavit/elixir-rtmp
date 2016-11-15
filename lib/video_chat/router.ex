@@ -20,6 +20,12 @@ defmodule VideoChat.Router do
     |> send_resp(200, render("live"))
   end
 
+  get "/playlists" do
+    conn
+    |> put_resp_header("Location", "/playlists/1")
+    |> send_resp(301, "")
+  end
+
   #
   # GET /playlists/:slug
   #
