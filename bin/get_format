@@ -1,0 +1,5 @@
+#!/bin/sh
+
+MEDIA_FILE=$1
+
+ffmpeg -i $MEDIA_FILE
