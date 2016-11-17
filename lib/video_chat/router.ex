@@ -119,8 +119,8 @@ defmodule VideoChat.Router do
         # Write into file
 
         conn
-        # |> put_resp_content_type("video/mp4")
-        |> put_resp_content_type("application/vnd.apple.mpegurl")
+        |> put_resp_content_type("video/mp4")
+        # |> put_resp_content_type("application/vnd.apple.mpegurl")
         |> send_file(206, video_fifo)
     end
 

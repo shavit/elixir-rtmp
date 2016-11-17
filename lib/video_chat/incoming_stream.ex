@@ -20,6 +20,14 @@ defmodule VideoChat.IncomingStream do
     # video_fifo = System.cwd <> "/tmp/video.pipe"
     video_fifo = System.cwd <> "/tmp/video-1.tmp"
 
+    # cmd = "bin/get_format #{video_fifo}"
+    # port = Port.open({:spawn, cmd}, [:eof])
+    # receive do
+    #   {^port, {:data, res}} ->
+    #     IO.inspect "---> The format is"
+    #     IO.inspect res
+    # end
+
     # Create new if not exists
     # cmd = "mkfifo #{fifo_path}"
     # port = Port.open({:spawn, cmd}, [:eof])
