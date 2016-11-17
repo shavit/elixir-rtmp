@@ -31,10 +31,8 @@ defmodule VideoChat.IncomingStream do
     # cmd = "echo -n -e #{data} > #{video_fifo}"
     # Port.open({:spawn, cmd}, [:eof])
 
-    :ok = File.write(video_fifo, data)
-    IO.puts "---> Writing data"
-
-    IO.inspect data
+    File.write(video_fifo, data, [:append])
+    # IO.puts "---> Writing data"
 
     {:noreply, state}
   end
@@ -70,7 +68,7 @@ defmodule VideoChat.IncomingStream do
     video_fifo = System.cwd <> "/tmp/video-1.tmp"
 
     if !File.exists? video_fifo do
-      port = Port.open({:spawn, "mkfifo #{video_fifo}"}, [:eof])
+      port = Port.open({:spawn, "mkfifo -m+w #{video_fifo}"}, [:eof])
       {:ok, port}
     else
       {:ok}
