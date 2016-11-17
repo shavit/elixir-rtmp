@@ -77,7 +77,8 @@ defmodule VideoChat.Router do
 
   # Stream video
   get "/videos/live" do
-    video_file = "videos/2.m4v"
+    # video_file = "videos/2.m4v"
+    video_file = "/tmp/video.mp4"
     file_path = Path.join(System.cwd, video_file)
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
