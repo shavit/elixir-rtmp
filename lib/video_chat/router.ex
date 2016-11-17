@@ -116,6 +116,8 @@ defmodule VideoChat.Router do
       {^port, {:data, res}} ->
         IO.puts "Reading data #{IO.inspect res}"
 
+        # Write into file
+
         conn
         # |> put_resp_content_type("video/mp4")
         |> put_resp_content_type("application/vnd.apple.mpegurl")

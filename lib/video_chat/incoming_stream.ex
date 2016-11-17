@@ -7,6 +7,8 @@ defmodule VideoChat.IncomingStream do
 
   def init(:ok) do
     IO.puts "---> Listening on port #{3001} for incoming stream"
+    create_fifo
+
     {:ok, _socket} = :gen_udp.open(3001, [:binary, {:active, true}])
   end
 
@@ -17,6 +19,15 @@ defmodule VideoChat.IncomingStream do
 
     # video_fifo = System.cwd <> "/tmp/video.pipe"
     video_fifo = System.cwd <> "/tmp/video-1.tmp"
+
+    # Create new if not exists
+    # cmd = "mkfifo #{fifo_path}"
+    # port = Port.open({:spawn, cmd}, [:eof])
+
+    # receive do
+    #   {^port, {:data, res}} ->
+    # end
+
     # cmd = "echo -n -e #{data} > #{video_fifo}"
     # Port.open({:spawn, cmd}, [:eof])
 
@@ -53,4 +64,17 @@ defmodule VideoChat.IncomingStream do
       message: String.rstrip(message),
     }
   end
+
+  # Create new named pipe if not exists
+  defp create_fifo do
+    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+
+    if !File.exists? video_fifo do
+      port = Port.open({:spawn, "mkfifo #{video_fifo}"}, [:eof])
+      {:ok, port}
+    else
+      {:ok}
+    end
+  end
+
 end
