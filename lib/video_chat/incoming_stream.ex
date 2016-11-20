@@ -7,7 +7,7 @@ defmodule VideoChat.IncomingStream do
 
   def init(:ok) do
     IO.puts "---> Listening on port #{3001} for incoming stream"
-    create_fifo
+    System.cwd <> "/tmp/video-2.tmp" |> create_fifo
 
     {:ok, _socket} = :gen_udp.open(3001, [:binary, {:active, true}])
   end
@@ -18,7 +18,7 @@ defmodule VideoChat.IncomingStream do
     # IO.inspect message
 
     # video_fifo = System.cwd <> "/tmp/video.pipe"
-    video_fifo = System.cwd <> "/tmp/video-2.mp4"
+    video_fifo = System.cwd <> "/tmp/video-2.tmp"
 
     # cmd = "bin/get_format #{video_fifo}"
     # port = Port.open({:spawn, cmd}, [:eof])
@@ -40,7 +40,9 @@ defmodule VideoChat.IncomingStream do
     # Port.open({:spawn, cmd}, [:eof])
 
     # This is not writing the file correctly
-    File.write(video_fifo, data, [:append])
+    IO.inspect "---> Writing to #{video_fifo}"
+    res = File.write(video_fifo, data, [:append])
+    IO.inspect res
     # IO.puts "---> Writing data"
 
     {:noreply, state}
@@ -73,8 +75,8 @@ defmodule VideoChat.IncomingStream do
   end
 
   # Create new named pipe if not exists
-  defp create_fifo do
-    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+  defp create_fifo(video_fifo) do
+    # video_fifo = System.cwd <> "/tmp/video-1.tmp"
 
     if !File.exists? video_fifo do
       port = Port.open({:spawn, "mkfifo -m+w #{video_fifo}"}, [:eof])
