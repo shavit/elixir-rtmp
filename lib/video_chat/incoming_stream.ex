@@ -18,7 +18,7 @@ defmodule VideoChat.IncomingStream do
     # IO.inspect message
 
     # video_fifo = System.cwd <> "/tmp/video.pipe"
-    video_fifo = System.cwd <> "/tmp/video-1.tmp"
+    video_fifo = System.cwd <> "/tmp/video-2.mp4"
 
     # cmd = "bin/get_format #{video_fifo}"
     # port = Port.open({:spawn, cmd}, [:eof])
@@ -39,6 +39,7 @@ defmodule VideoChat.IncomingStream do
     # cmd = "echo -n -e #{data} > #{video_fifo}"
     # Port.open({:spawn, cmd}, [:eof])
 
+    # This is not writing the file correctly
     File.write(video_fifo, data, [:append])
     # IO.puts "---> Writing data"
 
