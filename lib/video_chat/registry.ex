@@ -1,11 +1,11 @@
-defmodule VideoChat.Registery do
+defmodule VideoChat.Registry do
   use GenServer
 
   @doc """
   Start the registery
   """
-  def start_link() do
-    GenServer.start_link(__MODULE__, :ok, [])
+  def start_link(name) do
+    GenServer.start_link(__MODULE__, :ok, [name: name])
   end
 
   @doc """
@@ -26,6 +26,7 @@ defmodule VideoChat.Registery do
   #   Server callbacks
   #
   def init(:ok) do
+    IO.puts "---> Starting registry"
     {:ok, %{}}
   end
 

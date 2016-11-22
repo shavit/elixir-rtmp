@@ -43,13 +43,12 @@ defmodule VideoChat.IncomingStream do
     # This is not writing the file correctly
     IO.inspect "---> Writing to #{video_fifo}"
     # Write to the bucket
-    {:ok, bucket} = VideoChat.Bucket.start_link
     res = File.write(video_fifo, data, [:append])
     IO.inspect res
     # IO.puts "---> Writing data"
 
-
-    VideoChat.Bucket.add("video-3", data)
+    {:ok, bucket} = VideoChat.Bucket.start_link
+    VideoChat.Bucket.add(bucket, :live_video, data)
     File.write(System.cwd <> "/tmp/video-3.mp4", data, [:append])
 
     {:noreply, state}
