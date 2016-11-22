@@ -33,4 +33,12 @@ defmodule VideoChat.Registery do
     {:reply, Map.fetch(names, name), names}
   end
 
+  def handle_cast({:create, name}, names) do
+    if Map.has_key?(names, name) do
+      {:noreply, names}
+    else
+      {:ok, bucket} = Agents.Bucket.start_link
+      {:noreply, Map.put(names, name, bucket)}
+    end
+  end
 end
