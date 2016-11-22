@@ -21,4 +21,12 @@ defmodule VideoChat.Registery do
   def create(server, name) do
     GenServer.cast(server, {:create, name})
   end
+
+  #
+  #   Server callbacks
+  #
+  def init(:ok) do
+    {:ok, %{}}
+  end
+
 end
