@@ -52,6 +52,10 @@ defmodule VideoChat.IncomingStream do
     res = File.write(System.cwd <> "/tmp/video-4.tmp", data, [:append])
     IO.inspect "---> Writing to #{System.cwd <> "/tmp/video-4.tmp"} #{res}"
 
+    input_file = System.cwd <> "/tmp/video-4.tmp"
+    output_file = System.cwd <> "/tmp/video-4.mp4"
+    Port.open({:spawn, System.cwd <> "/bin/encode_output #{input_file} #{output_file}"}, [])
+
     {:noreply, state}
   end
 
