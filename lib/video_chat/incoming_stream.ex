@@ -48,9 +48,9 @@ defmodule VideoChat.IncomingStream do
     IO.inspect res
     # IO.puts "---> Writing data"
 
-    
+
     VideoChat.Bucket.add("video-3", data)
-    File.write(video_fifo = System.cwd <> "/tmp/video-3.mp4", data, [:append])
+    File.write(System.cwd <> "/tmp/video-3.mp4", data, [:append])
 
     {:noreply, state}
   end
