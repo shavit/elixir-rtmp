@@ -3,8 +3,11 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
 
-SERVER_FILE="${TMP_DIR}/video-4.tmp"
-OUTPUT_FILE="${TMP_DIR}/video-4.mp4"
+# SERVER_FILE="${TMP_DIR}/video-4.tmp"
+# OUTPUT_FILE="${TMP_DIR}/video-4.mp4"
+
+SERVER_FILE="${TMP_DIR}/${1}"
+OUTPUT_FILE="${TMP_DIR}/${2}"
 
 echo "---> Encoding video ${SERVER_FILE} into ${OUTPUT_FILE}"
 ffmpeg -i $SERVER_FILE $OUTPUT_FILE
