@@ -16,6 +16,7 @@ defmodule VideoChat.IncomingStream do
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # message = packet(data)
     # IO.inspect message
+    IO.inspect data
 
     # video_fifo = System.cwd <> "/tmp/video.pipe"
     video_fifo = System.cwd <> "/tmp/video-2.tmp"
@@ -41,6 +42,9 @@ defmodule VideoChat.IncomingStream do
 
     # This is not writing the file correctly
     IO.inspect "---> Writing to #{video_fifo}"
+    # Write to the bucket
+    {:ok, bucket} = VideoChat.Bucket.start_link
+    VideoChat.Bucket.add("video-2", data)
     res = File.write(video_fifo, data, [:append])
     IO.inspect res
     # IO.puts "---> Writing data"
