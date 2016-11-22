@@ -10,4 +10,4 @@ SERVER_FILE=$1
 OUTPUT_FILE=$2
 
 echo "---> Encoding video ${SERVER_FILE} into ${OUTPUT_FILE}"
-ffmpeg -i $SERVER_FILE $OUTPUT_FILE
+ffmpeg -y -i $SERVER_FILE $OUTPUT_FILE
