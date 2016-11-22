@@ -15,4 +15,10 @@ defmodule VideoChat.Registery do
     GenServer.call(server, {:lookup, name})
   end
 
+  @doc """
+  Ensures there is a bucket assosiated to the given name in server
+  """
+  def create(server, name) do
+    GenServer.cast(server, {:create, name})
+  end
 end
