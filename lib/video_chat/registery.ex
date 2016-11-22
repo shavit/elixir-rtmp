@@ -1,4 +1,5 @@
 defmodule VideoChat.Registery do
+  use GenServer
 
   @doc """
   Start the registery
