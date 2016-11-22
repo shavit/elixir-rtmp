@@ -29,4 +29,8 @@ defmodule VideoChat.Registery do
     {:ok, %{}}
   end
 
+  def handle_call({:lookup, name}, _from, names) do
+    {:reply, Map.fetch(names, name), names}
+  end
+
 end
