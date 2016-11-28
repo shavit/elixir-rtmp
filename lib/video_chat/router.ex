@@ -20,6 +20,11 @@ defmodule VideoChat.Router do
     |> send_resp(200, render("live"))
   end
 
+  @doc """
+  Encode video on demand.
+
+  Should not start another task if the file is encoded
+  """
   get "/playlists" do
     # Start encoding the video
     cmd = "bin/create_sequence tmp/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
