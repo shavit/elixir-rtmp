@@ -42,11 +42,14 @@ defmodule VideoChat.Router do
 
   end
 
-  #
+  @doc """
+  Return a playlist file (m3u8), then redirect to the ts file
+
+  Example:
+  /playlists/playlist-file-name.m3u8
+
+  """
   # GET /playlists/:slug
-  #
-  # Return a playlist file
-  #
   get "/playlists/:slug" do
     # Check the file extension
     ext = slug
