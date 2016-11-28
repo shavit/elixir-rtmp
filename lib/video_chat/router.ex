@@ -83,7 +83,9 @@ defmodule VideoChat.Router do
     |> send_resp(200, "Wait")
   end
 
-  # Stream video
+  @doc """
+  Stream the video, enable seek and skip bytes.
+  """
   get "/videos/live" do
     # video_file = "videos/2.m4v"
     video_file = "/tmp/video.mp4"
@@ -101,7 +103,12 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
-  # Live stream of incoming data from webcam
+  @doc """
+  Live stream from the webcam or UDP connection.
+
+  Should block and wait for new data, but instead of named pipes,
+    use agents.
+  """
   get "/stream/live" do
     # Create protocol communcation
     # video_fifo = System.cwd <> "/tmp/video.pipe"
