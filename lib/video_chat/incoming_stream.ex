@@ -12,7 +12,10 @@ defmodule VideoChat.IncomingStream do
     {:ok, _socket} = :gen_udp.open(3001, [:binary, {:active, true}])
   end
 
-  # Handle data
+  @doc """
+  Incoming streaming data from the webcam.
+  
+  """
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # message = packet(data)
     # IO.inspect message
