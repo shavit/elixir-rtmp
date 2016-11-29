@@ -7,7 +7,6 @@ defmodule VideoChat.IncomingStream do
 
   def init(:ok) do
     IO.puts "---> Listening on port #{3001} for incoming stream"
-    System.cwd <> "/tmp/video-2.tmp" |> create_fifo
 
     {:ok, _socket} = :gen_udp.open(3001, [:binary, {:active, true}])
   end
