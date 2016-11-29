@@ -101,12 +101,13 @@ defmodule VideoChat.Router do
     #   unstable stream.
     # video = VideoChat.EncodingBucket.pop
     IO.inspect byte_size(video)
+    IO.inspect video
 
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video)
+    |> send_resp(200, video)
   end
 
   # Create a playlist for the live stream
@@ -119,7 +120,7 @@ defmodule VideoChat.Router do
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
     # |> send_resp(206, playlist_file)
-    |> send_file(206, video_file)
+    |> send_file(200, video_file)
   end
 
   # Test the bucket
