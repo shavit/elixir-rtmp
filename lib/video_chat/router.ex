@@ -143,7 +143,7 @@ defmodule VideoChat.Router do
     |> put_resp_content_type("video/mp4")
     # |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_chunked(video)
+    |> send_resp(200, video)
   end
 
   match _ do
