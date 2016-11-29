@@ -90,7 +90,7 @@ defmodule VideoChat.Router do
     IO.inspect "---> Getting live video stream"
 
     # IO.inspect VideoChat.EncodingBucket.get
-    video = hd(VideoChat.EncodingBucket.get)
+    video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
     # video = Enum.map_join(
     #   VideoChat.EncodingBucket.get,
     #   fn b ->
@@ -100,14 +100,13 @@ defmodule VideoChat.Router do
     # This will remove the data from all of the consumer, resulting in
     #   unstable stream.
     # video = VideoChat.EncodingBucket.pop
-    IO.inspect byte_size(video)
     IO.inspect video
 
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(200, video)
+    |> send_resp(206, video)
   end
 
   # Create a playlist for the live stream
@@ -120,16 +119,25 @@ defmodule VideoChat.Router do
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
     # |> send_resp(206, playlist_file)
-    |> send_file(200, video_file)
+    |> send_file(206, video_file)
   end
 
-  # Test the bucket
-  get "/bucket" do
+  # Get all the data from the bucket
+  get "/videos/recording" do
     IO.inspect "---> Get /bucket"
-    IO.inspect VideoChat.EncodingBucket.get
+
+    video = Enum.map_join(
+      VideoChat.EncodingBucket.get,
+      fn b ->
+        b
+      end
+    ) |> :binary.decode_unsigned
 
     conn
-    |> send_resp(200, "Yes")
+    |> put_resp_content_type("video/mp4")
+    # |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> send_resp(206, video)
   end
 
   match _ do
@@ -159,15 +167,15 @@ defmodule VideoChat.Router do
   end
 
   # No skipping
-  defp playlist_file(name \\ :default) do
-    f = "
+  defp playlist_file(_name \\ :default) do
+    # video = hd(VideoChat.EncodingBucket.get)
+    "
       #EXTM3U
       #EXT-X-TARGETDURATION:10
       #EXT-X-VERSION:3
       #EXT-X-MEDIA-SEQUENCE:0
       /videos/live
     "
-    video = hd(VideoChat.EncodingBucket.get)
   end
 
 end
