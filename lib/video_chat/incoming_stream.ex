@@ -12,33 +12,10 @@ defmodule VideoChat.IncomingStream do
     {:ok, _socket} = :gen_udp.open(3001, [:binary, {:active, true}])
   end
 
-  @doc """
-  Incoming streaming data from the webcam.
-
-  """
+  # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
+    IO.inspect "---> Received #{byte_size(data)} bytes"
     # message = packet(data)
-    # IO.inspect message
-    IO.inspect data
-
-    # cmd = "bin/get_format #{video_fifo}"
-    # port = Port.open({:spawn, cmd}, [:eof])
-    # receive do
-    #   {^port, {:data, res}} ->
-    #     IO.inspect "---> The format is"
-    #     IO.inspect res
-    # end
-
-    # Create new if not exists
-    # cmd = "mkfifo #{fifo_path}"
-    # port = Port.open({:spawn, cmd}, [:eof])
-
-    # receive do
-    #   {^port, {:data, res}} ->
-    # end
-
-    # cmd = "echo -n -e #{data} > #{video_fifo}"
-    # Port.open({:spawn, cmd}, [:eof])
 
     # Write to the bucket
     VideoChat.EncodingBucket.add data

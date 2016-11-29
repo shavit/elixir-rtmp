@@ -20,11 +20,8 @@ defmodule VideoChat.Router do
     |> send_resp(200, render("live"))
   end
 
-  @doc """
-  Encode video on demand.
-
-  Should not start another task if the file is encoded
-  """
+  # Encode video on demand.
+  # Should not start another task if the file is encoded
   get "/playlists" do
     # Start encoding the video
     cmd = "bin/create_sequence tmp/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
@@ -42,13 +39,9 @@ defmodule VideoChat.Router do
 
   end
 
-  @doc """
-  Return a playlist file (m3u8), then redirect to the ts file
-
-  Example:
-  /playlists/playlist-file-name.m3u8
-
-  """
+  # Returns a playlist file (m3u8), then redirect to the ts file
+  # /playlists/playlist-file-name.m3u8
+  #
   # GET /playlists/:slug
   get "/playlists/:slug" do
     # Check the file extension
@@ -83,9 +76,7 @@ defmodule VideoChat.Router do
     |> send_resp(200, "Wait")
   end
 
-  @doc """
-  Stream the video, enable seek and skip bytes.
-  """
+  # Stream the video, enable seek and skip bytes.
   get "/videos/live" do
     # video_file = "videos/2.m4v"
     video_file = "/tmp/video.mp4"
@@ -103,59 +94,26 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
-  @doc """
-  Live stream from the webcam or UDP connection.
-
-  Should block and wait for new data, but instead of named pipes,
-    use agents.
-  """
+  # Live stream from the webcam or UDP connection.
   get "/stream/live" do
-    # Create protocol communcation
-    # video_fifo = System.cwd <> "/tmp/video.pipe"
-    video_fifo = System.cwd <> "/tmp/video-1.tmp"
-    # video_fifo = System.cwd <> "/tmp/video.mp4"
+    # IO.inspect VideoChat.EncodingBucket.get
+    video = hd(VideoChat.EncodingBucket.get)
+    # video = Enum.map_join(
+    #   VideoChat.EncodingBucket.get,
+    #   fn b ->
+    #     b
+    #   end
+    # )
+    # This will remove the data from all of the consumer, resulting in
+    #   unstable stream.
+    # video = VideoChat.EncodingBucket.pop
+    IO.inspect byte_size(video)
 
-    # :erlang.open_port(video_fifo, [EOF])
-    cmd = "cat #{video_fifo}"
-    # port = Port.open({:spawn, cmd}, [:binary])
-    # port = Port.open({:spawn, cmd}, [:eof]))
-
-    port = Port.open({:spawn, cmd}, [:eof])
-
-    #
-    #   Should create a playlist with time sequence files
-    #
-
-    # Respond with data
-    receive do
-      {^port, {:data, res}} ->
-        IO.puts "Reading data #{IO.inspect res}"
-
-        # Write into file
-
-        conn
-        |> put_resp_content_type("video/mp4")
-        # |> put_resp_content_type("application/vnd.apple.mpegurl")
-        |> send_file(206, video_fifo)
-    end
-
-    # Port.open({:spawn, cmd}, [:eof])
-    #   |> wait_for_data
-
-    #
-    #   Original video file
-    #
-
-    # video_file = "videos/video.mp4"
-    # file_path = Path.join(System.cwd, video_file)
-    # offset = get_offset(conn.req_headers)
-    # size = get_file_size(file_path)
-
-
-    # conn
-    # # |> put_resp_content_type("video/mp4")
-    # |> put_resp_content_type("application/vnd.apple.mpegurl")
-    # |> send_file(206, file_path, offset, size-offset)
+    conn
+    # |> put_resp_content_type("video/mp4")
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> send_resp(206, video)
   end
 
   # Test the bucket
@@ -165,25 +123,6 @@ defmodule VideoChat.Router do
 
     conn
     |> send_resp(200, "Yes")
-  end
-
-  get "/bucket/live" do
-    IO.inspect VideoChat.EncodingBucket.get
-    # video = hd(VideoChat.EncodingBucket.get)
-    # video = Enum.map_join(
-    #   VideoChat.EncodingBucket.get,
-    #   fn b ->
-    #     b
-    #   end
-    # )
-    video = VideoChat.EncodingBucket.pop
-    IO.inspect byte_size(video)
-
-    conn
-    # |> put_resp_content_type("video/mp4")
-    |> put_resp_content_type("application/vnd.apple.mpegurl")
-    |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video)
   end
 
   match _ do
