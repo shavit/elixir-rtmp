@@ -133,11 +133,16 @@ defmodule VideoChat.Router do
       fn b ->
         b
       end
-    ) |> :binary.decode_unsigned
-    File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"), video_raw)
+    )
+    w = File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"), video_raw)
+    IO.inspect "---> Wrote file #{w}"
 
     # This part should get a sequence of the video
-    video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
+    # video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
+    video = hd(VideoChat.EncodingBucket.get)
+    # video = video_raw
+
+    IO.inspect "---> Sending video"
 
     conn
     |> put_resp_content_type("video/mp4")
