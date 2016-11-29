@@ -87,6 +87,8 @@ defmodule VideoChat.Router do
 
   # Live stream from the webcam or UDP connection.
   get "/videos/live" do
+    IO.inspect "---> Getting live video stream"
+
     # IO.inspect VideoChat.EncodingBucket.get
     video = hd(VideoChat.EncodingBucket.get)
     # video = Enum.map_join(
@@ -109,13 +111,15 @@ defmodule VideoChat.Router do
 
   # Create a playlist for the live stream
   get "/videos/live/playlist" do
-    video_file = "tmp/webcam/live.m3u8"
-    file_path = Path.join(System.cwd, video_file)
+    IO.inspect "---> Getting live playlist file"
+
+    video_file = Path.join(System.cwd, "tmp/webcam/live.m3u8")
 
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_file(206, file_path)
+    # |> send_resp(206, playlist_file)
+    |> send_file(206, video_file)
   end
 
   # Test the bucket
@@ -153,11 +157,16 @@ defmodule VideoChat.Router do
     end
   end
 
-  def wait_for_data(port) do
-    receive do
-      {^port, {:data, res}} ->
-        IO.puts "Reading data #{IO.inspect res}"
-    end
+  # No skipping
+  defp playlist_file(name \\ :default) do
+    f = "
+      #EXTM3U
+      #EXT-X-TARGETDURATION:10
+      #EXT-X-VERSION:3
+      #EXT-X-MEDIA-SEQUENCE:0
+      /videos/live
+    "
+    video = hd(VideoChat.EncodingBucket.get)
   end
 
 end
