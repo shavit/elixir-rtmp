@@ -21,9 +21,6 @@ defmodule VideoChat.IncomingStream do
     # IO.inspect message
     IO.inspect data
 
-    # video_fifo = System.cwd <> "/tmp/video.pipe"
-    video_fifo = System.cwd <> "/tmp/video-2.tmp"
-
     # cmd = "bin/get_format #{video_fifo}"
     # port = Port.open({:spawn, cmd}, [:eof])
     # receive do
@@ -43,21 +40,8 @@ defmodule VideoChat.IncomingStream do
     # cmd = "echo -n -e #{data} > #{video_fifo}"
     # Port.open({:spawn, cmd}, [:eof])
 
-    # This is not writing the file correctly
-    IO.inspect "---> Writing to #{video_fifo}"
     # Write to the bucket
-    res = File.write(video_fifo, data, [:append])
-    IO.inspect res
-    # IO.puts "---> Writing data"
-
-    {:ok, bucket} = VideoChat.Bucket.start_link
-    VideoChat.Bucket.add(bucket, :live_video, data)
-    res = File.write(System.cwd <> "/tmp/video-4.tmp", data, [:append])
-    IO.inspect "---> Writing to #{System.cwd <> "/tmp/video-4.tmp"} #{res}"
-
-    input_file = System.cwd <> "/tmp/video-4.tmp"
-    output_file = System.cwd <> "/tmp/video-4.mp4"
-    Port.open({:spawn, System.cwd <> "/bin/encode_output #{input_file} #{output_file}"}, [])
+    VideoChat.EncodingBucket.add data
 
     {:noreply, state}
   end

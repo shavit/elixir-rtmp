@@ -2,6 +2,10 @@ defmodule VideoChat.EncodingBucket do
   @doc """
   This module store raw video data from the encoder, and helps manage
     encoding processes.
+
+  In development:
+    Currently this should work with 1 file and 1 version at a time.
+
   """
   use GenServer
 
