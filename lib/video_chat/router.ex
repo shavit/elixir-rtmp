@@ -134,8 +134,10 @@ defmodule VideoChat.Router do
         b
       end
     )
-    w = File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"), video_raw)
-    IO.inspect "---> Wrote file #{w}"
+    # For debugging. Shouldn't append to file
+    :ok = File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
+      video_raw,
+      [:append])
 
     # This part should get a sequence of the video
     # video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
