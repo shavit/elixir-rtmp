@@ -14,7 +14,7 @@ defmodule VideoChat.IncomingStream do
 
   @doc """
   Incoming streaming data from the webcam.
-  
+
   """
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # message = packet(data)

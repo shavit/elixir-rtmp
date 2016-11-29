@@ -4,15 +4,8 @@ defmodule ReceivePacketsTest do
 
   test "should receive messages" do
     {:ok, socket} = :gen_udp.open(3010)
-    res = :gen_udp.send(socket, {127,0,0,1}, 3001, "Message 1")
 
-    assert res == :ok
+    assert :ok == :gen_udp.send(socket, {127,0,0,1}, 3001, "Message 1")
   end
 
-  test "should send messages to registry" do
-    {:ok, socket} = :gen_udp.open(3010)
-    res = :gen_udp.send(socket, {127,0,0,1}, 3001, "Message 2")
-
-    assert res == :ok
-  end
 end

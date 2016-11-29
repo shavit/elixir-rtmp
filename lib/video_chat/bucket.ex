@@ -3,7 +3,7 @@ defmodule VideoChat.Bucket do
   Start a new bucket
   """
   def start_link do
-    Agent.start_link(fn -> %{} end)
+    Agent.start_link(fn -> %{} end, name: :bucket)
   end
 
   @doc """
