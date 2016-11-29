@@ -21,6 +21,10 @@ defmodule VideoChat.EncodingBucket do
     GenServer.call(:encoding_bucket, :get_messages)
   end
 
+  def pop do
+    GenServer.call(:encoding_bucket, :pop_message)
+  end
+
   #
   # Server callbacks
   #
@@ -29,12 +33,19 @@ defmodule VideoChat.EncodingBucket do
     {:ok, messages}
   end
 
+  def handle_cast({:add_message, new_message}, messages) do
+    {:noreply, [new_message | messages]}
+  end
+
   def handle_call(:get_messages, _from, messages) do
     {:reply, messages, messages}
   end
 
-  def handle_cast({:add_message, new_message}, messages) do
-    {:noreply, [new_message | messages]}
+  def handle_call(:pop_message, _from, [message | messages]) do
+    # Reply with head and tail, filo
+    # {:reply, message, messages}
+    # Reply with tail and head, fifo
+    {:reply, message, messages}
   end
 
 end
