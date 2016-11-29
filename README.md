@@ -10,3 +10,6 @@ There are 3 players on the page:
   1. Playing streamed video.
   2. Playing HLS.
   3. Playing live stream from a webcam.
+
+### Streaming to the server
+Stream to udp://localhost:3001, or run `bin/udp`.
