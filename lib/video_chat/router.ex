@@ -107,6 +107,17 @@ defmodule VideoChat.Router do
     |> send_resp(206, video)
   end
 
+  # Create a playlist for the live stream
+  get "/videos/live/playlist" do
+    video_file = "tmp/webcam/live.m3u8"
+    file_path = Path.join(System.cwd, video_file)
+
+    conn
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> send_file(206, file_path)
+  end
+
   # Test the bucket
   get "/bucket" do
     IO.inspect "---> Get /bucket"
