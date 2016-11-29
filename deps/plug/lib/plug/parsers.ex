@@ -186,8 +186,8 @@ defmodule Plug.Parsers do
     end
   end
 
-  def call(%Conn{req_headers: req_headers, method: method,
-                 body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
+  def call(%{req_headers: req_headers, method: method,
+             body_params: %Plug.Conn.Unfetched{}} = conn, opts) when method in @methods do
     conn = Conn.fetch_query_params(conn)
     case List.keyfind(req_headers, "content-type", 0) do
       {"content-type", ct} ->
@@ -195,28 +195,21 @@ defmodule Plug.Parsers do
           {:ok, type, subtype, headers} ->
             reduce(conn, Keyword.fetch!(opts, :parsers), type, subtype, headers, opts)
           :error ->
-            %{conn | body_params: %{}}
+            merge_params(conn, %{})
         end
       nil ->
-        %{conn | body_params: %{}}
+        merge_params(conn, %{})
     end
   end
 
-  def call(%Conn{body_params: %Plug.Conn.Unfetched{}} = conn, _opts) do
-    conn = Conn.fetch_query_params(conn)
-    %{conn | body_params: %{}}
-  end
-
-  def call(%Conn{} = conn, _opts) do
-    Conn.fetch_query_params(conn)
+  def call(%{body_params: body_params} = conn, _opts) do
+    merge_params(conn, make_empty_if_unfetched(body_params))
   end
 
   defp reduce(conn, [h|t], type, subtype, headers, opts) do
     case h.parse(conn, type, subtype, headers, opts) do
-      {:ok, body, %Conn{params: %Plug.Conn.Unfetched{}, query_params: query} = conn} ->
-        %{conn | body_params: body, params: query |> Map.merge(body)}
-      {:ok, body, %Conn{params: params, query_params: query} = conn} ->
-        %{conn | body_params: body, params: params |> Map.merge(query) |> Map.merge(body)}
+      {:ok, body, conn} ->
+        merge_params(conn, body)
       {:next, conn} ->
         reduce(conn, t, type, subtype, headers, opts)
       {:error, :too_large, _conn} ->
@@ -231,9 +224,27 @@ defmodule Plug.Parsers do
   defp ensure_accepted_mimes(conn, _type, _subtype, ["*/*"]), do: conn
   defp ensure_accepted_mimes(conn, type, subtype, pass) do
     if "#{type}/#{subtype}" in pass || "#{type}/*" in pass do
-      %{conn | body_params: %{}}
+      conn
     else
       raise UnsupportedMediaTypeError, media_type: "#{type}/#{subtype}"
     end
   end
+
+  defp merge_params(%{params: params, path_params: path_params} = conn, body_params) do
+    params = make_empty_if_unfetched(params)
+    query_params = fetch_query_params(conn)
+    params = query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
+    %{conn | params: params, query_params: query_params, body_params: body_params}
+  end
+
+  defp fetch_query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}) do
+    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
+    Plug.Conn.Query.decode(query_string)
+  end
+  defp fetch_query_params(%{query_params: query_params}) do
+    query_params
+  end
+
+  defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}
+  defp make_empty_if_unfetched(params), do: params
 end

@@ -29,6 +29,6 @@ defmodule VideoChat.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:cowboy, "~> 1.0.4"},
-    {:plug, "~> 1.0"}]
+    {:plug, "~> 1.3.0"}]
   end
 end

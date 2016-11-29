@@ -41,8 +41,11 @@ defmodule Plug.Conn do
   `Plug.Conn.Unfetched` structs.
 
     * `cookies`- the request cookies with the response cookies
-    * `query_params` - the request query params
-    * `params` - the request params. Usually populated by a plug, like `Plug.Parsers`
+    * `body_params` - the request body params, populated through a `Plug.Parsers` parser.
+    * `query_params` - the request query params, populated through `fetch_query_params/2`
+    * `path_params` - the request path params, populated by routers such as `Plug.Router`
+    * `params` - the request params, the result of merging the `:body_params` and `:query_params`
+       with `:path_params`
     * `req_cookies` - the request cookies (without the response ones)
 
   ## Response fields
@@ -100,12 +103,44 @@ defmodule Plug.Conn do
       # Each item is emitted as a chunk
       Enum.into(~w(each chunk as a word), conn)
 
+  ## Custom status codes
+
+  Plug allows status codes to be overridden or added in order to allow new codes
+  not directly specified by Plug or its adapters. Adding or overriding a status
+  code is done through the Mix configuration of the `:plug` application. For
+  example, to override the existing 404 reason phrase for the 404 status code
+  ("Not Found" by default) and add a new 451 status code, the following config
+  can be specified:
+
+      config :plug, :statuses, %{
+        404 => "Actually This Was Found",
+        451 => "Unavailable For Legal Reasons"
+      }
+
+  As this configuration is Plug specific, Plug will need to be recompiled for
+  the changes to take place: this will not happen automatically as dependencies
+  are not automatically recompiled when their configuration changes. To recompile
+  Plug:
+
+      MIX_ENV=prod mix deps.compile plug
+
+  The atoms that can be used in place of the status code in many functions are
+  inflected from the reason phrase of the status code. With the above
+  configuration, the following will all work:
+
+      put_status(conn, :not_found)                     # 404
+      put_status(conn, :actually_this_was_found)       # 404
+      put_status(conn, :unavailable_for_legal_reasons) # 451
+
+  Even though 404 has been overridden, the `:not_found` atom can still be used
+  to set the status to 404 as well as the new atom `:actually_this_was_found`
+  inflected from the reason phrase "Actually This Was Found".
   """
 
   @type adapter         :: {module, term}
   @type assigns         :: %{atom => any}
   @type before_send     :: [(t -> t)]
-  @type body            :: iodata | nil
+  @type body            :: iodata
   @type cookies         :: %{binary => binary}
   @type halted          :: boolean
   @type headers         :: [{binary, binary}]
@@ -136,6 +171,7 @@ defmodule Plug.Conn do
               owner:           owner,
               params:          params | Unfetched.t,
               path_info:       segments,
+              path_params:     params,
               port:            :inet.port_number,
               private:         assigns,
               query_params:    params | Unfetched.t,
@@ -145,7 +181,7 @@ defmodule Plug.Conn do
               req_cookies:     cookies | Unfetched.t,
               req_headers:     headers,
               request_path:    binary,
-              resp_body:       body,
+              resp_body:       body | nil,
               resp_cookies:    resp_cookies,
               resp_headers:    headers,
               scheme:          scheme,
@@ -164,6 +200,7 @@ defmodule Plug.Conn do
             method:          "GET",
             owner:           nil,
             params:          %Unfetched{aspect: :params},
+            path_params:     %{},
             path_info:       [],
             port:            0,
             private:         %{},
@@ -764,7 +801,8 @@ defmodule Plug.Conn do
   ## Options
 
     * `:domain` - the domain the cookie applies to
-    * `:max_age` - the cookie max-age
+    * `:max_age` - the cookie max-age, in seconds. Providing a value for this option will set
+    both the _max-age_ and _expires_ cookie attributes
     * `:path` - the path the cookie applies to
     * `:http_only` - when false, the cookie is accessible beyond http
     * `:secure` - if the cookie must be sent only over https. Defaults

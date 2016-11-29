@@ -67,17 +67,8 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
-  # Accept video stream
-  post "/videos/stream" do
-
-
-    # stream to the clients
-    conn
-    |> send_resp(200, "Wait")
-  end
-
   # Stream the video, enable seek and skip bytes.
-  get "/videos/live" do
+  get "/videos/stream" do
     # video_file = "videos/2.m4v"
     video_file = "/tmp/video.mp4"
     file_path = Path.join(System.cwd, video_file)
@@ -95,7 +86,7 @@ defmodule VideoChat.Router do
   end
 
   # Live stream from the webcam or UDP connection.
-  get "/stream/live" do
+  get "/videos/live" do
     # IO.inspect VideoChat.EncodingBucket.get
     video = hd(VideoChat.EncodingBucket.get)
     # video = Enum.map_join(

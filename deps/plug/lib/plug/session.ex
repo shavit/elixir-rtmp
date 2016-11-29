@@ -76,6 +76,8 @@ defmodule Plug.Session do
           {nil, %{}}
         end
 
+      session = Map.merge(session, Map.get(conn.private, :plug_session, %{}))
+
       conn
       |> Conn.put_private(:plug_session, session)
       |> Conn.put_private(:plug_session_fetch, :done)
