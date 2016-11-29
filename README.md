@@ -1,6 +1,12 @@
-# VideoChat
+# Diana Video Chat
 
 ![Video Chat](https://github.com/shavit/verbose-parakeet/raw/master/doc/meme.gif?raw=true)
+
+* Play videos on demand.
+* Seek in the videos.
+* Stream live video to the server from webcam or encoders.
+* Play live video from camera or live source.
+* Encode videos on the fly.
 
 ## Quick start
 
