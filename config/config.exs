@@ -20,6 +20,13 @@ use Mix.Config
 #
 #     config :logger, level: :info
 #
+config :video_chat,
+  port: (if System.get_env("PORT") do
+    System.get_env("PORT") |> String.to_integer
+  else 3000 end),
+  incoming_port: (if System.get_env("INCOMING_PORT") do
+    System.get_env("INCOMING_PORT") |> String.to_integer
+    else 3001 end)
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
