@@ -168,14 +168,15 @@ defmodule VideoChat.Router do
   end
 
   get "/bucket/live" do
-    # IO.inspect VideoChat.EncodingBucket.get
+    IO.inspect VideoChat.EncodingBucket.get
     # video = hd(VideoChat.EncodingBucket.get)
-    video = Enum.map_join(
-      VideoChat.EncodingBucket.get,
-      fn b ->
-        b
-      end
-    )
+    # video = Enum.map_join(
+    #   VideoChat.EncodingBucket.get,
+    #   fn b ->
+    #     b
+    #   end
+    # )
+    video = VideoChat.EncodingBucket.pop
     IO.inspect byte_size(video)
 
     conn

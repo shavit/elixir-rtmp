@@ -42,9 +42,6 @@ defmodule VideoChat.EncodingBucket do
   end
 
   def handle_call(:pop_message, _from, [message | messages]) do
-    # Reply with head and tail, filo
-    # {:reply, message, messages}
-    # Reply with tail and head, fifo
     {:reply, message, messages}
   end
 
