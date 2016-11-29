@@ -1,4 +1,4 @@
-# Diana Video Chat
+# Diana Video Chat Streaming Server
 
 ![Video Chat](https://github.com/shavit/verbose-parakeet/raw/master/doc/meme.gif?raw=true)
 
