@@ -10,7 +10,11 @@
 
 ## Quick start
 
-Start the server `bin/start`, visit http://localhost:3000.
+1. Configure environment variables, or edit `.profile.example.`
+2. Make *tmp* directory with a video file named *video.mp4*
+3. Start the server using `bin/start`
+
+Visit http://localhost:3000.
 
 There are 3 players on the page:
   1. Playing streamed video.
@@ -19,3 +23,5 @@ There are 3 players on the page:
 
 ### Streaming to the server
 Stream to udp://localhost:3001, or run `bin/udp`.
+
+You can use [this webcam client](https://github.com/shavit/Monique)
