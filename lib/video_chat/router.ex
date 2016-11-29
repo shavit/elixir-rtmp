@@ -122,22 +122,28 @@ defmodule VideoChat.Router do
     |> send_file(206, video_file)
   end
 
+  # Debug: Write to file
   # Get all the data from the bucket
   get "/videos/recording" do
     IO.inspect "---> Get /bucket"
 
-    video = Enum.map_join(
+    # This part write a temporary file for debugging
+    video_raw = Enum.map_join(
       VideoChat.EncodingBucket.get,
       fn b ->
         b
       end
     ) |> :binary.decode_unsigned
+    File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"), video_raw)
+
+    # This part should get a sequence of the video
+    video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
 
     conn
     |> put_resp_content_type("video/mp4")
     # |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video)
+    |> send_chunked(video)
   end
 
   match _ do
