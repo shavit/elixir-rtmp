@@ -3,8 +3,8 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
 MEDIA_FILE="${TMP_DIR}/video.mp4"
-# MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
-MEDIA_FILE="${TMP_DIR}/video.mp4"
+MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+# MEDIA_FILE="${TMP_DIR}/video.mp4"
 FRAMERATE="$($DIR/get_framerate $MEDIA_FILE)"
 
 echo "---> Streaming video ${MEDIA_FILE} at ${FRAMERATE} to the server"

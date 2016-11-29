@@ -168,18 +168,20 @@ defmodule VideoChat.Router do
   end
 
   get "/bucket/live" do
-    IO.inspect VideoChat.EncodingBucket.get
-    video = hd(VideoChat.EncodingBucket.get)
-    offset = get_offset(conn.req_headers)
-    size = byte_size(video)
-
+    # IO.inspect VideoChat.EncodingBucket.get
+    # video = hd(VideoChat.EncodingBucket.get)
+    video = Enum.map_join(
+      VideoChat.EncodingBucket.get,
+      fn b ->
+        b
+      end
+    )
+    IO.inspect byte_size(video)
 
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> put_resp_header("Content-Length", "#{size}")
-    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
     |> send_resp(206, video)
   end
 
