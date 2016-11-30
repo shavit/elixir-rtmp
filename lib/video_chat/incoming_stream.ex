@@ -14,18 +14,7 @@ defmodule VideoChat.IncomingStream do
 
   # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
-    # IO.inspect "---> Received #{byte_size(data)} bytes"
-
-    # Data type
-    #   BitString
-    # Byte size
-    #   119056
-    # Description
-    #   This is a binary: a collection of bytes. It's printed with the `<<>>`
-    #   syntax (as opposed to double quotes) because it is not a
-    #   UTF-8 encoded binary (the first invalid byte being `<<153>>`)
-    # Reference modules
-    #   :binary
+    IO.inspect "---> Received #{byte_size(data)} bytes"
 
     # Write to the bucket
     VideoChat.EncodingBucket.add parse_message(data)[:body]
