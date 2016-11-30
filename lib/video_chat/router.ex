@@ -126,31 +126,26 @@ defmodule VideoChat.Router do
   # Get all the data from the bucket
   get "/videos/recording" do
     IO.inspect "---> Get /bucket"
+    video_raw = VideoChat.EncodingBucket.get |> Enum.join
 
-    # This part write a temporary file for debugging
-    video_raw = Enum.map_join(
-      VideoChat.EncodingBucket.get,
-      fn b ->
-        b
-      end
-    )
-    # For debugging. Shouldn't append to file
-    :ok = File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
+    # Writing binary for debugging
+    p1 = Path.join(System.cwd, "/tmp/video.mp4")
+    p2 = Path.join(System.cwd, "/tmp/video_out_3.mp4")
+    {_, d} = File.read(p1)
+    File.write(p2, d, [:raw])
+
+    IO.inspect File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
       video_raw,
-      [:append])
+      [:write, :raw, :exclusive, :binary])
 
-    # This part should get a sequence of the video
-    # video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
-    video = hd(VideoChat.EncodingBucket.get)
-    # video = video_raw
-
-    IO.inspect "---> Sending video"
+    IO.inspect "---> Sending video with #{byte_size(video_raw)} bytes"
 
     conn
     |> put_resp_content_type("video/mp4")
     # |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Content-Length", "#{byte_size(video_raw)}")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(200, video)
+    |> send_resp(206, video_raw)
   end
 
   match _ do
