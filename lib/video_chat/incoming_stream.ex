@@ -15,50 +15,37 @@ defmodule VideoChat.IncomingStream do
   # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     IO.inspect "---> Received #{byte_size(data)} bytes"
-    # message = packet(data)
+
+    # Data type
+    #   BitString
+    # Byte size
+    #   119056
+    # Description
+    #   This is a binary: a collection of bytes. It's printed with the `<<>>`
+    #   syntax (as opposed to double quotes) because it is not a
+    #   UTF-8 encoded binary (the first invalid byte being `<<153>>`)
+    # Reference modules
+    #   :binary
 
     # Write to the bucket
-    VideoChat.EncodingBucket.add data
+    VideoChat.EncodingBucket.add parse_message(data)[:body]
 
     {:noreply, state}
   end
 
-  # Handle data
   def handle_info({_, _socket}, state) do
     {:noreply, state}
   end
 
-  # Parse packet
-  def packet(data) do
-    IO.puts "---> Parsing data"
-    IO.inspect data
-
-    # 30 bytes * 8 = 240 bits
+  defp parse_message(data) do
     <<
-      _header :: size(240),
-      priority_code :: bitstring-size(8),
-      agent_number :: little-unsigned-integer-size(32),
-      message :: bitstring-size(320)
+      header :: size(16),
+      rest :: bits
     >> = data
 
-    # The message
     %{
-      priority_code: priority_code,
-      agent_number: agent_number,
-      message: String.rstrip(message),
+      header: header,
+      body: rest
     }
   end
-
-  # Create new named pipe if not exists
-  defp create_fifo(video_fifo) do
-    # video_fifo = System.cwd <> "/tmp/video-1.tmp"
-
-    if !File.exists? video_fifo do
-      port = Port.open({:spawn, "mkfifo -m+w #{video_fifo}"}, [:eof])
-      {:ok, port}
-    else
-      {:ok}
-    end
-  end
-
 end
