@@ -1,0 +1,11 @@
+#!/bin/sh
+
+clear
+echo "\n---> Sending data\n"
+sh bin/udp
+
+echo "\n---> Checking output\n"
+curl -XGET -I http://localhost:3000/videos/recording
+
+echo "\n---> Encoding data\n"
+bin/encode_output tmp/video_raw_1.mp4 tmp/video_raw_2.mp4

@@ -12,6 +12,6 @@ FRAMERATE="$($DIR/get_framerate $MEDIA_FILE)"
 echo "---> Streaming video ${MEDIA_FILE} at ${FRAMERATE} to the server"
 ffmpeg \
   -i $MEDIA_FILE \
-  -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k \
+  -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 320k \
   -r $FRAMERATE -s 640x480 -ss 00.000 -f avi \
   udp://127.0.0.1:3001
