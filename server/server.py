@@ -6,8 +6,6 @@ bucket = bytearray()
 
 def user_signals(signal, frame):
     print('---> Terminating')
-    # with open('tmp/image_out_2.gif', 'wb') as f:
-    #     f.write(bucket)
     with open('tmp/README.md', 'wb') as f:
         f.write(bucket)
     sys.exit(0)
@@ -17,7 +15,7 @@ def run():
     sock.bind(('127.0.0.1', 3001))
 
     while True:
-        buf = 2048
+        buf = 20480
         data, _ = sock.recvfrom(buf)
         print('---> Received ({}) {}'.format(type(data), len(data)))
         for d in data:
