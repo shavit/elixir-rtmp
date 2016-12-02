@@ -125,15 +125,9 @@ defmodule VideoChat.Router do
   # Debug: Write to file
   # Get all the data from the bucket
   get "/videos/recording" do
-    video_raw = VideoChat.EncodingBucket.get |> Enum.join
+    video_raw = VideoChat.EncodingBucket.get |> Enum.reverse |> Enum.join
 
-    # Writing binary for debugging
-    # p1 = Path.join(System.cwd, "/tmp/video.mp4")
-    # p2 = Path.join(System.cwd, "/tmp/video_out_3.mp4")
-    # {_, d} = File.read(p1)
-    # File.write(p2, d, [:raw])
-
-    IO.inspect File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
+    File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
       video_raw,
       [:write, :raw, :exclusive, :binary])
 

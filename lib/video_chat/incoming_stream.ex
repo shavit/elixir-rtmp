@@ -9,7 +9,9 @@ defmodule VideoChat.IncomingStream do
     incoming_port = Application.get_env(:video_chat, :incoming_port)
     IO.puts "---> Listening on port #{incoming_port} for incoming stream"
 
-    {:ok, _socket} = :gen_udp.open(incoming_port, [:binary, {:active, true}])
+    {:ok, _socket} = :gen_udp.open(incoming_port, [:binary,
+      {:active, true}, {:buffer, 1024}
+      ])
   end
 
   # Incoming streaming data from the webcam.
@@ -17,7 +19,7 @@ defmodule VideoChat.IncomingStream do
     IO.inspect "---> Received #{byte_size(data)} bytes"
 
     # Write to the bucket
-    VideoChat.EncodingBucket.add parse_message(data)[:body]
+    VideoChat.EncodingBucket.add data
 
     {:noreply, state}
   end
@@ -26,6 +28,7 @@ defmodule VideoChat.IncomingStream do
     {:noreply, state}
   end
 
+  # Optional format
   defp parse_message(data) do
     <<
       header :: size(16),
