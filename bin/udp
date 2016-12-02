@@ -12,5 +12,5 @@ echo "---> Streaming video ${MEDIA_FILE} at ${FRAMERATE} to the server"
 ffmpeg \
   -i $MEDIA_FILE \
   -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k \
-  -r $FRAMERATE -s 640x480 -ss 00.000 -f avi \
+  -r $FRAMERATE -s 640x480 -ss 00.000 -f mp4 \
   udp://127.0.0.1:3001

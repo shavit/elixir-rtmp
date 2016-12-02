@@ -2,12 +2,16 @@
 
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
+# Uncomment to test with a small file
 MEDIA_FILE="${TMP_DIR}/video.mp4"
-MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+# Uncomment to test with a large file
+# MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+FRAMERATE="$($DIR/get_framerate $MEDIA_FILE)"
 
-echo "---> Streaming video ${MEDIA_FILE} to the server"
+echo "---> Streaming video ${MEDIA_FILE} at ${FRAMERATE} to the server"
 ffmpeg \
   -i $MEDIA_FILE \
-  -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k -r 30 \
-  -s 640x480 -ss 00.000 -f hls \
-  http://localhost:3000/videos/stream
+  -c:a aac -ar 44100 -ab 128k -ac 2 -strict -2 -c:v libx264 -vb 500k \
+  -r $FRAMERATE -s 640x480 -ss 00.000 -f mp4 \
+  -movflags frag_keyframe+empty_moov \
+  udp://127.0.0.1:3001
