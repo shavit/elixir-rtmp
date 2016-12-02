@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DIR=`dirname $BASH_SOURCE[0]`
+TMP_DIR="${DIR}/../tmp"
+# Uncomment to test with a small file
+# MEDIA_FILE="${TMP_DIR}/video.mp4"
+# Uncomment to test with a large file
+MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+FRAMERATE="$($DIR/get_framerate $MEDIA_FILE)"
+
+echo "---> Streaming video ${MEDIA_FILE} at ${FRAMERATE} to the server"
+ffmpeg \
+  -i $MEDIA_FILE \
+  -c:a aac -ac 2 -strict -2 \
+  -c:v libx264 \
+  -movflags frag_keyframe+empty_moov \
+  -crf 28 \
+  -b:v 64k -bufsize 64k \
+  -r $FRAMERATE -f hls \
+  udp://127.0.0.1:3001

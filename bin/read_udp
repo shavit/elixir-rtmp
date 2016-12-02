@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DIR=`dirname $BASH_SOURCE[0]`
+TMP_DIR="${DIR}/../tmp"
+# OUTPUT_FILE="${TMP_DIR}/udp_out_1.mp4"
+OUTPUT_FILE="${TMP_DIR}/udp_out_%0d.ts"
+OUTPUT_PLAYLIST="${TMP_DIR}/udp_out_playlist.m3u8"
+
+echo "---> Reading stream and writing to ${OUTPUT_FILE}"
+ffmpeg \
+  -i udp://127.0.0.1:3001 \
+  -c:a copy \
+  -c:v libx264 \
+  -bufsize 1024k \
+  -strict experimental \
+  -map 0 \
+  -f ssegment -segment_list $OUTPUT_PLAYLIST -segment_time 10 \
+  -segment_list_size 10 -segment_list_flags +live \
+  -segment_list_type hls \
+  $OUTPUT_FILE
