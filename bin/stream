@@ -13,7 +13,7 @@ ffmpeg \
   -i $MEDIA_FILE \
   -c:a aac -ac 2 -strict -2 \
   -c:v libx264 \
-  -crf 22 \
+  -crf 28 \
   -b:v 64k -bufsize 64k \
   -r $FRAMERATE -f mp4 \
   -movflags frag_keyframe+empty_moov \

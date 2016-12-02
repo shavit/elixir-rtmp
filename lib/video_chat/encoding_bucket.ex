@@ -24,7 +24,7 @@ defmodule VideoChat.EncodingBucket do
   def pop do
     GenServer.call(:encoding_bucket, :pop_message)
   end
-
+  
   #
   # Server callbacks
   #
