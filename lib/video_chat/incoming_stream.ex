@@ -16,7 +16,9 @@ defmodule VideoChat.IncomingStream do
 
   # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
-    IO.inspect "---> Received #{byte_size(data)} bytes"
+    IO.inspect _socket
+    IO.inspect _ip
+    IO.inspect "---> Received #{byte_size(data)} bytes from #{_port}"
 
     # Write to the bucket
     VideoChat.EncodingBucket.add data
