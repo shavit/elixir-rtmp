@@ -22,4 +22,4 @@ ffmpeg -y \
   -f mpegts -hls_time 9 -hls_list_size 0 \
   -s 1280x720 \
   -threads 12 \
-  udp://127.0.0.1:3001
+  udp://127.0.0.1:3002
