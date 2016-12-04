@@ -89,39 +89,22 @@ defmodule VideoChat.Router do
   get "/videos/live" do
     IO.inspect "---> Getting live video stream"
 
-    cmd = "bin/read_udp"
-    port = Port.open({:spawn, cmd}, [:eof])
-
-    receive do
-      {^port, {:data, res}} ->
-        IO.puts "Accepting data #{IO.inspect res}"
-
-        # Stream the data
-        conn
-        |> put_resp_content_type("application/vnd.apple.mpegurl")
-        |> send_resp(206, "")
-    end
-
-    video = VideoChat.EncodingBucket.get |> List.last
+    # video = VideoChat.EncodingBucket.get |> List.last
 
     conn
-    # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video)
+    |> send_resp(206, playlist_file)
   end
 
-  # Create a playlist for the live stream
-  get "/videos/live/playlist" do
-    IO.inspect "---> Getting live playlist file"
-
-    video_file = Path.join(System.cwd, "tmp/webcam/live.m3u8")
+  get "/videos/live/:ts" do
+    file_path = Path.join(System.cwd, "tmp/ts/#{ts}")
+    IO.inspect file_path
 
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    # |> send_resp(206, playlist_file)
-    |> send_file(206, video_file)
+    |> send_file(206, file_path)
   end
 
   # Debug: Write to file
@@ -170,14 +153,21 @@ defmodule VideoChat.Router do
   end
 
   # No skipping
-  defp playlist_file(_name \\ :default) do
-    # video = hd(VideoChat.EncodingBucket.get)
+  defp playlist_file do
     "
       #EXTM3U
       #EXT-X-TARGETDURATION:10
       #EXT-X-VERSION:3
       #EXT-X-MEDIA-SEQUENCE:0
-      /videos/live
+      #EXTINF:11.323222,
+      /videos/live/320x1800.ts
+      #EXTINF:9.000000,
+      /videos/live/320x1801.ts
+      #EXTINF:7.300000,
+      /videos/live/320x1802.ts
+      #EXTINF:8.800000,
+      /videos/live/320x1803.ts
+      #EXT-X-ENDLIST
     "
   end
 
