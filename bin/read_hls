@@ -13,6 +13,7 @@ ffmpeg \
   -bufsize 1024k \
   -strict experimental \
   -map 0 \
+  -s 320x240 \
   -f ssegment -segment_list $OUTPUT_PLAYLIST -segment_time 10 \
   -segment_list_size 10 -segment_list_flags +live \
   -segment_list_type hls \
