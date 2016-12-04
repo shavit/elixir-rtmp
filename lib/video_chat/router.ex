@@ -89,8 +89,7 @@ defmodule VideoChat.Router do
   get "/videos/live" do
     IO.inspect "---> Getting live video stream"
 
-    # IO.inspect VideoChat.EncodingBucket.get
-    video = hd(VideoChat.EncodingBucket.get) |> :binary.decode_unsigned
+    video = VideoChat.EncodingBucket.get |> List.last
     # video = Enum.map_join(
     #   VideoChat.EncodingBucket.get,
     #   fn b ->
