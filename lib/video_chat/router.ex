@@ -90,15 +90,22 @@ defmodule VideoChat.Router do
     IO.inspect "---> Getting live video stream"
 
     # video = VideoChat.EncodingBucket.get |> List.last
+    file_path = Path.join(System.cwd, "tmp/webcam/live.m3u8")
+    offset = get_offset(conn.req_headers)
+    size = get_file_size(file_path)
+
 
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, playlist_file)
+    |> put_resp_header("Content-Length", "#{size}")
+    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
+    # |> send_resp(206, playlist_file)
+    |> send_file(206, file_path, offset, size-offset)
   end
 
   get "/videos/live/:ts" do
-    file_path = Path.join(System.cwd, "tmp/ts/#{ts}")
+    file_path = Path.join(System.cwd, "webcam/ts/#{ts}")
     IO.inspect file_path
 
     conn
@@ -154,7 +161,7 @@ defmodule VideoChat.Router do
 
   # No skipping
   defp playlist_file do
-    "
+    '
       #EXTM3U
       #EXT-X-TARGETDURATION:10
       #EXT-X-VERSION:3
@@ -167,8 +174,7 @@ defmodule VideoChat.Router do
       /videos/live/320x1802.ts
       #EXTINF:8.800000,
       /videos/live/320x1803.ts
-      #EXT-X-ENDLIST
-    "
+    '
   end
 
 end
