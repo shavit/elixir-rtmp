@@ -90,17 +90,7 @@ defmodule VideoChat.Router do
     IO.inspect "---> Getting live video stream"
 
     video = VideoChat.EncodingBucket.get |> List.last
-    # video = Enum.map_join(
-    #   VideoChat.EncodingBucket.get,
-    #   fn b ->
-    #     b
-    #   end
-    # )
-    # This will remove the data from all of the consumer, resulting in
-    #   unstable stream.
-    # video = VideoChat.EncodingBucket.pop
-    IO.inspect video
-
+    
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
