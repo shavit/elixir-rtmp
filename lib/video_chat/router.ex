@@ -89,8 +89,21 @@ defmodule VideoChat.Router do
   get "/videos/live" do
     IO.inspect "---> Getting live video stream"
 
+    cmd = "bin/read_udp"
+    port = Port.open({:spawn, cmd}, [:eof])
+
+    receive do
+      {^port, {:data, res}} ->
+        IO.puts "Accepting data #{IO.inspect res}"
+
+        # Stream the data
+        conn
+        |> put_resp_content_type("application/vnd.apple.mpegurl")
+        |> send_resp(206, "")
+    end
+
     video = VideoChat.EncodingBucket.get |> List.last
-    
+
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
