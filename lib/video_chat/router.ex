@@ -105,7 +105,7 @@ defmodule VideoChat.Router do
   end
 
   get "/videos/live/:ts" do
-    file_path = Path.join(System.cwd, "webcam/ts/#{ts}")
+    file_path = Path.join(System.cwd, "webcam/#{ts}")
     IO.inspect file_path
 
     conn
