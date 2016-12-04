@@ -86,7 +86,7 @@ defmodule VideoChat.Router do
   end
 
   # Live stream from the webcam or UDP connection.
-  get "/videos/live" do
+  get "/videos/live/playlist" do
     IO.inspect "---> Getting live video stream"
 
     # video = VideoChat.EncodingBucket.get |> List.last
@@ -105,7 +105,7 @@ defmodule VideoChat.Router do
   end
 
   get "/videos/live/:ts" do
-    file_path = Path.join(System.cwd, "webcam/#{ts}")
+    file_path = Path.join(System.cwd, "tmp/webcam/#{ts}")
     IO.inspect file_path
 
     conn
