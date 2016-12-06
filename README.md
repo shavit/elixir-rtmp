@@ -28,7 +28,7 @@ Stream to udp://localhost:3001, or run `bin/udp`.
 
 Listen, encode and write to file:
 ````
-bin/read_udp
+bin/read_hls
 ````
 
 Stream the video from the `tmp` directory:
