@@ -1,0 +1,15 @@
+#!/bin/sh
+
+#
+# Testing
+#
+# Read from the app and write to file
+#
+#
+DIR=`dirname $BASH_SOURCE[0]`
+TMP_DIR="${DIR}/../tmp/stdtest"
+
+while read input
+do
+  echo $input >> $TMP_DIR/output.txt
+done
