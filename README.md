@@ -24,4 +24,16 @@ There are 3 players on the page:
 ### Streaming to the server
 Stream to udp://localhost:3001, or run `bin/udp`.
 
+### Streaming HLS using FFMPEG
+
+Listen, encode and write to file:
+````
+bin/read_udp
+````
+
+Stream the video from the `tmp` directory:
+````
+bin/stream_hls
+````
+
 You can use [this webcam client](https://github.com/shavit/Monique)
