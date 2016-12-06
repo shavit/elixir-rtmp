@@ -9,7 +9,9 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp/stdtest"
 
-while read input
-do
-  echo $input >> $TMP_DIR/output.txt
-done
+echo $1 >> $TMP_DIR/output.txt
+
+# while read input
+# do
+#   echo $input >> $TMP_DIR/output.txt
+# done

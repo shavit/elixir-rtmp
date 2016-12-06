@@ -1,3 +1,6 @@
+#
+# Testing module
+#
 defmodule VideoChat.Writer do
   use GenServer
 
@@ -6,9 +9,9 @@ defmodule VideoChat.Writer do
   end
 
   def init(:ok) do
-    IO.inspect "---> Init writer"
-    System.cmd("sh", ["bin/read_string"])
-    IO.puts :stdio, "Starting Elixir app"
-    {:ok}
+    {{_year,_month,_day},{h,m,s}} = :calendar.local_time
+    System.cmd("sh", ["bin/read_string", "[#{h}:#{m}:#{s}] Started from Eixir"])
+
+    {:ok, System.get_pid}
   end
 end
