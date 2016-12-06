@@ -1,4 +1,4 @@
-# Diana Video Chat Streaming Server
+# Diana Elixir Video Chat Streaming Server
 
 ![Video Chat](https://github.com/shavit/verbose-parakeet/raw/master/doc/meme.gif?raw=true)
 
@@ -35,5 +35,7 @@ Stream the video from the `tmp` directory:
 ````
 bin/stream_hls
 ````
+
+### MacOS webcam client
 
 You can use [this webcam client](https://github.com/shavit/Monique)
