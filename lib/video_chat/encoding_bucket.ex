@@ -16,11 +16,21 @@ defmodule VideoChat.EncodingBucket do
   def add(message) do
     IO.inspect "---> Add data"
 
-    _pid = spawn fn ->
+    self_pid = self()
+    pid = spawn fn ->
       System.cmd("sh", [
-          Path.join([System.cwd, "bin", "read_udp_in"])
+          Path.join([System.cwd, "bin", "read_udp_in"]),
+          message
         ], into: IO.stream(:stdio, :line))
+      :timer.sleep(400)
+      send(self_pid, {:done, self()})
       end
+
+    receive do
+      {:done, pid} -> IO.puts "---> #{pid} Complete"
+      _ -> Process.exit(pid, :kill)
+    end
+
 
     GenServer.cast(:encoding_bucket, {:add_message, message})
   end
