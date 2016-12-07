@@ -15,7 +15,7 @@ defmodule VideoChat.Writer do
     # System.cmd(Path.join([System.cwd, "bin", "read_hls"]), ["-v"])
 
     # Start and wait for messages
-    IO.inspect "---> Starting writer"
+    IO.inspect "---> Writer waiting to stdin"
     pid = spawn fn ->
       System.cmd("sh", [
           Path.join([System.cwd, "bin", "read_udp_in"])
