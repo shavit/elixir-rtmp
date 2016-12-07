@@ -9,12 +9,12 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp/stdtest"
 
-# echo $1 >> $TMP_DIR/output.txt
+echo $1 >> $TMP_DIR/output.txt
 
-while read input
-do
-  echo $input >> $TMP_DIR/output.txt
-done
+# while read input
+# do
+#   echo $input >> $TMP_DIR/output.txt
+# done
 
 # {:ok, pid} = System.cmd("sh", ["bin/read_string"])
 
