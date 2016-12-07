@@ -4,33 +4,17 @@ defmodule VideoChat.EncodingBucket do
   #
   # In development:
   #   Currently this should work with 1 file and 1 version at a time.
-  use GenServer
+  # use GenServer
+  use Supervisor
 
   def start_link do
-    {{_year,_month,_day},{h,m,s}} = :calendar.local_time
-    System.cmd("sh", ["bin/read_string", "[#{h}:#{m}:#{s}] Started from Eixir"])
-
-    GenServer.start_link(__MODULE__, [], [name: :encoding_bucket])
+    # GenServer.start_link(__MODULE__, [], [name: :encoding_bucket])
+    Supervisor.start_link(__MODULE__, :ok)
   end
 
   def add(message) do
-    IO.inspect "---> Add data"
-
-    self_pid = self()
-    pid = spawn fn ->
-      System.cmd("sh", [
-          Path.join([System.cwd, "bin", "read_udp_in"]),
-          message
-        ], into: IO.stream(:stdio, :line))
-      :timer.sleep(400)
-      send(self_pid, {:done, self()})
-      end
-
-    receive do
-      {:done, pid} -> IO.puts "---> #{pid} Complete"
-      _ -> Process.exit(pid, :kill)
-    end
-
+    IO.inspect "---> Adding encoded data"
+    VideoChat.Encoder.encode(message)
 
     GenServer.cast(:encoding_bucket, {:add_message, message})
   end
@@ -47,8 +31,13 @@ defmodule VideoChat.EncodingBucket do
   # Server callbacks
   #
 
-  def init(messages) do
-    {:ok, messages}
+  def init(:ok) do
+    children = [
+      worker(VideoChat.Encoder, [])
+    ]
+
+    # {:ok, messages}
+    supervise(children, strategy: :one_for_one)
   end
 
   def handle_cast({:add_message, new_message}, messages) do
