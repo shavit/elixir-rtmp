@@ -9,7 +9,7 @@ defmodule VideoChat.Encoder do
   def init(_state) do
     # Open a port for the external process
     #   wait for stdin.
-    port = Port.open({:spawn, "bin/read_udp_in"}, [:binary])
+    port = Port.open({:spawn, "bin/read_hls"}, [:binary])
     # Port.connect port, self()
 
     {:ok, port}
