@@ -14,14 +14,12 @@ defmodule VideoChat.EncodingBucket do
   end
 
   def add(message) do
-    # IO.inspect "---> Add data"
-    # {_stdout, 0} = System.cmd("sh", [
-    #     Path.join([System.cwd, "bin", "read_udp_in"]),
-    #     message
-    #   ], into: IO.stream(:stdio, :line))
-    # IO.inspect _stdout
-
-    IO.write(__MODULE__, "foo")
+    IO.inspect "---> Add data"
+    {_stdout, 0} = System.cmd("sh", [
+        Path.join([System.cwd, "bin", "read_udp_in"]),
+        message
+      ], into: IO.stream(:stdio, :line))
+    IO.inspect _stdout
 
     # {_stdout, 0} = System.cmd("sh", [
     #     Path.join([System.cwd, "bin", "read_string"]),

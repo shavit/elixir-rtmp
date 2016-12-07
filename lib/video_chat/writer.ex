@@ -14,6 +14,15 @@ defmodule VideoChat.Writer do
     # Listen to incoming streams on 3002
     # System.cmd(Path.join([System.cwd, "bin", "read_hls"]), ["-v"])
 
-    {:ok, System.get_pid}
+    # Start and wait for messages
+    IO.inspect "---> Starting writer"
+    pid = spawn fn ->
+      System.cmd("sh", [
+          Path.join([System.cwd, "bin", "read_udp_in"])
+        ], into: IO.stream(:stdio, :line))
+      end
+
+    # {:ok, System.get_pid}
+    {:ok, pid}
   end
 end
