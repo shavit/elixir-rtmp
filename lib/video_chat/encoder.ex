@@ -19,19 +19,13 @@ defmodule VideoChat.Encoder do
     GenServer.cast(:encoder, {:encode, data})
   end
 
-  defp log_message(port, message) do
-    # Write a message
-    {{_year,_month,_day},{h,m,s}} = :calendar.local_time
-    port |> Port.command("[#{h}:#{m}:#{s}] #{message}\n")
-  end
-
   #
   # Callbacks
   #
 
   def handle_cast({:encode, data}, port) do
     # Pipe the data to the external process
-    log_message(port, "Hello again")
+    port |> Port.command(data)
 
     {:noreply, port}
   end
