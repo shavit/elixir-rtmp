@@ -15,18 +15,3 @@ while read input
 do
   echo $input >> $TMP_DIR/output.txt
 done
-
-# {:ok, pid} = System.cmd("sh", ["bin/read_string"])
-
-# pid = spawn fn -> System.cmd("sh", ["bin/read_string"]) end
-# pid = spawn fn -> System.cmd("elixir", ["bin/read_string.ex"]) end
-#
-# IO.write(pid, "Hello")
-
-
-# Pipe stdin into stdout
-# Enum.each IO.stream(:stdio, :line), &IO.write(&1)
-# IO.stream(pid, :line)
-# Write into the file
-# {:ok, p} = :file.open("tmp/stdtest/output.txt", :write)
-# IO.write(p, "Message 1\n")
