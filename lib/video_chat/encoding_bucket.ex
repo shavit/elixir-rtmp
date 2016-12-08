@@ -1,9 +1,4 @@
 defmodule VideoChat.EncodingBucket do
-  # This module store raw video data from the encoder, and helps manage
-  #   encoding processes.
-  #
-  # In development:
-  #   Currently this should work with 1 file and 1 version at a time.
   # use GenServer
   use Supervisor
 
@@ -12,10 +7,18 @@ defmodule VideoChat.EncodingBucket do
     Supervisor.start_link(__MODULE__, :ok)
   end
 
-  def add(message) do
-    IO.inspect "---> Adding encoded data"
-    VideoChat.Encoder.encode(message)
+  def init(:ok) do
+    children = [
+      worker(VideoChat.Encoder, [])
+    ]
 
+    # {:ok, messages}
+    supervise(children, strategy: :one_for_one)
+  end
+
+  def add(message) do
+    File.write("tmp/video2.raw", message, [:append])
+    VideoChat.Encoder.encode(message)
     GenServer.cast(:encoding_bucket, {:add_message, message})
   end
 
@@ -30,15 +33,6 @@ defmodule VideoChat.EncodingBucket do
   #
   # Server callbacks
   #
-
-  def init(:ok) do
-    children = [
-      worker(VideoChat.Encoder, [])
-    ]
-
-    # {:ok, messages}
-    supervise(children, strategy: :one_for_one)
-  end
 
   def handle_cast({:add_message, new_message}, messages) do
     {:noreply, [new_message | messages]}
