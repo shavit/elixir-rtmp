@@ -21,5 +21,4 @@ echo "---> Reading stream and writing to ${OUTPUT_FILE}"
 #   -segment_list_type hls \
 #   $OUTPUT_FILE
 
-
 nc -ul 127.0.0.1 3001 | cat - >> tmp/raw_video.mp4
