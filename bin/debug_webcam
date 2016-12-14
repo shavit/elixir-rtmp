@@ -22,4 +22,4 @@ echo "---> Reading stream and writing to ${OUTPUT_FILE}"
 #   $OUTPUT_FILE
 
 # clear; nc -ul 127.0.0.1 3001 | cat - >> tmp/raw_video.mp4
-clear; nc -ul 127.0.0.1 3001 | cat - >> tmp/raw_video.out
+clear; rm tmp/raw_video.out; nc -ul 127.0.0.1 3001 | cat - >> tmp/raw_video.out
