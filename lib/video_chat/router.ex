@@ -13,7 +13,7 @@ defmodule VideoChat.Router do
     {:ok, _} = Plug.Adapters.Cowboy.http VideoChat.Router, []
   end
 
-  # Render a page with a player
+  # Render the main page
   get "/" do
     conn
     |> put_resp_content_type("text/html")
