@@ -86,6 +86,7 @@ defmodule VideoChat.Router do
   end
 
   # Live stream from the webcam or UDP connection.
+  # Need to parse the packets
   get "/videos/live/playlist" do
     IO.inspect "---> Getting live video stream"
 
