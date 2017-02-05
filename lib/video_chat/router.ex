@@ -102,6 +102,7 @@ defmodule VideoChat.Router do
     |> put_resp_header("Content-Length", "#{size}")
     |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
     # |> send_resp(206, playlist_file)
+
     |> send_file(206, file_path, offset, size-offset)
   end
 
@@ -160,6 +161,7 @@ defmodule VideoChat.Router do
     end
   end
 
+  # Live stream
   # No skipping
   defp playlist_file do
     '
