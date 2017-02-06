@@ -161,7 +161,6 @@ defmodule VideoChat.Router do
     end
   end
 
-  # Live stream
   # No skipping
   defp playlist_file do
     '
