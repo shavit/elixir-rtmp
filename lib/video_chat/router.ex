@@ -94,8 +94,7 @@ defmodule VideoChat.Router do
     file_path = Path.join(System.cwd, "tmp/webcam/live.m3u8")
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
-
-
+    
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
