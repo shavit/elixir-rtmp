@@ -89,12 +89,12 @@ defmodule VideoChat.Router do
   # Need to parse the packets.
   get "/videos/live/playlist" do
     IO.inspect "---> Getting live video stream"
-
+    
     # video = VideoChat.EncodingBucket.get |> List.last
     file_path = Path.join(System.cwd, "tmp/webcam/live.m3u8")
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
-    
+
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
