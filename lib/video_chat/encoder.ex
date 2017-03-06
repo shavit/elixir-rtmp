@@ -2,13 +2,14 @@ defmodule VideoChat.Encoder do
   use GenServer
 
   def start_link do
-    IO.inspect "---> Starting encoder"
+    IO.puts "---> Starting encoder"
     GenServer.start_link(__MODULE__, [], [name: :encoder])
   end
 
   def init(_state) do
     # Open a port for the external process
     #   wait for stdin.
+    IO.puts "---> Reading webcam bin/read_webcam"
     port = Port.open({:spawn, "bin/read_webcam"}, [:binary])
     # Port.connect port, self()
 
@@ -24,8 +25,10 @@ defmodule VideoChat.Encoder do
   #
 
   def handle_cast({:encode, data}, port) do
+
     # Pipe the data to the external process
-    port |> Port.command(data)
+    # port |> Port.command(data)
+    port |> Port.command("Sample data")
 
     {:noreply, port}
   end
