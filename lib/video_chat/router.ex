@@ -20,6 +20,19 @@ defmodule VideoChat.Router do
     |> send_resp(200, render("live"))
   end
 
+  # Get live stream from the bucket
+  get "/live.mp4" do
+    video_raw = VideoChat.EncodingBucket.get |> Enum.reverse |> Enum.join
+
+    IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
+
+    conn
+    |> put_resp_content_type("video/mp4")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> send_resp(206, video_raw)
+  end
+
+
   # Encode video on demand.
   # Should not start another task if the file is encoded
   get "/playlists" do
@@ -74,7 +87,7 @@ defmodule VideoChat.Router do
     file_path = Path.join(System.cwd, video_file)
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
-    
+
     conn
     # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")

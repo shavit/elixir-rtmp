@@ -22,6 +22,7 @@ defmodule VideoChat.EncodingBucket do
     File.write("tmp/video2.mp4", message, [:append])
     # Send messages to the encoder
     VideoChat.Encoder.encode(message)
+    
     GenServer.cast(:encoding_bucket, {:add_message, message})
   end
 
