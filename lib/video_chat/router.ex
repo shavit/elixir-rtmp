@@ -37,7 +37,8 @@ defmodule VideoChat.Router do
   # Should not start another task if the file is encoded
   get "/playlists" do
     # Start encoding the video
-    cmd = "bin/create_sequence tmp/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+    # cmd = "bin/create_sequence tmp/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
+    cmd = "bin/create_sequence tmp/video.mp4"
     port = Port.open({:spawn, cmd}, [:eof])
 
     receive do
