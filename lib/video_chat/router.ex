@@ -82,20 +82,18 @@ defmodule VideoChat.Router do
 
   # Stream the video, enable seek and skip bytes.
   get "/videos/:file_name" do
-    file_path = System.cwd
-      |> Path.join Application.get_env(:video_chat, :media_directory)
-      |> Path.join file_name
-    offset = get_offset(conn.req_headers)
-    size = get_file_size(file_path)
+    ext = (file_name
+      |> String.split("."))
+        |> List.last
 
-    IO.puts "---> Playing #{file_name}"
+    IO.puts "---> File extension #{ext}"
 
-    conn
-    |> put_resp_content_type("application/vnd.apple.mpegurl")
-    |> put_resp_header("Accept-Ranges", "bytes")
-    |> put_resp_header("Content-Length", "#{size}")
-    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
-    |> send_file(206, file_path, offset, size-offset)
+    case ext do
+      "mp4" -> stream_video(conn, file_name)
+      "jpg" -> serve_image(conn, file_name)
+      "png" -> serve_image(conn, file_name)
+      _ -> send_resp(404)
+    end
   end
 
   # Live stream from the webcam or UDP connection.
@@ -154,6 +152,34 @@ defmodule VideoChat.Router do
   #
   # Helpers
   #
+
+  defp stream_video(conn, file_name) do
+    file_path = System.cwd
+      |> Path.join(Application.get_env(:video_chat, :media_directory))
+      |> Path.join(file_name)
+    offset = get_offset(conn.req_headers)
+    size = get_file_size(file_path)
+
+    conn
+    |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> put_resp_header("Content-Length", "#{size}")
+    |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
+    |> send_file(206, file_path, offset, size-offset)
+  end
+
+  defp serve_image(conn, file_name) do
+    file_path = System.cwd
+      |> Path.join(Application.get_env(:video_chat, :media_directory))
+      |> Path.join(file_name)
+    size = get_file_size(file_path)
+
+    conn
+    |> put_resp_content_type("application/jpg")
+    |> put_resp_header("Accept-Ranges", "bytes")
+    |> put_resp_header("Content-Length", "#{size}")
+    |> send_file(206, file_path)
+  end
 
   defp get_file_size(path) do
     {:ok, %{size: size}} = File.stat path
