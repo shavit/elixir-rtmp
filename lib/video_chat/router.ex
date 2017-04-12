@@ -81,12 +81,10 @@ defmodule VideoChat.Router do
   end
 
   # Stream the video, enable seek and skip bytes.
-  get "/videos/:file_name" do
+  get "/media/:file_name" do
     ext = (file_name
       |> String.split("."))
         |> List.last
-
-    IO.puts "---> File extension #{ext}"
 
     case ext do
       "mp4" -> stream_video(conn, file_name)
