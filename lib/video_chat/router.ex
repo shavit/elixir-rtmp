@@ -88,6 +88,8 @@ defmodule VideoChat.Router do
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
 
+    IO.puts "---> Playing #{file_name}"
+
     conn
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
