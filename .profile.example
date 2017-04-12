@@ -10,3 +10,4 @@
 
 export PORT=3000
 export INCOMING_PORT=3001
+export MEDIA_DIRECTORY=/tmp

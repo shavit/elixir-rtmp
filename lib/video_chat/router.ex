@@ -81,15 +81,14 @@ defmodule VideoChat.Router do
   end
 
   # Stream the video, enable seek and skip bytes.
-  get "/videos/stream" do
-    # video_file = "videos/2.m4v"
-    video_file = "/tmp/video.mp4"
-    file_path = Path.join(System.cwd, video_file)
+  get "/videos/:file_name" do
+    file_path = System.cwd
+      |> Path.join Application.get_env(:video_chat, :media_directory)
+      |> Path.join file_name
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
 
     conn
-    # |> put_resp_content_type("video/mp4")
     |> put_resp_content_type("application/vnd.apple.mpegurl")
     |> put_resp_header("Accept-Ranges", "bytes")
     |> put_resp_header("Content-Length", "#{size}")
