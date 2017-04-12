@@ -62,13 +62,16 @@ defmodule VideoChat.Router do
       |> String.split(".")
     |> List.last
 
-    video_file = cond do
-      ext == "m3u8" -> "tmp/ts/320x180.m3u8"
-      ext == "ts" -> "tmp/ts/#{slug}"
-      true -> "tmp/ts/320x180.m3u8"
+    video_file = case ext do
+      "m3u8" -> "/ts/320x180.m3u8"
+      "ts" -> "/ts/#{slug}"
+      _ -> "/ts/320x180.m3u8"
     end
 
-    file_path = Path.join(System.cwd, video_file)
+    # file_path = Path.join(System.cwd, video_file)
+    file_path = System.cwd
+      |> Path.join(Application.get_env(:video_chat, :media_directory))
+      |> Path.join(video_file)
     offset = get_offset(conn.req_headers)
     size = get_file_size(file_path)
 
