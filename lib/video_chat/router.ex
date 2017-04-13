@@ -64,9 +64,9 @@ defmodule VideoChat.Router do
     |> List.last
 
     video_file = case ext do
-      "m3u8" -> "/ts/320x180.m3u8"
+      "m3u8" -> "/ts/#{streaming_resolution(conn)}.m3u8"
       "ts" -> "/ts/#{slug}"
-      _ -> "/ts/320x180.m3u8"
+      _ -> "/ts/#{streaming_resolution(conn)}.m3u8"
     end
 
     # file_path = Path.join(System.cwd, video_file)
@@ -197,6 +197,16 @@ defmodule VideoChat.Router do
         |> String.to_integer
     nil ->
       0
+    end
+  end
+
+  defp streaming_resolution(conn) do
+    case fetch_query_params(conn).params["vq"] do
+      "l" -> "320x180"
+      "s" -> "480x270"
+      "m" -> "640x360"
+      "h" -> "1280x720"
+      _ -> "480x270"
     end
   end
 

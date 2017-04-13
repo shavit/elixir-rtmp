@@ -21,18 +21,19 @@ echo "---> Reading stream and writing to ${OUTPUT_FILE}"
 #   -segment_list_type hls \
 #   $OUTPUT_FILE
 
-# input=$1
-# while read input
-# do
-#   echo $input >> tmp/video-1.mp4
-# done
+ffmpeg \
+  -i pipe:0 \
+  -c:a copy \
+  -c:v libx264 \
+  -bufsize 1024k \
+  -strict experimental \
+  -map 0 \
+  -s 320x240 \
+  -f hls \
+  -hls_time 9 \
+  -hls_list_size 0 \
+  -flags +global_header \
+  $OUTPUT_FILE
 
-echo $1 >> tmp/video.raw
-
-# ffmpeg -i tmp/video.raw -c:a copy -c:v libx264 -f mp4 -s 320x240 tmp/raw_video4.mp4
-#   -f ssegment \
-#   -segment_list $OUTPUT_PLAYLIST -segment_time 10 \
-#   -flags +global_header \
-#   -segment_list_size 10 -segment_list_flags +live \
-#   -segment_list_type hls \
-#   $OUTPUT_FILE
+# This will not work on video files, only txt for debugging.
+# cat $1 >> tmp/video.raw
