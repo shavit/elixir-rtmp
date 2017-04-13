@@ -24,12 +24,16 @@ defmodule VideoChat.Encoder do
   # Callbacks
   #
 
-  def handle_cast({:encode, data}, port) do
+  def handle_cast({:encode, _data}, port) do
 
     # Pipe the data to the external process
     # port |> Port.command(data)
     port |> Port.command("Sample data")
 
+    {:noreply, port}
+  end
+
+  def handle_info({_port, {:data, _msg}}, port) do
     {:noreply, port}
   end
 
