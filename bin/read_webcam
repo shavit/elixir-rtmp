@@ -24,7 +24,7 @@ echo "---> Reading stream and writing to ${OUTPUT_FILE}"
 # input=$1
 # while read input
 # do
-#   echo $input >> tmp/video.raw
+#   echo $input >> tmp/video-1.mp4
 # done
 
 echo $1 >> tmp/video.raw
