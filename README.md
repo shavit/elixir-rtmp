@@ -4,9 +4,9 @@
 
 * Play videos on demand.
 * Seek in the videos.
-* Stream live video to the server from webcam or encoders.
-* Play live video from camera or live source.
-* Encode videos on the fly.
+* <s>Stream live video to the server from webcam or encoders.</s>
+* <s>Play live video from camera or live source.</s>
+* <s>Encode videos on the fly.<s>
 
 ## Quick start
 
@@ -19,7 +19,7 @@ Visit http://localhost:3000.
 There are 3 players on the page:
   1. Playing streamed video.
   2. Playing HLS.
-  3. Playing live stream from a webcam.
+  3. <s>Playing live stream from a webcam.</s>
 
 ### Streaming to the server
 Stream to udp://localhost:3001, or run `bin/udp`.
