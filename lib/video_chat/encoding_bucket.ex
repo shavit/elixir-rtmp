@@ -50,7 +50,7 @@ defmodule VideoChat.EncodingBucket do
   end
 
   # In order for this to work, each packet should have a header
-  #   with the information about the size, resolution and channel. 
+  #   with the information about the size, resolution and channel.
   # Then this server will close each file and write to disk.
   # After each write, the playlist file should be updated.
   def handle_cast({:push_message, new_message}, messages) do
@@ -69,6 +69,10 @@ defmodule VideoChat.EncodingBucket do
 
   def handle_call(:pop_message, _from, [message | messages]) do
     {:reply, message, messages}
+  end
+
+  def handle_call(:pop_message, _from, []) do
+    {:reply, nil, []}
   end
 
 end

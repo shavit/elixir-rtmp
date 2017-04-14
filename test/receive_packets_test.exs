@@ -6,6 +6,8 @@ defmodule ReceivePacketsTest do
     {:ok, socket} = :gen_udp.open(3010)
 
     assert :ok = :gen_udp.send(socket, {127,0,0,1}, 3001, "Message 1")
+
+    IO.inspect VideoChat.EncodingBucket.pop
   end
 
 end

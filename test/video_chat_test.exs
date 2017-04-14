@@ -3,7 +3,7 @@ defmodule VideoChatTest do
   doctest VideoChat
 
   test "render template" do
-    assert((VideoChat.Template.render("live") |> String.length) 
+    assert((VideoChat.Template.render("live") |> String.length)
       > 200)
   end
 end
