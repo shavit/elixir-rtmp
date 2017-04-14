@@ -19,7 +19,7 @@ defmodule VideoChat.IncomingStream do
     # IO.inspect "---> Received #{byte_size(data)} bytes from #{_port}"
 
     # Write to the bucket
-    # VideoChat.EncodingBucket.add data
+    VideoChat.EncodingBucket.add data
     VideoChat.EncodingBucket.push data
 
     {:noreply, state}
