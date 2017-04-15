@@ -33,7 +33,7 @@ defmodule VideoChat.IncomingStream do
   end
 
   defp write_data(channel, data) do
-    File.write("tmp/picture-#{channel}.jpg", data)
+    File.write("tmp/picture-#{channel}.mp4", data)
   end
 
   # Optional format
