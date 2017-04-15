@@ -10,7 +10,7 @@ defmodule VideoChat.IncomingStream do
     IO.puts "---> Listening on port #{incoming_port} for incoming stream"
 
     {:ok, _socket} = :gen_udp.open(incoming_port, [:binary,
-      {:active, true}, {:buffer, 1024}
+      {:active, true}, {:buffer, 4096}
       ])
   end
 
@@ -39,17 +39,17 @@ defmodule VideoChat.IncomingStream do
     # data: binary
 
     IO.inspect message
-
+    
     <<
-      channel :: little-unsigned-integer-size(24),
+      channel :: little-unsigned-integer-size(32),
       resolution :: little-unsigned-integer-size(8),
-      size :: little-unsigned-integer-size(32),
+      size :: size(32),
       data :: binary
     >> = message
 
     IO.inspect "---> Channel #{channel}"
-    IO.inspect "---> Resolution #{resolution}"
-    IO.inspect "---> Size #{size}"
+    IO.inspect "---> Resolution #{resolution} #{<<resolution>>}"
+    IO.inspect "---> Size #{size} #{<<size>>}"
     IO.inspect "---> Message (#{data})"
 
     %{
