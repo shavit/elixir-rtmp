@@ -37,6 +37,9 @@ defmodule VideoChat.IncomingStream do
     # resolution: 1 | 2 | 3 | 4
     # size: 4000
     # data: binary
+
+    IO.inspect message
+
     <<
       channel :: little-unsigned-integer-size(24),
       resolution :: little-unsigned-integer-size(8),
@@ -44,9 +47,9 @@ defmodule VideoChat.IncomingStream do
       data :: binary
     >> = message
 
-    IO.inspect "---> Channel #{<<channel>>}"
-    IO.inspect "---> Resolution #{<<resolution>>} (#{resolution})"
-    IO.inspect "---> Size #{<<size>>} (#{size})"
+    IO.inspect "---> Channel #{channel}"
+    IO.inspect "---> Resolution #{resolution}"
+    IO.inspect "---> Size #{size}"
     IO.inspect "---> Message (#{data})"
 
     %{
