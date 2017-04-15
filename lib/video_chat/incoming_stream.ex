@@ -30,15 +30,23 @@ defmodule VideoChat.IncomingStream do
   end
 
   # Optional format
-  defp parse_message(data) do
+  defp parse_message(message) do
+    # channel: 001
+    # resolution: 1 | 2 | 3 | 4
+    # size: 4000
+    # data: binary
     <<
-      header :: size(16),
-      rest :: bits
-    >> = data
+      channel :: little-unsigned-integer-size(24),
+      resolution :: little-unsigned-integer-size(8),
+      size :: little-unsigned-integer-size(8),
+      data :: bits
+    >> = message
 
     %{
-      header: header,
-      body: rest
+      channel: channel,
+      resolution: resolution,
+      size: size,
+      data: data
     }
   end
 end
