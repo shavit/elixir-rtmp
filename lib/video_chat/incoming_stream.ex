@@ -18,8 +18,9 @@ defmodule VideoChat.IncomingStream do
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # IO.inspect "---> Received #{byte_size(data)} bytes from #{_port}"
     IO.inspect "---> Received #{byte_size(data)} bytes"
-    message = parse_message(data)
-    IO.inspect write_data(message.channel, message.data)
+    IO.inspect data
+      |> parse_message
+      |> write_data
 
     # Write to the bucket
     VideoChat.EncodingBucket.add data
@@ -32,8 +33,8 @@ defmodule VideoChat.IncomingStream do
     {:noreply, state}
   end
 
-  defp write_data(channel, data) do
-    File.write("tmp/picture-#{channel}.mp4", data)
+  defp write_data(message) do
+    File.write("tmp/picture-#{message.channel}.mp4", message.data)
   end
 
   # Optional format
