@@ -17,6 +17,8 @@ defmodule VideoChat.IncomingStream do
   # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # IO.inspect "---> Received #{byte_size(data)} bytes from #{_port}"
+    IO.inspect "---> Received #{byte_size(data)} bytes"
+    IO.inspect parse_message(data)
 
     # Write to the bucket
     VideoChat.EncodingBucket.add data
@@ -38,9 +40,14 @@ defmodule VideoChat.IncomingStream do
     <<
       channel :: little-unsigned-integer-size(24),
       resolution :: little-unsigned-integer-size(8),
-      size :: little-unsigned-integer-size(8),
-      data :: bits
+      size :: little-unsigned-integer-size(32),
+      data :: binary
     >> = message
+
+    IO.inspect "---> Channel #{<<channel>>}"
+    IO.inspect "---> Resolution #{<<resolution>>} (#{resolution})"
+    IO.inspect "---> Size #{<<size>>} (#{size})"
+    IO.inspect "---> Message (#{data})"
 
     %{
       channel: channel,
