@@ -49,6 +49,10 @@ defmodule VideoChat.IncomingStream do
       data :: binary
     >> = message
 
+    IO.inspect "Channel #{channel} (#{<<channel>>})"
+    IO.inspect "Resolution #{resolution}"
+    IO.inspect "Size #{size}"
+
     %{
       channel: channel,
       resolution: resolution,
