@@ -34,7 +34,8 @@ defmodule VideoChat.IncomingStream do
   end
 
   defp write_data(message) do
-    File.write("tmp/picture-#{message.channel}.mp4", message.data)
+    # File.write("tmp/picture-#{message.channel}.mp4", message.data)
+    File.write("tmp/video-#{message.channel}.mp4", message.data, [:append])
   end
 
   # Optional format
