@@ -2,6 +2,11 @@ defmodule VideoChat.EncodingBucket do
   use GenServer
   # use Supervisor
 
+  #
+  # Create data structure to store messages from different channels
+  #   with differnet identifiers and timestamps
+  #
+
   def start_link do
     GenServer.start_link(__MODULE__, [], [name: :encoding_bucket])
     # Supervisor.start_link(__MODULE__, :ok)

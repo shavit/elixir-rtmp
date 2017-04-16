@@ -22,8 +22,8 @@ defmodule VideoChat.IncomingStream do
       |> write_data
 
     # Write to the bucket
-    VideoChat.EncodingBucket.add data
-    VideoChat.EncodingBucket.push data
+    # VideoChat.EncodingBucket.add data
+    # VideoChat.EncodingBucket.push data
 
     {:noreply, state}
   end
@@ -33,10 +33,9 @@ defmodule VideoChat.IncomingStream do
   end
 
   defp write_data(message) do
-    # File.write("tmp/picture-#{message.channel}.mp4", message.data)
+    # File.write("tmp/picture-#{message.channel}.jpg", message.data)
     # File.write("tmp/picture-#{message.channel}.jpg", message.data, [:append])
-    File.write("tmp/picture-#{message.channel}.jpg", message.data)
-    # File.write("tmp/video-#{message.channel}.mp4", message.data, [:append])
+    File.write("tmp/video-#{message.channel}.mp4", message.data, [:append])
   end
 
   # Messages should not exceed 4000 bytes
