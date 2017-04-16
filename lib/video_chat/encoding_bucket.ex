@@ -69,6 +69,9 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     IO.inspect "---> New message"
+    IO.inspect new_message.channel
+    IO.inspect <<new_message.resolution>>
+    IO.inspect new_message.data
 
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
     {:noreply, [new_message | messages]}
