@@ -2,11 +2,18 @@
 
 ![Video Chat](https://github.com/shavit/verbose-parakeet/raw/master/doc/meme.gif?raw=true)
 
-* Play videos on demand.
+This is what you can do right now:
+
+* Play videos on demand in HLS format.
 * Seek in the videos.
+* Accept streams from a webcam.
 * <s>Stream live video to the server from webcam or encoders.</s>
 * <s>Play live video from camera or live source.</s>
-* <s>Encode videos on the fly.<s>
+* <s>Encode videos on the fly.</s>
+
+Soon will be a release of this server and a client for streaming. Playing videos can be done using the HTML5 video tag like in the `live.html` file.
+
+This is not production ready yet, although part of this server is already in use to serve videos on demand.
 
 ## Quick start
 
