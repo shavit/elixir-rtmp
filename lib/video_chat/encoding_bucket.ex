@@ -12,15 +12,6 @@ defmodule VideoChat.EncodingBucket do
     # Supervisor.start_link(__MODULE__, :ok)
   end
 
-  # def init(:ok) do
-  #   children = [
-  #     worker(VideoChat.Encoder, [])
-  #   ]
-  #
-  #   # {:ok, messages}
-  #   supervise(children, strategy: :one_for_one)
-  # end
-
   def add(message) do
     # Write to file
     File.write("tmp/video2.raw", message, [:append])
@@ -33,10 +24,6 @@ defmodule VideoChat.EncodingBucket do
   end
 
   def push(message) do
-    IO.inspect "---> Message"
-    IO.inspect message
-
-    # GenServer.call(:encoding_bucket, {:push_message, message})
     GenServer.cast(:encoding_bucket, {:push_message, message})
   end
 
@@ -71,7 +58,6 @@ defmodule VideoChat.EncodingBucket do
     IO.inspect "---> New message"
     IO.inspect new_message.channel
     IO.inspect <<new_message.resolution>>
-    IO.inspect new_message.data
 
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
     {:noreply, [new_message | messages]}
