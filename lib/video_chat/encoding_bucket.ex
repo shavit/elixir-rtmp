@@ -8,7 +8,7 @@ defmodule VideoChat.EncodingBucket do
   #
 
   def start_link do
-    GenServer.start_link(__MODULE__, [], [name: :encoding_bucket])
+    GenServer.start_link(__MODULE__, %{}, [name: :encoding_bucket])
     # Supervisor.start_link(__MODULE__, :ok)
   end
 
@@ -60,7 +60,7 @@ defmodule VideoChat.EncodingBucket do
     IO.inspect <<new_message.resolution>>
 
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
-    {:noreply, [new_message | messages]}
+    {:noreply, Map.put(messages, new_message.channel, new_message.data)}
   end
 
   # Synchronous
@@ -84,7 +84,7 @@ defmodule VideoChat.EncodingBucket do
   end
 
   def handle_call(:pop_message, _from, []) do
-    {:reply, nil, []}
+    {:reply, nil, %{}}
   end
 
   defp write_data(message) do
