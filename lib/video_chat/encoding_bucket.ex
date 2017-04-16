@@ -27,8 +27,8 @@ defmodule VideoChat.EncodingBucket do
     GenServer.cast(:encoding_bucket, {:push_message, message})
   end
 
-  def get do
-    GenServer.call(:encoding_bucket, :get_messages)
+  def get(key) do
+    GenServer.call(:encoding_bucket, {:get_messages, key})
   end
 
   def pop do
@@ -55,14 +55,10 @@ defmodule VideoChat.EncodingBucket do
     :ok = new_message
       |> write_data
 
-    IO.inspect "---> New message"
-    IO.inspect new_message.channel
-    IO.inspect <<new_message.resolution>>
-
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
     {:noreply,
       Map.put(messages,
-        <<new_message.channel>> <> <<new_message.resolution>>, 
+        new_message.channel <> <<new_message.resolution>>,
         new_message.data)}
   end
 
@@ -78,8 +74,10 @@ defmodule VideoChat.EncodingBucket do
     {:noreply, [new_message | messages]}
   end
 
-  def handle_call(:get_messages, _from, messages) do
-    {:reply, messages, messages}
+  def handle_call({:get_messages, key}, _from, messages) do
+    {:reply,
+      Map.get(messages, key),
+      messages}
   end
 
   def handle_call(:pop_message, _from, [message | messages]) do
@@ -102,12 +100,12 @@ defmodule VideoChat.EncodingBucket do
     # resolution: 1 | 2 | 3 | 4
     # data: binary
     <<
-      channel :: little-unsigned-integer-size(32),
+      channel :: bitstring-size(32),
       resolution :: little-unsigned-integer-size(8),
       data :: binary
     >> = message
 
-    IO.inspect "C:#{channel} | R:#{resolution}"
+    IO.inspect "C:#{channel} | R:#{<<resolution>>}"
 
     %{
       channel: channel,

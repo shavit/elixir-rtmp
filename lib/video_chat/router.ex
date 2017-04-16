@@ -22,7 +22,7 @@ defmodule VideoChat.Router do
 
   # Get live stream from the bucket
   get "/live.mp4" do
-    video_raw = VideoChat.EncodingBucket.get |> Enum.reverse |> Enum.join
+    video_raw = VideoChat.EncodingBucket.get(0) |> Enum.reverse |> Enum.join
 
     IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
 
@@ -127,25 +127,6 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path)
   end
 
-  # Debug: Write to file
-  # Get all the data from the bucket
-  get "/videos/recording" do
-    video_raw = VideoChat.EncodingBucket.get |> Enum.reverse |> Enum.join
-
-    File.write(Path.join(System.cwd, "/tmp/video_raw_1.mp4"),
-      video_raw,
-      [:write, :raw, :exclusive, :binary])
-
-    IO.inspect "---> Sending video with #{byte_size(video_raw)} bytes"
-
-    conn
-    |> put_resp_content_type("video/mp4")
-    # |> put_resp_content_type("application/vnd.apple.mpegurl")
-    |> put_resp_header("Content-Length", "#{byte_size(video_raw)}")
-    |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video_raw)
-  end
-
   match _ do
     conn
     |> send_resp(404, "Not found")
@@ -211,21 +192,21 @@ defmodule VideoChat.Router do
   end
 
   # No skipping
-  defp playlist_file do
-    '
-      #EXTM3U
-      #EXT-X-TARGETDURATION:10
-      #EXT-X-VERSION:3
-      #EXT-X-MEDIA-SEQUENCE:0
-      #EXTINF:11.323222,
-      /videos/live/320x1800.ts
-      #EXTINF:9.000000,
-      /videos/live/320x1801.ts
-      #EXTINF:7.300000,
-      /videos/live/320x1802.ts
-      #EXTINF:8.800000,
-      /videos/live/320x1803.ts
-    '
-  end
+  # defp playlist_file do
+  #   '
+  #     #EXTM3U
+  #     #EXT-X-TARGETDURATION:10
+  #     #EXT-X-VERSION:3
+  #     #EXT-X-MEDIA-SEQUENCE:0
+  #     #EXTINF:11.323222,
+  #     /videos/live/320x1800.ts
+  #     #EXTINF:9.000000,
+  #     /videos/live/320x1801.ts
+  #     #EXTINF:7.300000,
+  #     /videos/live/320x1802.ts
+  #     #EXTINF:8.800000,
+  #     /videos/live/320x1803.ts
+  #   '
+  # end
 
 end
