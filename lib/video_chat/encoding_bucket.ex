@@ -56,10 +56,9 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
-    
+
     key_list = (messages
-      |> Map.get(new_message.channel <> <<new_message.resolution>>))
-        || []
+      |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
       |> List.insert_at(-1, new_message.data)
 
     {:noreply,
@@ -87,20 +86,17 @@ defmodule VideoChat.EncodingBucket do
   end
 
   def handle_call({:pop_message, key}, _from, messages) do
-    # {message, key_list} = messages
-    #   |> Map.get(key)
-    #   |> List.pop_at(0)
+    {message, key_list} = messages
+      |> Map.get(key)
+      |> List.pop_at(0)
+    IO.inspect "What"
+    IO.inspect messages
     IO.inspect messages
       |> Map.get(key)
-      # |> List.pop_at(0)
 
-    IO.inspect "---> Pop"
-    IO.inspect messages
-    # IO.inspect key_list
 
     {:reply,
-      messages,
-      messages}
+      messages,messages}
   end
 
   def handle_call(:pop_message, _from, []) do
