@@ -44,8 +44,6 @@ defmodule VideoChat.EncodingBucket do
     :ok = new_message
       |> write_data
 
-    IO.inspect "---> Writing #{new_message.channel}"
-
     key_list = (messages
       |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
       |> List.insert_at(-1, new_message.data)
@@ -98,8 +96,6 @@ defmodule VideoChat.EncodingBucket do
   end
 
   defp write_data(message) do
-    IO.inspect "---> Channel"
-    IO.inspect message.channel
     # File.write("tmp/picture-#{message.channel}.jpg", message.data)
     File.write("tmp/picture-#{message.channel}.jpg", message.data, [:append])
     # File.write("tmp/video-#{message.channel}-#{message.resolution}.mp4", message.data, [:append])
@@ -116,7 +112,6 @@ defmodule VideoChat.EncodingBucket do
       data :: binary
     >> = message
 
-    IO.inspect "---> New message"
     IO.inspect "C:#{channel} | R:#{<<resolution>>}"
 
     %{
