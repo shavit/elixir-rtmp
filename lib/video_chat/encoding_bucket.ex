@@ -45,12 +45,12 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     key_list = (messages
-      |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
+      |> Map.get(new_message.channel <> new_message.resolution, []))
       |> List.insert_at(-1, new_message.data)
 
     {:noreply,
       Map.put(messages,
-        new_message.channel <> <<new_message.resolution>>,
+        new_message.channel <> new_message.resolution,
         key_list)}
   end
 
@@ -64,12 +64,12 @@ defmodule VideoChat.EncodingBucket do
     #   |> write_data
 
     key_list = (messages
-      |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
+      |> Map.get(new_message.channel <> new_message.resolution, []))
       |> List.insert_at(-1, new_message.data)
 
     {:noreply,
       Map.put(messages,
-        new_message.channel <> <<new_message.resolution>>,
+        new_message.channel <> new_message.resolution,
         key_list)}
   end
 
@@ -108,11 +108,11 @@ defmodule VideoChat.EncodingBucket do
     # data: binary
     <<
       channel :: bitstring-size(32),
-      resolution :: little-unsigned-integer-size(8),
+      resolution :: bitstring-size(8),
       data :: binary
     >> = message
 
-    IO.inspect "C:#{channel} | R:#{<<resolution>>}"
+    IO.inspect "C:#{channel} | R:#{resolution}"
 
     %{
       channel: channel,
