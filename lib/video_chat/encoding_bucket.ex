@@ -12,17 +12,6 @@ defmodule VideoChat.EncodingBucket do
     # Supervisor.start_link(__MODULE__, :ok)
   end
 
-  def add(message) do
-    # Write to file
-    File.write("tmp/video2.raw", message, [:append])
-    File.write("tmp/video2.mp4", message, [:append])
-    File.write("tmp/video3.mp4", message)
-    # Send messages to the encoder
-    VideoChat.Encoder.encode(message)
-
-    GenServer.cast(:encoding_bucket, {:add_message, message})
-  end
-
   def push(message) do
     GenServer.cast(:encoding_bucket, {:push_message, message})
   end
@@ -55,7 +44,7 @@ defmodule VideoChat.EncodingBucket do
     :ok = new_message
       |> write_data
 
-    # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
+    IO.inspect "---> Writing #{new_message.channel}"
 
     key_list = (messages
       |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
@@ -73,8 +62,8 @@ defmodule VideoChat.EncodingBucket do
     new_message = data
       |> parse_message
 
-    :ok = new_message
-      |> write_data
+    # :ok = new_message
+    #   |> write_data
 
     key_list = (messages
       |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
@@ -109,9 +98,11 @@ defmodule VideoChat.EncodingBucket do
   end
 
   defp write_data(message) do
+    IO.inspect "---> Channel"
+    IO.inspect message.channel
     # File.write("tmp/picture-#{message.channel}.jpg", message.data)
-    # File.write("tmp/picture-#{message.channel}.jpg", message.data, [:append])
-    File.write("tmp/video-#{message.channel}.mp4", message.data, [:append])
+    File.write("tmp/picture-#{message.channel}.jpg", message.data, [:append])
+    # File.write("tmp/video-#{message.channel}-#{message.resolution}.mp4", message.data, [:append])
   end
 
   # Messages should not exceed 4000 bytes
@@ -125,6 +116,7 @@ defmodule VideoChat.EncodingBucket do
       data :: binary
     >> = message
 
+    IO.inspect "---> New message"
     IO.inspect "C:#{channel} | R:#{<<resolution>>}"
 
     %{
