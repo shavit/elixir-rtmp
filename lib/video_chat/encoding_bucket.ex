@@ -89,14 +89,12 @@ defmodule VideoChat.EncodingBucket do
     {message, key_list} = messages
       |> Map.get(key)
       |> List.pop_at(0)
-    IO.inspect "What"
-    IO.inspect messages
-    IO.inspect messages
-      |> Map.get(key)
-
-
+    
     {:reply,
-      messages,messages}
+      message,
+      Map.put(messages,
+        key,
+        key_list)}
   end
 
   def handle_call(:pop_message, _from, []) do

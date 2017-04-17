@@ -13,7 +13,7 @@ defmodule ReceivePacketsTest do
     assert((VideoChat.EncodingBucket.get("25413") |> length) == 1)
     assert :ok = VideoChat.EncodingBucket.push "25413What"
     assert :ok = VideoChat.EncodingBucket.push "25413Do"
-    IO.inspect VideoChat.EncodingBucket.pop("25413")
+    assert VideoChat.EncodingBucket.pop("25413") == "Message"
     # assert VideoChat.EncodingBucket.pop("25413") != nil
   end
 
