@@ -31,8 +31,8 @@ defmodule VideoChat.EncodingBucket do
     GenServer.call(:encoding_bucket, {:get_messages, key})
   end
 
-  def pop do
-    GenServer.call(:encoding_bucket, :pop_message)
+  def pop(key) do
+    GenServer.call(:encoding_bucket, {:pop_message, key})
   end
 
   #
@@ -56,10 +56,16 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     # File.write("tmp/webcam_ts/#{length(messages)}.mp4", messages)
+    
+    key_list = (messages
+      |> Map.get(new_message.channel <> <<new_message.resolution>>))
+        || []
+      |> List.insert_at(-1, new_message.data)
+
     {:noreply,
       Map.put(messages,
         new_message.channel <> <<new_message.resolution>>,
-        new_message.data)}
+        key_list)}
   end
 
   # Synchronous
@@ -80,8 +86,21 @@ defmodule VideoChat.EncodingBucket do
       messages}
   end
 
-  def handle_call(:pop_message, _from, [message | messages]) do
-    {:reply, message, messages}
+  def handle_call({:pop_message, key}, _from, messages) do
+    # {message, key_list} = messages
+    #   |> Map.get(key)
+    #   |> List.pop_at(0)
+    IO.inspect messages
+      |> Map.get(key)
+      # |> List.pop_at(0)
+
+    IO.inspect "---> Pop"
+    IO.inspect messages
+    # IO.inspect key_list
+
+    {:reply,
+      messages,
+      messages}
   end
 
   def handle_call(:pop_message, _from, []) do
