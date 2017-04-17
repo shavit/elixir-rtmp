@@ -76,7 +76,14 @@ defmodule VideoChat.EncodingBucket do
     :ok = new_message
       |> write_data
 
-    {:noreply, [new_message | messages]}
+    key_list = (messages
+      |> Map.get(new_message.channel <> <<new_message.resolution>>, []))
+      |> List.insert_at(-1, new_message.data)
+
+    {:noreply,
+      Map.put(messages,
+        new_message.channel <> <<new_message.resolution>>,
+        key_list)}
   end
 
   def handle_call({:get_messages, key}, _from, messages) do
@@ -89,7 +96,7 @@ defmodule VideoChat.EncodingBucket do
     {message, key_list} = messages
       |> Map.get(key)
       |> List.pop_at(0)
-    
+
     {:reply,
       message,
       Map.put(messages,
