@@ -97,8 +97,8 @@ defmodule VideoChat.EncodingBucket do
 
   defp write_data(message) do
     # File.write("tmp/picture-#{message.channel}.jpg", message.data)
-    File.write("tmp/picture-#{message.channel}-#{message.resolution}.jpg", message.data, [:append, :binary])
-    # File.write("tmp/video-#{message.channel}-#{message.resolution}.mp4", message.data, [:append])
+    # File.write("tmp/picture-#{message.channel}-#{message.resolution}.jpg", message.data, [:append, :binary])
+    File.write("tmp/video-#{message.channel}-#{message.resolution}.mp4", message.data, [:append, :binary])
   end
 
   # Messages should not exceed 4000 bytes
