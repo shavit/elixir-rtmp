@@ -117,7 +117,7 @@ defmodule VideoChat.EncodingBucket do
       data :: binary
     >> = message
 
-    IO.inspect "C:#{channel} | R:#{resolution} | ID: #{id}"
+    # IO.inspect "C:#{channel} | R:#{resolution} | ID: #{id}"
 
     %{
       channel: channel,
