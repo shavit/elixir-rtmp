@@ -10,7 +10,7 @@ defmodule VideoChat.IncomingStream do
     IO.puts "---> Listening on port #{incoming_port} for incoming stream"
 
     {:ok, _socket} = :gen_udp.open(incoming_port, [:binary,
-      {:active, true}, {:buffer, 4096}
+      {:active, true}, {:buffer, 16384}
       ])
   end
 
