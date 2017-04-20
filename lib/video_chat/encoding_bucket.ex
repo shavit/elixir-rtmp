@@ -45,12 +45,12 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     key_list = (messages
-      |> Map.get(new_message.channel <> new_message.resolution, []))
+      |> Map.get(new_message.channel <> new_message.resolution <> new_message.id, []))
       |> List.insert_at(-1, new_message.data)
 
     {:noreply,
       Map.put(messages,
-        new_message.channel <> new_message.resolution,
+        new_message.channel <> new_message.resolution <> new_message.id,
         key_list)}
   end
 
@@ -64,12 +64,12 @@ defmodule VideoChat.EncodingBucket do
       |> write_data
 
     key_list = (messages
-      |> Map.get(new_message.channel <> new_message.resolution, []))
+      |> Map.get(new_message.channel <> new_message.resolution <> new_message.id, []))
       |> List.insert_at(-1, new_message.data)
 
     {:noreply,
       Map.put(messages,
-        new_message.channel <> new_message.resolution,
+        new_message.channel <> new_message.resolution <> new_message.id,
         key_list)}
   end
 
@@ -100,7 +100,7 @@ defmodule VideoChat.EncodingBucket do
     # File.write("tmp/picture-#{message.channel}-#{message.resolution}.jpg",
     #   message.data,
     #   [:append, :binary])
-    File.write("tmp/video-#{message.channel}-#{message.resolution}.mp4",
+    File.write("tmp/video-#{message.channel}-#{message.resolution}-#{message.id}.mp4",
       message.data,
       [:append, :binary])
   end
@@ -113,14 +113,16 @@ defmodule VideoChat.EncodingBucket do
     <<
       channel :: bitstring-size(32),
       resolution :: bitstring-size(8),
+      id :: bitstring-size(32),
       data :: binary
     >> = message
 
-    # IO.inspect "C:#{channel} | R:#{resolution}"
+    # IO.inspect "C:#{channel} | R:#{resolution} | ID: #{id}"
 
     %{
       channel: channel,
       resolution: resolution,
+      id: id,
       data: data
     }
   end
