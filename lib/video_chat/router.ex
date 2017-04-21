@@ -22,7 +22,7 @@ defmodule VideoChat.Router do
 
   # Get live stream from the bucket
   get "/live.mp4" do
-    video_raw = VideoChat.EncodingBucket.get(0) |> Enum.reverse |> Enum.join
+    video_raw = VideoChat.EncodingBucket.get(nil, 0) |> Enum.reverse |> Enum.join
 
     IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
 
