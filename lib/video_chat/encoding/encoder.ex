@@ -1,41 +1,36 @@
 defmodule VideoChat.Encoding.Encoder do
   use GenServer
-  # use Supervisor
 
   #
   # Create data structure to store messages from different channels
   #   with differnet identifiers and timestamps
   #
-
-  def start_link(opts \\ {:id, :default}) do
-    {:id, id} = opts
-    IO.inspect "---> Starting encoding bucket: #{id}"
-    # {:ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
-    {_ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, %{}, name: :encoder)
   end
 
   def encode(data) do
     GenServer.cast(:encoder, {:encode, data})
   end
 
-  def push(pid, message) do
-    GenServer.cast(pid, {:push_message, message})
+  def push(message) do
+    GenServer.cast(:encoder, {:push_message, message})
   end
 
-  def get_one(pid, key) do
-    GenServer.call(pid, {:get_channel_message, key})
+  def get_one(key) do
+    GenServer.call(:encoder, {:get_channel_message, key})
   end
 
-  def get_all(pid, key) do
-    GenServer.call(pid, {:get_channel_messages, key})
+  def get_all(key) do
+    GenServer.call(:encoder, {:get_channel_messages, key})
   end
 
-  def pop(pid, key) do
-    GenServer.call(pid, {:pop_message, key})
+  def pop(key) do
+    GenServer.call(:encoder, {:pop_message, key})
   end
 
-  def call_action(pid, action_handler, args \\ nil) do
-    GenServer.call(pid, {:call_action, action_handler, args})
+  def call_action(action_handler, args \\ nil) do
+    GenServer.call(:encoder, {:call_action, action_handler, args})
   end
 
   def handle_call({:call_action, action_handler, args}, _from, actions) do
@@ -59,6 +54,7 @@ defmodule VideoChat.Encoding.Encoder do
   def handle_cast({:push_message, data}, messages) do
     new_message = data
       |> parse_message
+
 
     :ok = new_message
       |> write_data

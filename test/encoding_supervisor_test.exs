@@ -2,17 +2,8 @@ defmodule EncodingSupervisorTest do
   use ExUnit.Case
   doctest VideoChat
 
-  setup do
-    # import Supervisor.Spec
-    {:ok, pid} = VideoChat.Encoding.Supervisor.start_link([name: :supervisor_test])
-    Supervisor.start_child(pid, [])
-    # IO.inspect Supervisor.start_child(pid,
-    #   worker(VideoChat.Encoding.Encoder, [id: :encoder_worker_one]))
-
-    %{pid: pid}
-  end
-
-  test "should start a worker", %{pid: pid} do
+  test "should start a worker" do
+    pid = Process.whereis(:encoding_supervisor)
     assert pid != nil
     %{active: active,
       specs: _specs,
