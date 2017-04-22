@@ -92,15 +92,9 @@ defmodule VideoChat.Encoding.Encoder do
   end
 
   def handle_call({:get_channel_messages, key}, _from, messages) do
-
-    IO.inspect "---> Channel messages"
-    IO.inspect Map.get(messages, key)
-      |> Enum.map(fn x ->
-        x
-      end)
-
     {:reply,
-      Map.get(messages, key),
+      ((Map.get(messages, key) || [])
+        |> Enum.sort),
       messages}
   end
 

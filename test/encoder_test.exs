@@ -37,12 +37,15 @@ defmodule EncoderTest do
   test "should get sorted messages", %{pid: pid} do
     assert pid != nil
 
-    # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210001Message-1"
-    # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210002Message-2"
-    # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210003Message-3"
-    # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210004Message-4"
-    # IO.puts "---> Get all messages"
-    # IO.inspect VideoChat.Encoding.Encoder.get_all(pid, "25421")
+    assert :ok = VideoChat.Encoding.Encoder.push pid, "254210001Message-1"
+    assert :ok = VideoChat.Encoding.Encoder.push pid, "254210003Message-3"
+    assert :ok = VideoChat.Encoding.Encoder.push pid, "254210004Message-4"
+    assert :ok = VideoChat.Encoding.Encoder.push pid, "254210002Message-2"
+    messages = VideoChat.Encoding.Encoder.get_all(pid, "25421")
+    assert  Enum.at(messages, 0) |> elem(0) == "0001"
+    assert  Enum.at(messages, 1) |> elem(0) == "0002"
+    assert  Enum.at(messages, 2) |> elem(0) == "0003"
+    assert  Enum.at(messages, 3) |> elem(0) == "0004"
   end
 
 end
