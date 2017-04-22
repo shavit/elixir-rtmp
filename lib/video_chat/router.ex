@@ -20,17 +20,18 @@ defmodule VideoChat.Router do
     |> send_resp(200, render("live"))
   end
 
+  # Should pick a public channel to broadcast HLS from file, not from memory.
   # Get live stream from the bucket
-  get "/live.mp4" do
-    video_raw = VideoChat.Encoding.Encoder.get_one(nil, 0) |> Enum.reverse |> Enum.join
-
-    IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
-
-    conn
-    |> put_resp_content_type("video/mp4")
-    |> put_resp_header("Accept-Ranges", "bytes")
-    |> send_resp(206, video_raw)
-  end
+  # get "/live.mp4" do
+  #   video_raw = VideoChat.Encoding.Encoder.get_one(nil, 0) |> Enum.reverse |> Enum.join
+  #
+  #   IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
+  #
+  #   conn
+  #   |> put_resp_content_type("video/mp4")
+  #   |> put_resp_header("Accept-Ranges", "bytes")
+  #   |> send_resp(206, video_raw)
+  # end
 
 
   # Encode video on demand.
