@@ -7,21 +7,31 @@ defmodule VideoChat.EncodingBucket do
   #   with differnet identifiers and timestamps
   #
 
-  def start_link do
-    GenServer.start_link(__MODULE__, %{}, [name: :encoding_bucket])
-    # Supervisor.start_link(__MODULE__, :ok)
+  def start_link(opts \\ {:id, :default}) do
+    {:id, id} = opts
+    IO.inspect "---> Starting encoding bucket: #{id}"
+    {:ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
   end
 
-  def push(message) do
-    GenServer.cast(:encoding_bucket, {:push_message, message})
+  def push(pid, message) do
+    GenServer.cast(pid, {:push_message, message})
   end
 
-  def get(key) do
-    GenServer.call(:encoding_bucket, {:get_messages, key})
+  def get(pid, key) do
+    GenServer.call(pid, {:get_messages, key})
   end
 
-  def pop(key) do
-    GenServer.call(:encoding_bucket, {:pop_message, key})
+  def pop(pid, key) do
+    GenServer.call(pid, {:pop_message, key})
+  end
+
+  def call_action(pid, action_handler, args \\ nil) do
+    GenServer.call(pid, {:call_action, action_handler, args})
+  end
+
+  def handle_call({:call_action, action_handler, args}, _from, actions) do
+    # Process.send_after(self(), :try_running, 0)
+    {:reply, action_handler.(args), actions}
   end
 
   #

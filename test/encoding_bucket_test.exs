@@ -1,0 +1,35 @@
+defmodule EncodingBucketTest do
+  use ExUnit.Case
+  doctest VideoChat
+
+  setup do
+    {:ok, pid} = VideoChat.EncodingBucket.start_link
+    [pid: pid]
+  end
+
+  test "should start a worker", %{pid: pid} do
+    assert pid != nil
+    action = fn(nil) -> :ok end
+
+    assert :ok = VideoChat.EncodingBucket.call_action(pid, action)
+    assert :name = VideoChat.EncodingBucket.call_action(pid,
+      (fn(x) -> x end),
+      :name)
+  end
+
+  test "should send and receive messages", %{pid: pid} do
+    assert pid != nil
+    {:ok, socket} = :gen_udp.open(3010)
+
+    # This is not sending to the bucket
+    assert :ok = :gen_udp.send(socket, {127,0,0,1}, 3001, "254130001Message")
+
+    assert :ok = VideoChat.EncodingBucket.push pid, "254130001Message"
+    assert((VideoChat.EncodingBucket.get(pid, "254130001") |> length) == 1)
+    assert :ok = VideoChat.EncodingBucket.push pid, "254130001Another one"
+    assert :ok = VideoChat.EncodingBucket.push pid, "254130001And another one"
+    assert VideoChat.EncodingBucket.pop(pid, "254130001") == "Message"
+    assert VideoChat.EncodingBucket.pop(pid, "254130001") != nil
+  end
+
+end
