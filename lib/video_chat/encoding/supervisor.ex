@@ -15,11 +15,13 @@ defmodule VideoChat.Encoding.Supervisor do
     children = [
       # No point to restart
       worker(VideoChat.Encoding.Encoder, [id: :one], restart: :transient),
-      # worker(VideoChat.Encoding.Encoder, [id: :encoder], restart: :transient),
-      # worker(VideoChat.Encoding.Encoder, [id: :two], restart: :transient),
     ]
 
     supervise(children, strategy: :one_for_one)
+  end
+
+  def create_encoder(name) do
+    Supervisor.start_child(:encoding_supervisor, [name])
   end
 
 end
