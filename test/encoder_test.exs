@@ -27,17 +27,16 @@ defmodule EncoderTest do
     assert :ok = VideoChat.Encoding.Encoder.push pid, "254130001Message1"
     assert :ok = VideoChat.Encoding.Encoder.push pid, "254130002Message2"
     assert :ok = VideoChat.Encoding.Encoder.push pid, "254130003Message3"
-    assert :ok = VideoChat.Encoding.Encoder.push pid, "254130004Message4"
     assert VideoChat.Encoding.Encoder.get_one(pid, "254130001") == "Message1"
     assert VideoChat.Encoding.Encoder.pop(pid, "25413") == "Message1"
     assert VideoChat.Encoding.Encoder.pop(pid, "25413") == "Message2"
     assert VideoChat.Encoding.Encoder.pop(pid, "25413") == "Message3"
+    assert VideoChat.Encoding.Encoder.pop(pid, "25413") == nil
   end
 
   test "should get sorted messages", %{pid: pid} do
     assert pid != nil
 
-    # IO.inspect VideoChat.Encoding.Encoder.pop(pid, "25413")
     # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210001Message-1"
     # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210002Message-2"
     # assert :ok = VideoChat.Encoding.Encoder.push pid, "254210003Message-3"
