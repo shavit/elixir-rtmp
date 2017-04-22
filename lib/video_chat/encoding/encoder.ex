@@ -22,7 +22,11 @@ defmodule VideoChat.Encoding.Encoder do
   end
 
   def get_one(pid, key) do
-    GenServer.call(pid, {:get_messages, key})
+    GenServer.call(pid, {:get_channel_message, key})
+  end
+
+  def get_all(pid, key) do
+    GenServer.call(pid, {:get_channel_messages, key})
   end
 
   def pop(pid, key) do
@@ -59,29 +63,53 @@ defmodule VideoChat.Encoding.Encoder do
       |> write_data
 
     key_list = (messages
-      |> Map.get(new_message.channel <> new_message.resolution <> new_message.id, []))
-      |> List.insert_at(-1, new_message.data)
+      |> Map.get(new_message.channel <> new_message.resolution, []))
+      |> List.insert_at(-1, {new_message.id, new_message.data})
 
+    # This should be changed to a linked list.
+    # There is a problem with duplicates, altough it shouldn't happen
+    #   with UDP messages, since they will not be sent if they dropped.
     {:noreply,
       Map.put(messages,
-        new_message.channel <> new_message.resolution <> new_message.id,
+        new_message.channel <> new_message.resolution,
         key_list)}
   end
 
   # Synchronous
-  def handle_call({:get_messages, key}, _from, messages) do
+  def handle_call({:get_channel_message, key}, _from, messages) do
+    <<
+    channel :: bitstring-size(32),
+    resolution :: bitstring-size(8),
+    id :: bitstring-size(32)
+    >> = key
+
+    {:reply,
+      Map.get(messages, channel<>resolution)
+        |> Enum.filter(fn x -> elem(x, 0) == id end)
+        |> List.first
+        |> elem(1),
+      messages}
+  end
+
+  def handle_call({:get_channel_messages, key}, _from, messages) do
+
+    IO.inspect "---> Channel messages"
+    IO.inspect Map.get(messages, key)
+      |> Enum.map(fn x ->
+        x
+      end)
+
     {:reply,
       Map.get(messages, key),
       messages}
   end
 
   def handle_call({:pop_message, key}, _from, messages) do
-    {message, key_list} = messages
-      |> Map.get(key)
+    {message, key_list} = (Map.get(messages, key) || [])
       |> List.pop_at(0)
 
     {:reply,
-      message,
+      elem((message || {nil, nil}), 1),
       Map.put(messages,
         key,
         key_list)}
