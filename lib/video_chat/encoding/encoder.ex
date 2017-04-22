@@ -21,7 +21,7 @@ defmodule VideoChat.Encoding.Encoder do
     GenServer.cast(pid, {:push_message, message})
   end
 
-  def get(pid, key) do
+  def get_one(pid, key) do
     GenServer.call(pid, {:get_messages, key})
   end
 
