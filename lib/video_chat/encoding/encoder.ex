@@ -10,7 +10,8 @@ defmodule VideoChat.Encoding.Encoder do
   def start_link(opts \\ {:id, :default}) do
     {:id, id} = opts
     IO.inspect "---> Starting encoding bucket: #{id}"
-    {:ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
+    # {:ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
+    {_ok, _pid} = GenServer.start_link(__MODULE__, %{id: id}, [])
   end
 
   def encode(data) do

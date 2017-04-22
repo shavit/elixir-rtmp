@@ -4,9 +4,8 @@ defmodule EncodingSupervisorTest do
 
   setup do
     # import Supervisor.Spec
-    # {:ok, pid} = VideoChat.Encoding.Supervisor.start_link([name: :supervisor_test])
-    {:ok, pid} = VideoChat.Encoding.Supervisor.start_link()
-    # Supervisor.start_child(pid, [])
+    {:ok, pid} = VideoChat.Encoding.Supervisor.start_link([name: :supervisor_test])
+    Supervisor.start_child(pid, [])
     # IO.inspect Supervisor.start_child(pid,
     #   worker(VideoChat.Encoding.Encoder, [id: :encoder_worker_one]))
 
