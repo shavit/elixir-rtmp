@@ -114,6 +114,7 @@ defmodule VideoChat.Encoding.Encoder do
     # File.write("tmp/picture-#{message.channel}-#{message.resolution}.jpg",
     #   message.data,
     #   [:append, :binary])
+    # IO.inspect message.id
     File.write("tmp/video-#{message.channel}-#{message.resolution}-#{message.id}.mp4",
       message.data,
       [:append, :binary])
