@@ -17,7 +17,9 @@ defmodule VideoChat.IncomingStream do
   # Incoming streaming data from the webcam.
   def handle_info({:udp, _socket, _ip, _port, data}, state) do
     # IO.inspect "---> Received #{byte_size(data)} bytes from #{_port}"
+    # File.write("tmp/video-complete-file.mp4", data, [:append, :binary])
     VideoChat.Encoding.Encoder.push data
+
     {:noreply, state}
   end
 

@@ -3,7 +3,8 @@
 DIR=`dirname $BASH_SOURCE[0]`
 TMP_DIR="${DIR}/../tmp"
 # Uncomment to test with a small file
-MEDIA_FILE="${TMP_DIR}/video.mp4"
+# MEDIA_FILE="${TMP_DIR}/video.mp4"
+MEDIA_FILE="${TMP_DIR}/video-small.mp4"
 # Uncomment to test with a large file
 # MEDIA_FILE="${TMP_DIR}/The.Wolf.of.Wall.Street.2013.BluRay.mp4"
 FRAMERATE="$($DIR/get_framerate $MEDIA_FILE)"
@@ -16,8 +17,9 @@ ffmpeg -y \
   -movflags frag_keyframe+empty_moov \
   -strict experimental \
   -crf 18 \
+  -qmax 48 \
   -b:a 64k -b:v 64k -bufsize 64k \
-  -pix_fmt yuv420p -profile:v baseline -level 1.3 -maxrate 192K -bufsize 1024k \
+  -pix_fmt yuv420p -profile:v baseline -level 1.3 -maxrate 192K -bufsize 1408k \
   -r $FRAMERATE \
   -f mp4 \
   -s 1280x720 \
