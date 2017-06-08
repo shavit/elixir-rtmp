@@ -87,11 +87,13 @@ defmodule VideoChat.Router do
 
   # Stream the video, enable seek and skip bytes.
   get "/media/:file_name" do
+    matched = file_name
+      |> Regex.match?(~r(^[a-zA-Z0-9]+[\\.][a-zA-Z0-9]{2,4}$))
     ext = (file_name
       |> String.split("."))
         |> List.last
 
-    case ext do
+    case ext and matched do
       "mp4" -> stream_video(conn, file_name)
       "jpg" -> serve_image(conn, file_name)
       "png" -> serve_image(conn, file_name)
