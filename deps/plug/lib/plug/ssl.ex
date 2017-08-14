@@ -36,7 +36,8 @@ defmodule Plug.SSL do
     * `:subdomains` - a boolean on including subdomains or not in HSTS,
       defaults to false.
     * `:host` - a new host to redirect to if the request's scheme is `http`,
-      defaults to `conn.host`.
+      defaults to `conn.host`. It may be set to a binary or a tuple
+      `{module, function, args}` that will be invoked on demand
 
   ## Port
 
@@ -79,7 +80,7 @@ defmodule Plug.SSL do
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
   defp hsts_header(opts) do
     if Keyword.get(opts, :hsts, true) do
-      expires    = Keyword.get(opts, :expires, 31536000)
+      expires    = Keyword.get(opts, :expires, 31_536_000)
       subdomains = Keyword.get(opts, :subdomains, false)
 
       "max-age=#{expires}" <>
@@ -105,8 +106,10 @@ defmodule Plug.SSL do
   end
 
   defp host(nil, host), do: host
-  defp host({:system, env}, host), do: host(System.get_env(env), host)
   defp host(host, _) when is_binary(host), do: host
+  defp host({mod, fun, args}, host), do: host(apply(mod, fun, args), host)
+  # TODO: Deprecate this format
+  defp host({:system, env}, host), do: host(System.get_env(env), host)
 
   defp qs(""), do: ""
   defp qs(qs), do: "?" <> qs

@@ -1,4 +1,4 @@
-%% Copyright (c) 2012-2015, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2012-2017, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -59,6 +59,14 @@ cleanup_listener_opts(Ref) ->
 	_ = ets:delete(?TAB, {addr, Ref}),
 	_ = ets:delete(?TAB, {max_conns, Ref}),
 	_ = ets:delete(?TAB, {opts, Ref}),
+	%% We also remove the pid of the connections supervisor.
+	%% Depending on the timing, it might already have been deleted
+	%% when we handled the monitor DOWN message. However, in some
+	%% cases when calling stop_listener followed by get_connections_sup,
+	%% we could end up with the pid still being returned, when we
+	%% expected a crash (because the listener was stopped).
+	%% Deleting it explictly here removes any possible confusion.
+	_ = ets:delete(?TAB, {conns_sup, Ref}),
 	ok.
 
 -spec set_connections_sup(ranch:ref(), pid()) -> ok.
@@ -141,7 +149,7 @@ handle_cast(_Request, State) ->
 handle_info({'DOWN', MonitorRef, process, Pid, _},
 		State=#state{monitors=Monitors}) ->
 	{_, Ref} = lists:keyfind({MonitorRef, Pid}, 1, Monitors),
-	true = ets:delete(?TAB, {conns_sup, Ref}),
+	_ = ets:delete(?TAB, {conns_sup, Ref}),
 	Monitors2 = lists:keydelete({MonitorRef, Pid}, 1, Monitors),
 	{noreply, State#state{monitors=Monitors2}};
 handle_info(_Info, State) ->

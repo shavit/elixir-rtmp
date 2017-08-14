@@ -122,7 +122,7 @@ defmodule Plug.Conn do
   are not automatically recompiled when their configuration changes. To recompile
   Plug:
 
-      MIX_ENV=prod mix deps.compile plug
+      mix deps.clean --build plug
 
   The atoms that can be used in place of the status code in many functions are
   inflected from the reason phrase of the status code. With the above
@@ -423,8 +423,11 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
-  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length)
-      when is_binary(file) do
+  def send_file(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status, file, offset, length) when is_binary(file) do
+    if file =~ "\0" do
+      raise ArgumentError, "cannot send_file/5 with null byte"
+    end
+
     conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send owner, @already_sent
@@ -578,7 +581,7 @@ defmodule Plug.Conn do
   ## Examples
 
       iex> conn = %{conn | resp_headers: [{"content-type", "text/plain"}]}
-      iex> conn |> get_resp_header("content-type")
+      iex> get_resp_header(conn, "content-type")
       ["text/plain"]
 
   """
@@ -679,12 +682,12 @@ defmodule Plug.Conn do
   def put_resp_content_type(conn, content_type, charset \\ "utf-8")
 
   def put_resp_content_type(conn, content_type, nil) when is_binary(content_type) do
-    conn |> put_resp_header("content-type", content_type)
+    put_resp_header(conn, "content-type", content_type)
   end
 
   def put_resp_content_type(conn, content_type, charset) when
       is_binary(content_type) and is_binary(charset) do
-    conn |> put_resp_header("content-type", "#{content_type}; charset=#{charset}")
+    put_resp_header(conn, "content-type", "#{content_type}; charset=#{charset}")
   end
 
   @doc """
@@ -798,15 +801,22 @@ defmodule Plug.Conn do
   @doc """
   Puts a response cookie.
 
+  The cookie value is not automatically escaped. Therefore, if you
+  want to store values with comma, quotes, etc, you need to explicitly
+  escape them or use a function such as `Base.encode64` when writing
+  and `Base.decode64` when reading the cookie.
+
   ## Options
 
     * `:domain` - the domain the cookie applies to
-    * `:max_age` - the cookie max-age, in seconds. Providing a value for this option will set
-    both the _max-age_ and _expires_ cookie attributes
+    * `:max_age` - the cookie max-age, in seconds. Providing a value for this
+      option will set both the _max-age_ and _expires_ cookie attributes
     * `:path` - the path the cookie applies to
     * `:http_only` - when false, the cookie is accessible beyond http
     * `:secure` - if the cookie must be sent only over https. Defaults
       to true when the connection is https
+    * `:extra` - string to append to cookie. Use this to take advantage of
+      non-standard cookie attributes.
 
   """
   @spec put_resp_cookie(t, binary, binary, Keyword.t) :: t
@@ -814,7 +824,7 @@ defmodule Plug.Conn do
       is_binary(key) and is_binary(value) and is_list(opts) do
     cookie = [{:value, value}|opts] |> :maps.from_list() |> maybe_secure_cookie(scheme)
     resp_cookies = Map.put(resp_cookies, key, cookie)
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.put(&1, key, value))
+    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.put(&1, key, value))
   end
 
   defp maybe_secure_cookie(cookie, :https), do: Map.put_new(cookie, :secure, true)
@@ -833,7 +843,7 @@ defmodule Plug.Conn do
       is_binary(key) and is_list(opts) do
     opts = [universal_time: @epoch, max_age: 0] ++ opts
     resp_cookies = Map.put(resp_cookies, key, :maps.from_list(opts))
-    %{conn | resp_cookies: resp_cookies} |> update_cookies(&Map.delete(&1, key))
+    update_cookies(%{conn | resp_cookies: resp_cookies}, &Map.delete(&1, key))
   end
 
   @doc """
@@ -980,6 +990,7 @@ defmodule Plug.Conn do
           "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
+    validate_header_value!(cookie)
     cookie
   end
 
@@ -1003,7 +1014,7 @@ defmodule Plug.Conn do
 
   defp put_session(conn, fun) do
     private = conn.private
-              |> Map.put(:plug_session, get_session(conn) |> fun.())
+              |> Map.put(:plug_session, fun.(get_session(conn)))
               |> Map.put_new(:plug_session_info, :write)
 
     %{conn | private: private}

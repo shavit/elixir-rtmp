@@ -75,7 +75,7 @@ def hello_world_plug(conn, _opts) do
 end
 ```
 
-A module plug provides an `init/1` function to initialize options and implement the `call/2` function, receiving the connection and the initialized options, and returning the connection:
+A module plug implements an `init/1` function to initialize the options and a `call/2` function which receives the connection and initialized options and returns the connection:
 
 ```elixir
 defmodule MyPlug do
@@ -157,7 +157,7 @@ and then update `lib/my_app.ex` as follows:
 defmodule MyApp do
   use Application
 
-  # See http://elixir-lang.org/docs/stable/elixir/Application.html
+  # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
     import Supervisor.Spec
@@ -167,7 +167,7 @@ defmodule MyApp do
       Plug.Adapters.Cowboy.child_spec(:http, MyRouter, [], [port: 4001])
     ]
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)

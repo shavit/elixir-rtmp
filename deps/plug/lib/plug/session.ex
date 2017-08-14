@@ -27,6 +27,7 @@ defmodule Plug.Session do
     * `:path` - see `Plug.Conn.put_resp_cookie/4`;
     * `:secure` - see `Plug.Conn.put_resp_cookie/4`;
     * `:http_only` - see `Plug.Conn.put_resp_cookie/4`;
+    * `:extra` - see `Plug.Conn.put_resp_cookie/4`;
 
   Additional options can be given to the session store, see the store's
   documentation for the options it accepts.
@@ -39,10 +40,10 @@ defmodule Plug.Session do
   alias Plug.Conn
   @behaviour Plug
 
-  @cookie_opts [:domain, :max_age, :path, :secure, :http_only]
+  @cookie_opts [:domain, :max_age, :path, :secure, :http_only, :extra]
 
   def init(opts) do
-    store        = Keyword.fetch!(opts, :store) |> convert_store
+    store        = convert_store(Keyword.fetch!(opts, :store))
     key          = Keyword.fetch!(opts, :key)
     cookie_opts  = Keyword.take(opts, @cookie_opts)
     store_opts   = Keyword.drop(opts, [:store, :key] ++ @cookie_opts)
@@ -92,22 +93,30 @@ defmodule Plug.Session do
           value = put_session(sid, conn, config)
           put_cookie(value, conn, config)
         :drop ->
-          if sid do
-            delete_session(sid, conn, config)
-            delete_cookie(conn, config)
-          else
-            conn
-          end
+          drop_session(sid, conn, config)
         :renew ->
-          if sid, do: delete_session(sid, conn, config)
-          value = put_session(nil, conn, config)
-          put_cookie(value, conn, config)
+          renew_session(sid, conn, config)
         :ignore ->
           conn
         nil ->
           conn
       end
     end
+  end
+
+  defp drop_session(sid, conn, config) do
+    if sid do
+      delete_session(sid, conn, config)
+      delete_cookie(conn, config)
+    else
+      conn
+    end
+  end
+
+  defp renew_session(sid, conn, config) do
+    if sid, do: delete_session(sid, conn, config)
+    value = put_session(nil, conn, config)
+    put_cookie(value, conn, config)
   end
 
   defp put_session(sid, conn, %{store: store, store_config: store_config}),
