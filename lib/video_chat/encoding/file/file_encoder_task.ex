@@ -3,7 +3,9 @@ defmodule VideoChat.Encoding.FileEncoderTask do
   import VideoChat.Encoding.Util
 
   def start_link(opts) do
-    Task.start_link(__MODULE__, :work, [opts])
+    # Task.start_link(__MODULE__, :work, [opts])
+    # TODO: Remove the dumb work
+    Task.start_link(__MODULE__, :dumb_work, [opts])
   end
 
   def work(opts) do
@@ -32,6 +34,14 @@ defmodule VideoChat.Encoding.FileEncoderTask do
       |> to_command
 
     System.cmd(cmd, args)
+  end
+
+  def dumb_work(opts) do
+    {:res, n} = Enum.at(opts, 2)
+    res = get_resolution(n)
+
+    # TODO: Add ffmpeg image
+    System.cmd(Path.expand("bin/encode_once"), ["tmp/video.mp4", res])
   end
 
   defp get_resolution(i) do
