@@ -1,4 +1,4 @@
-defmodule VideoChat.Encoding.Encoder do
+defmodule VideoChat.Encoding.StreamEncoder do
   use GenServer
 
   #
@@ -50,9 +50,12 @@ defmodule VideoChat.Encoding.Encoder do
     new_message = data
       |> parse_message
 
-
-    :ok = new_message
-      |> write_data
+    case write_data(new_message) do
+      :ok ->
+        nil
+      {:error, :enoent} ->
+        IO.puts "---> Error writing an ecoded message into file"
+    end
 
     key_list = (messages
       |> Map.get(new_message.channel <> new_message.resolution, []))
@@ -67,7 +70,7 @@ defmodule VideoChat.Encoding.Encoder do
         key_list)}
   end
 
-  # Synchronous  
+  # Synchronous
   def handle_call({:call_action, action_handler, args}, _from, actions) do
     # Process.send_after(self(), :try_running, 0)
     {:reply, action_handler.(args), actions}
