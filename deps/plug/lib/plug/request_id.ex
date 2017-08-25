@@ -23,8 +23,8 @@ defmodule Plug.RequestId do
   ## Options
 
     * `:http_header` - The name of the HTTP *request* header to check for
-    existing request ids. This is also the HTTP *response* header that will be
-    set with the request id. Default value is "x-request-id"
+      existing request ids. This is also the HTTP *response* header that will be
+      set with the request id. Default value is "x-request-id"
 
         plug Plug.RequestId, http_header: "custom-request-id"
   """
@@ -52,11 +52,11 @@ defmodule Plug.RequestId do
 
   defp set_request_id({conn, request_id}, header) do
     Logger.metadata(request_id: request_id)
-    conn |> Conn.put_resp_header(header, request_id)
+    Conn.put_resp_header(conn, header, request_id)
   end
 
   defp generate_request_id do
-    :crypto.strong_rand_bytes(20) |> Base.hex_encode32(case: :lower)
+    Base.hex_encode32(:crypto.strong_rand_bytes(20), case: :lower)
   end
 
   defp valid_request_id?(s), do: byte_size(s) in 20..200

@@ -10,11 +10,11 @@ The package can be installed as:
 
   ```elixir
   def deps do
-    [{:mime, "~> 1.0"}]
+    [{:mime, "~> 1.1"}]
   end
   ```
 
-2. Ensure mime is started before your application:
+2. If there is an `applications` key in your `mix.exs`, add `:mime` to the list. This step is not necessary if you have `extra_applications` instead.
 
   ```elixir
   def application do
@@ -24,14 +24,15 @@ The package can be installed as:
   
 ## Usage
 
-MIME types can be extended in your application configuration
-as follows:
+MIME types can be extended in your application `config/config.exs` as follows:
 
 ```elixir
 config :mime, :types, %{
   "application/vnd.api+json" => ["json-api"]
 }
 ```
+
+And then run `mix deps.clean --build mime` to force mime to be recompiled across all environments.
 
 ## License
 

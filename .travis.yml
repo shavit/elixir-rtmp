@@ -1,0 +1,7 @@
+dist: trusty
+language: elixir
+sudo: required
+services:
+  - docker
+script:
+  - docker-compose run web mix test

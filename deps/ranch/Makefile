@@ -1,6 +1,9 @@
 # See LICENSE for licensing information.
 
 PROJECT = ranch
+PROJECT_DESCRIPTION = Socket acceptor pool for TCP protocols.
+PROJECT_VERSION = 1.4.0
+PROJECT_REGISTERED = ranch_server
 
 # Options.
 
@@ -8,20 +11,20 @@ COMPILE_FIRST = ranch_transport
 CT_OPTS += -pa test -ct_hooks ranch_ct_hook []
 PLT_APPS = crypto public_key ssl
 
-CI_OTP = \
-	OTP_R15B01 OTP_R15B02 OTP_R15B03-1 \
+CI_OTP ?= \
 	OTP_R16B OTP_R16B01 OTP_R16B02 OTP_R16B03-1 \
-	OTP-17.0.2 OTP-17.1.2 OTP-17.2.2 OTP-17.3.4 OTP-17.4.1 OTP-17.5.6.6 \
-	OTP-18.0.3 OTP-18.1.5 OTP-18.2.1
-
-# Only test on the most recent version on public CI services.
-ifdef CI
-ifndef BUILDKITE
-CI_OTP := $(lastword $(CI_OTP))
-endif
-endif
+	OTP-17.1.2 OTP-17.2.2 OTP-17.3.4 OTP-17.4.1 OTP-17.5.6.6 \
+	OTP-18.0.3 OTP-18.1.5 OTP-18.2.4.1 OTP-18.3.4.5 \
+	OTP-19.0.7 OTP-19.1.6 OTP-19.2.3 OTP-19.3.5 \
+	OTP-20.0-rc2
+#CI_HIPE ?= $(lastword $(CI_OTP))
+#CI_ERLLVM ?= $(CI_HIPE)
 
 # Dependencies.
+
+LOCAL_DEPS = ssl
+
+DOC_DEPS = asciideck
 
 TEST_DEPS = ct_helper
 dep_ct_helper = git https://github.com/ninenines/ct_helper master

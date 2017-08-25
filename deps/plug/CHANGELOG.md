@@ -1,6 +1,37 @@
 ## Changelog
 
-## v1.3.0-dev
+## v1.3.5
+
+* Bug fixes
+  * Validate cookie headers
+
+## v1.3.4
+
+* Bug fixes
+  * Do not convert exits into errors
+
+## v1.3.3
+
+* Bug fixes
+  * Support improper lists, bitstrings and structs in safe_binary_to_term
+
+## v1.3.2
+
+* Bug fixes
+  * [Plug.Crypto] Provide safer deserialization mechanisms
+  * [Plug.Static] Properly handle null bytes
+
+## v1.3.1
+
+* Enhancements
+  * [Plug.Conn] Support arbitrary cookie attributes
+  * [Plug.SSL] Support tuple hosts in Plug.SSL
+  * [Plug.Static] Add ability to generate etags via a user defined function
+
+* Bug fixes
+  * [Plug.ErrorHandler] Do not unwrap errors wrapped in `Plug.Conn.WrapperError` when reraising
+
+## v1.3.0
 
 * Enhancements
   * [Plug.Adapters.Cowboy] Support tuples with other than 2 elements in the adapter options

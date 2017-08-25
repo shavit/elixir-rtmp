@@ -1,0 +1,18 @@
+version: "2"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: mix run --no-halt
+    volumes:
+      - .:/var/www/diana
+    environment:
+      - MIX_ENV=${MIX_ENV}
+      - PORT=${PORT}
+      - INCOMING_PORT=${INCOMING_PORT}
+      - MEDIA_DIRECTORY=${MEDIA_DIRECTORY}
+    ports:
+      - 3010:3010
+      - ${PORT}:${PORT}
+      - ${INCOMING_PORT}:${INCOMING_PORT}

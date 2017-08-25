@@ -85,6 +85,41 @@ defmodule Plug.Router do
   Check `match/3` for more information on how route compilation
   works and a list of supported options.
 
+  ## Parameter Parsing
+
+  Handling request data can be done through the
+  [`Plug.Parsers`](https://hexdocs.pm/plug/Plug.Parsers.html#content) plug. It
+  provides support for parsing URL-encoded, form-data, and JSON data as well as
+  providing a behaviour that others parsers can adopt.
+
+  Here is an example of `Plug.Parsers` can be used in a `Plug.Router` router to
+  parse the JSON-encoded body of a POST request:
+
+      defmodule AppRouter do
+        use Plug.Router
+
+        plug :match
+        plug Plug.Parsers, parsers: [:json],
+                           pass:  ["application/json"],
+                           json_decoder: Poison
+        plug :dispatch
+
+        post "/hello" do
+          IO.inspect conn.body_params # Prints JSON POST body
+          send_resp(conn, 200, "Success!")
+        end
+      end
+
+  It is important that `Plug.Parsers` is placed before the `:dispatch` plug in
+  the pipeline, otherwise the matched clause route will not receive the parsed
+  body in its `Plug.Conn` argument when dispatched.
+
+  `Plug.Parsers` can also be plugged between `:match` and `:dispatch` (like in
+  the example above): this means that `Plug.Parsers` will run only if there is a
+  matching route. This can be useful to perform actions such as authentication
+  *before* parsing the body, which should only be parsed if a route matches
+  afterwards.
+
   ## Error handling
 
   In case something goes wrong in a request, the router by default
