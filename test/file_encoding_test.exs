@@ -27,7 +27,11 @@ defmodule FileEncoderTest do
   end
 
   test "supervisor should start multiple encoding tasks", %{pid: pid} do
-    assert {:ok, _pid} = start_child(pid, [id: :one, video: :random_video, res: :mp4_320])
-    assert {:ok, _pid} = start_child(pid, [id: :two, video: :random_video, res: :mp4_320])
+    assert {:ok, _pid} = start_child(pid, [id: :one, path: :random_video, res: :mp4_320])
+    assert {:ok, _pid} = start_child(pid, [id: :two, path: :random_video, res: :mp4_320])
+  end
+
+  test "encode", %{pid: pid} do
+    assert {:ok, _pid} = start_child(pid, [id: :one, path: :random_video, res: :mp4_320])
   end
 end

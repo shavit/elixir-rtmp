@@ -43,6 +43,10 @@ plug :dispatch
         #   then send the location or binary to the encoder.
         # File.write("tmp/uploaded-video.mp4", file_data, [:binary])
 
+
+        VideoChat.Encoding.FileSupervisor.start_link(name: :file_encoding_supervisor_1,
+          workers: 1)
+
         conn
         |> put_resp_header("Location", "/")
         |> send_resp(301, "")
