@@ -53,7 +53,7 @@ defmodule VideoChat.Encoding.StreamEncoder do
     case write_data(new_message) do
       :ok ->
         nil
-      _ ->
+      {:error, :enoent} ->
         IO.puts "---> Error writing an ecoded message into file"
     end
 
