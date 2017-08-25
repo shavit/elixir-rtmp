@@ -3,7 +3,7 @@ defmodule EncodingSupervisorTest do
   doctest VideoChat
 
   test "should start a worker" do
-    pid = Process.whereis(:encoding_supervisor)
+    pid = Process.whereis(:stream_encoding_supervisor)
     assert pid != nil
     %{active: active,
       specs: _specs,

@@ -2,8 +2,11 @@ defmodule VideoChat.Router do
   use Plug.Router
   import VideoChat.Template
 
-  plug :match
-  plug :dispatch
+plug Plug.Static,
+  at: "/public",
+  from: :video_chat
+plug :match
+plug :dispatch
 
   def init(options) do
     options
@@ -13,7 +16,6 @@ defmodule VideoChat.Router do
     {:ok, _} = Plug.Adapters.Cowboy.http VideoChat.Router, []
   end
 
-  # Render the main page with the video players
   get "/" do
     conn
     |> put_resp_content_type("text/html")
@@ -33,6 +35,27 @@ defmodule VideoChat.Router do
   #   |> send_resp(206, video_raw)
   # end
 
+  post "/upload" do
+    case read_body(conn) do
+      {:ok, _file_data, _} ->
+
+        # TODO: Extract each file data and write to the uploads folder,
+        #   then send the location or binary to the encoder.
+        # File.write("tmp/uploaded-video.mp4", file_data, [:binary])
+
+        conn
+        |> put_resp_header("Location", "/")
+        |> send_resp(301, "")
+
+      {:error, _term} ->
+        conn
+        |> send_resp(500, "Error uploading the file")
+
+      _ ->
+        conn
+        |> send_resp(500, "Unknown error")
+    end
+  end
 
   # Encode video on demand.
   # Should not start another task if the file is encoded
@@ -56,8 +79,6 @@ defmodule VideoChat.Router do
 
   # Returns a playlist file (m3u8), then redirect to the ts file
   # /playlists/playlist-file-name.m3u8
-  #
-  # GET /playlists/:slug
   get "/playlists/:slug" do
     # Check the file extension
     ext = slug
@@ -87,23 +108,23 @@ defmodule VideoChat.Router do
 
   # Stream the video, enable seek and skip bytes.
   get "/media/:file_name" do
-    matched = file_name
-      |> Regex.match?(~r(^[a-zA-Z0-9]+[\\.][a-zA-Z0-9]{2,4}$))
+    matched = ~r(^[a-zA-Z0-9]+[\\.][a-zA-Z0-9]{2,4}$)
+      |> Regex.match?(file_name)
     ext = (file_name
       |> String.split("."))
         |> List.last
 
-    case ext and matched do
-      "mp4" -> stream_video(conn, file_name)
+    case matched && ext do
+      "mp4" -> stream_video_file(conn, file_name)
       "jpg" -> serve_image(conn, file_name)
       "png" -> serve_image(conn, file_name)
       _ -> send_resp(404)
     end
   end
 
-  # Live stream from the webcam or UDP connection.
-  # Need to parse the packets.
+  # Live stream from the webcam or UDP connection/client.
   get "/videos/live/playlist" do
+    # TODO: Parse the packets.
     IO.inspect "---> Getting live video stream"
 
     # video = VideoChat.Encoding.Encoder.get_one |> List.last
@@ -120,6 +141,8 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
+  # Stream each segment in a sequence.
+  # Get called from the video player
   get "/videos/live/:ts" do
     file_path = Path.join(System.cwd, "tmp/webcam/#{ts}")
     IO.inspect file_path
@@ -132,14 +155,11 @@ defmodule VideoChat.Router do
 
   match _ do
     conn
-    |> send_resp(404, "Not found")
+    |> send_resp(404, "Page not found")
   end
 
-  #
-  # Helpers
-  #
-
-  defp stream_video(conn, file_name) do
+  # Stream a video file on demand
+  defp stream_video_file(conn, file_name) do
     file_path = System.cwd
       |> Path.join(Application.get_env(:video_chat, :media_directory))
       |> Path.join(file_name)
@@ -154,6 +174,7 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path, offset, size-offset)
   end
 
+  # Stream an image, totally pointless
   defp serve_image(conn, file_name) do
     file_path = System.cwd
       |> Path.join(Application.get_env(:video_chat, :media_directory))
@@ -167,12 +188,13 @@ defmodule VideoChat.Router do
     |> send_file(206, file_path)
   end
 
+  # Get the file size from a path
   defp get_file_size(path) do
     {:ok, %{size: size}} = File.stat path
-
     size
   end
 
+  # Extract the playback offset from the request headers
   defp get_offset(headers) do
     case List.keyfind(headers, "range", 0) do
     {"range", "bytes=" <> start_pos} ->
