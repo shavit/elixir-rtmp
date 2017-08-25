@@ -50,9 +50,12 @@ defmodule VideoChat.Encoding.StreamEncoder do
     new_message = data
       |> parse_message
 
-
-    :ok = new_message
-      |> write_data
+    case write_data(new_message) do
+      :ok ->
+        nil
+      _ ->
+        IO.puts "---> Error writing an ecoded message into file"
+    end
 
     key_list = (messages
       |> Map.get(new_message.channel <> new_message.resolution, []))

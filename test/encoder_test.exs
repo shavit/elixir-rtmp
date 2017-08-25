@@ -25,7 +25,7 @@ defmodule EncoderTest do
     assert VideoChat.Encoding.StreamEncoder.pop("25413") == nil
   end
 
-  test "should get sorted messages" do
+  test "should get sorted messages when inserted in the wrong order" do
     # Insert in the wrong order
     assert :ok = VideoChat.Encoding.StreamEncoder.push "254210001Message-1"
     assert :ok = VideoChat.Encoding.StreamEncoder.push "254210003Message-3"
