@@ -1,5 +1,7 @@
 dist: trusty
 language: elixir
+elixir:
+  - 1.5.1
 sudo: required
 services:
   - docker
