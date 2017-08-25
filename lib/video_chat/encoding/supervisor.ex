@@ -14,7 +14,7 @@ defmodule VideoChat.Encoding.Supervisor do
     #   or {:shutdown, term}
     children = [
       # No point to restart
-      worker(VideoChat.Encoding.Encoder, [id: :one], restart: :transient),
+      worker(VideoChat.Encoding.StreamEncoder, [id: :one], restart: :transient),
     ]
 
     supervise(children, strategy: :one_for_one)

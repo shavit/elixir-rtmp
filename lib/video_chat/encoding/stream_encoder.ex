@@ -1,4 +1,4 @@
-defmodule VideoChat.Encoding.Encoder do
+defmodule VideoChat.Encoding.StreamEncoder do
   use GenServer
 
   #
@@ -67,7 +67,7 @@ defmodule VideoChat.Encoding.Encoder do
         key_list)}
   end
 
-  # Synchronous  
+  # Synchronous
   def handle_call({:call_action, action_handler, args}, _from, actions) do
     # Process.send_after(self(), :try_running, 0)
     {:reply, action_handler.(args), actions}
