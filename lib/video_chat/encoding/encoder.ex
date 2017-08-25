@@ -33,11 +33,6 @@ defmodule VideoChat.Encoding.Encoder do
     GenServer.call(:encoder, {:call_action, action_handler, args})
   end
 
-  def handle_call({:call_action, action_handler, args}, _from, actions) do
-    # Process.send_after(self(), :try_running, 0)
-    {:reply, action_handler.(args), actions}
-  end
-
   #
   # Server callbacks
   #
@@ -72,7 +67,12 @@ defmodule VideoChat.Encoding.Encoder do
         key_list)}
   end
 
-  # Synchronous
+  # Synchronous  
+  def handle_call({:call_action, action_handler, args}, _from, actions) do
+    # Process.send_after(self(), :try_running, 0)
+    {:reply, action_handler.(args), actions}
+  end
+
   def handle_call({:get_channel_message, key}, _from, messages) do
     <<
     channel :: bitstring-size(32),
