@@ -11,10 +11,9 @@ defmodule EncoderTest do
   end
 
   test "should send and receive messages" do
-    {:ok, socket} = :gen_udp.open(3010)
-
+    # {:ok, socket} = :gen_udp.open(3010)
     # This is not sending to the bucket
-    assert :ok = :gen_udp.send(socket, {127,0,0,1}, 3001, "000120001Message")
+    # assert :ok = :gen_udp.send(socket, {127,0,0,1}, 3001, "000120001Message")
 
     assert :ok = VideoChat.Encoding.Encoder.push "254130001Message1"
     assert :ok = VideoChat.Encoding.Encoder.push "254130002Message2"
