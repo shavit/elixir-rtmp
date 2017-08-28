@@ -6,6 +6,9 @@ sudo: required
 services:
   - docker
 
+before_install:
+  - mkdir $PWD/tmp
+
 script:
   - docker build -t ffmpeg --file Dockerfile.ffmpeg .
   - docker run -td --rm --name ffmpeg ffmpeg
