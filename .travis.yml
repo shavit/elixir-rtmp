@@ -9,10 +9,10 @@ services:
 script:
   - docker build -t ffmpeg --file Dockerfile.ffmpeg .
   - docker run -td --rm --name ffmpeg ffmpeg
-  - docker cp ffmpeg:/usr/bin/ffmpeg `pwd`/tmp
-  - cp `pwd`/tmp/ffmpeg `pwd`/bin/
+  - docker cp ffmpeg:/usr/bin/ffmpeg $TRAVIS_BUILD_DIR/tmp
+  - cp $TRAVIS_BUILD_DIR/tmp/ffmpeg $TRAVIS_BUILD_DIR/bin/
   - docker build -t itstommy/diana .
   - docker-compose run web mix test
 after_script:
   - docker stop ffmpeg
-  - rm `pwd`/bin/ffmpeg
+  - rm $TRAVIS_BUILD_DIR/bin/ffmpeg
