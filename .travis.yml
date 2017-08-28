@@ -5,5 +5,14 @@ elixir:
 sudo: required
 services:
   - docker
+
 script:
+  - docker build -t ffmpeg --file Dockerfile.ffmpeg .
+  - docker run -td --rm --name ffmpeg ffmpeg
+  - docker cp ffmpeg:/usr/bin/ffmpeg `pwd`/tmp
+  - cp `pwd`/tmp/ffmpeg `pwd`/bin/
+  - docker build -t itstommy/diana .
   - docker-compose run web mix test
+after_script:
+  - docker stop ffmpeg
+  - rm `pwd`/bin/ffmpeg

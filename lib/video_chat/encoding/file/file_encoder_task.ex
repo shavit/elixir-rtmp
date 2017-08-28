@@ -13,7 +13,7 @@ defmodule VideoChat.Encoding.FileEncoderTask do
     res = get_resolution(n)
     frame_rate = "23.98"
 
-    {cmd, args} = VideoChat.Encoding.Util.new("tmp/video.mp4", "tmp/uploads/ts")
+    {cmd, args} = VideoChat.Encoding.Util.new("tmp/video.mp4", output_dir_name())
       |> add_option(["-strict experimental"])
       |> add_option(["-ac 2"])
       |> add_option(["-b:a 96k"])
@@ -40,8 +40,8 @@ defmodule VideoChat.Encoding.FileEncoderTask do
     {:res, n} = Enum.at(opts, 2)
     res = get_resolution(n)
 
-    # TODO: Add ffmpeg image
-    System.cmd(Path.expand("bin/encode_once"), ["tmp/video.mp4", res])
+    System.cmd(Path.expand("bin/encode_once"),
+      ["tmp/video.mp4", output_dir_name(), res])
   end
 
   defp get_resolution(i) do
@@ -51,5 +51,9 @@ defmodule VideoChat.Encoding.FileEncoderTask do
       2 -> "640x360"
       _ -> "1280x720"
     end
+  end
+
+  defp output_dir_name do
+    "tmp/uploads/" <> Base.url_encode64(:crypto.strong_rand_bytes(12))
   end
 end
