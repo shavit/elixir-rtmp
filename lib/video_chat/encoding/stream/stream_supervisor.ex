@@ -1,8 +1,8 @@
-defmodule VideoChat.Encoding.Supervisor do
+defmodule VideoChat.Encoding.StreamSupervisor do
   use Supervisor
 
   def start_link(_opts \\ []) do
-    Supervisor.start_link(__MODULE__, :ok, name: :encoding_supervisor)
+    Supervisor.start_link(__MODULE__, :ok, name: :stream_encoding_supervisor)
   end
 
   def init(:ok) do

@@ -1,0 +1,3 @@
+FROM alpine
+WORKDIR /home/ffmpeg
+RUN apk update && apk add ffmpeg
