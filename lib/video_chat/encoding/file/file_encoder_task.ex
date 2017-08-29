@@ -3,9 +3,9 @@ defmodule VideoChat.Encoding.FileEncoderTask do
   import VideoChat.Encoding.Util
 
   def start_link(opts) do
-    # Task.start_link(__MODULE__, :work, [opts])
+    Task.start_link(__MODULE__, :work, [opts])
     # TODO: Remove the dumb work
-    Task.start_link(__MODULE__, :dumb_work, [opts])
+    # Task.start_link(__MODULE__, :dumb_work, [opts])
   end
 
   def work(opts) do
