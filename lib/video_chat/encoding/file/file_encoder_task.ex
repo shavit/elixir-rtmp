@@ -3,9 +3,9 @@ defmodule VideoChat.Encoding.FileEncoderTask do
   import VideoChat.Encoding.Util
 
   def start_link(opts) do
-    Task.start_link(__MODULE__, :work, [opts])
+    # Task.start_link(__MODULE__, :work, [opts])
     # TODO: Remove the dumb work
-    # Task.start_link(__MODULE__, :dumb_work, [opts])
+    Task.start_link(__MODULE__, :dumb_work, [opts])
   end
 
   def work(opts) do
@@ -37,11 +37,12 @@ defmodule VideoChat.Encoding.FileEncoderTask do
   end
 
   def dumb_work(opts) do
-    {:res, n} = Enum.at(opts, 2)
+    {:res, n} = Enum.at(opts, 3)
     res = get_resolution(n)
+    {:path, path} = Enum.at(opts, 2)
 
     System.cmd(Path.expand("bin/encode_once"),
-      ["tmp/video.mp4", output_dir_name(), res])
+      [path, output_dir_name(), res])
   end
 
   defp get_resolution(i) do
