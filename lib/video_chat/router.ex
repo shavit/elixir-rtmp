@@ -18,8 +18,7 @@ plug :dispatch
   end
 
   get "/" do
-    # TODO: Fix this
-    {:ok, _pid1} = FileSupervisor.start_link(name: :file_encoding_supervisor_1, workers: 3, path: "tmp/video.mp4")
+    # {:ok, _pid1} = FileSupervisor.start_link(name: :file_encoding_supervisor_1, workers: 3, path: "tmp/video.mp4")
 
     conn
     |> put_resp_content_type("text/html")

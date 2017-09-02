@@ -6,11 +6,11 @@ defmodule VideoChat.Encoding.Util do
   end
 
   @doc """
-  Add an option string, key and value:
-    -ac 2
+  Add option strings, key and value:
+    ["-ac", "2"]
   """
   def add_option(cmd, opt) do
-    cmd |> Map.put(:args, Enum.concat(cmd.args, opt))
+    Map.put(cmd, :args, Enum.concat(cmd.args, opt))
   end
 
   @doc """
@@ -18,6 +18,8 @@ defmodule VideoChat.Encoding.Util do
   """
   def to_command(cmd) do
     {"ffmpeg",
-      Enum.concat(["-i #{cmd.path}" | cmd.args], ["-o #{cmd.output}"])}
+      ["-i", "#{cmd.path}"]
+      |> Enum.concat(cmd.args)
+      |> Enum.concat(["#{cmd.output}"])}
   end
 end
