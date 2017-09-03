@@ -10,8 +10,7 @@ defmodule EncodingSupervisorTest do
       supervisors: _supervisors,
       workers: _workers} = Supervisor.count_children(pid)
 
-    assert active > 0
-    IO.puts "---> Active children: #{active}"
+    assert active == 1
   end
 
 end

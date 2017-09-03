@@ -1,6 +1,7 @@
 defmodule VideoChat.Router do
   use Plug.Router
   import VideoChat.Template
+  alias VideoChat.Encoding.FileSupervisor, as: FileSupervisor
 
 plug Plug.Static,
   at: "/public",
@@ -17,6 +18,8 @@ plug :dispatch
   end
 
   get "/" do
+    # {:ok, _pid1} = FileSupervisor.start_link(name: :file_encoding_supervisor_1, workers: 3, path: "tmp/video.mp4")
+
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(200, render("live"))
