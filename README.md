@@ -5,8 +5,6 @@
 
 Elixir Video Chat Streaming Server
 
-![Preview](https://github.com/shavit/Diana/blob/master/doc/meme.gif?raw=true)
-
 This is not production ready yet, although part of this server is already in use to serve videos on demand.
 
 This is what it is able to do now:
@@ -17,7 +15,7 @@ This is what it is able to do now:
 * Encode multiple videos in multiple resolutions using tasks.
 * <s>Stream live video to the server from webcam or encoders.</s>
 * <s>Play live video from camera or live source.</s>
-* <s>Encode live videos from a stream.</s> (however it is possible using ffmpeg directly)
+* <s>Encode live videos from a stream.</s> (however it is possible with the ffmpeg script)
 
 
 ![Preview](https://github.com/shavit/Diana/blob/master/doc/page-1.png?raw=true)
