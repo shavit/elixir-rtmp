@@ -48,9 +48,10 @@ defmodule VideoChat.Encoding.FileEncoderTask do
 
   defp get_resolution(i) do
     case i do
-      0 -> "320x180"
-      1 -> "480x270"
-      2 -> "640x360"
+      0 -> "240x140"
+      1 -> "320x180"
+      2 -> "480x270"
+      3 -> "640x360"
       _ -> "1280x720"
     end
   end
