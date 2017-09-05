@@ -6,102 +6,45 @@
   </head>
   <body>
 
-    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-      <header class="mdl-layout__header">
-        <div class="mdl-layout__header-row">
-          <!-- Title -->
-          <span class="mdl-layout-title">Dashboard</span>
-          <!-- Add spacer, to align navigation to the right -->
-          <div class="mdl-layout-spacer"></div>
-          <!-- Navigation. We hide it in small screens. -->
-          <nav class="mdl-navigation mdl-layout--large-screen-only">
-            <a class="mdl-navigation__link" href="/">Login</a>
-            <a class="mdl-navigation__link" href="/">Logout</a>
-          </nav>
-        </div>
-      </header>
-      <div class="mdl-layout__drawer">
-        <span class="mdl-layout-title">Video stream</span>
-        <nav class="mdl-navigation">
-          <a class="mdl-navigation__link" href="/">My videos</a>
-          <a class="mdl-navigation__link" href="/">Live video chat</a>
-          <a class="mdl-navigation__link" href="/playlists">Live processing</a>
-          <a class="mdl-navigation__link" href="/playlists/2">On demand</a>
-        </nav>
-      </div>
-      <main class="mdl-layout__content">
-        <div class="page-content">
+    <div class="primary navbar">
+      <nav class="top">
+        <a href="/">Dashboard</a>
+      </nav>
+    </div>
 
-          <div class="mdl-grid">
-            <div class="mdl-cell mdl-cell--4-col"></div>
-            <div class="mdl-cell mdl-cell--4-col">
-
-              <section>
-                <h2 class="mdl-title display-3">Video Players</h2>
-                <div class="video-card">
-                  <video autoplay controls>
-                    <!-- <source src="http://localhost:3000/videos/stream" type="video/mp4" /> -->
-                    <source src="http://localhost:3000/media/video.mp4" type="video/mp4" />
-                  </video>
-                  <p>
-                    Encoded
-                  </p>
-                </div>
-
-              </section>
-
-              <div class="video-card">
-                <h2>Upload</h2>
-                <p>This should process the video using multiple child processes</p>
-                <form action="/upload" method="post" enctype="multipart/form-data">
-                  <input type="file" id="video_file" name="video[file]">
-                  <input type="hidden" name="video[uploader]" value="guest_user">
-                  <button type="submit" name="button">Submit</button>
-                </form>
-              </div>
-
-              <!-- <div class="video-card">
-                <video controls autoplay>
-                  <source src="http://localhost:3000/playlists/1?vq=l" type="video/mp4" />
-                </video>
-                <p>
-                  Encode on the fly
-                </p>
-              </div> -->
-
-              <!-- <div class="video-card">
-                <video autoplay controls>
-                  <source src="http://localhost:3000/videos/live/playlist" type="video/mp4" />
-                </video>
-                <p>
-                  Web camera
-                </p>
-              </div> -->
-
-              <!-- <div class="video-card">
-                <video autoplay controls>
-                  <source src="http://localhost:3000/videos/live.mp4" type="video/mp4" />
-                </video>
-                <p>
-                  Public live stream (offline)
-                </p>
-              </div> -->
-
-            </div>
-            <div class="mdl-cell mdl-cell--4-col"></div>
+    <div class="container">
+      <section>
+        <div class="video-card">
+          <div class="video player">
+            <video autoplay controls>
+              <!-- <source src="http://localhost:3000/videos/stream" type="video/mp4" /> -->
+              <source src="http://localhost:3000/media/video.mp4" type="video/mp4" />
+            </video>
           </div>
-          <!-- end grid -->
-
+          <p>
+            Live video
+          </p>
         </div>
-      </main>
-      <!-- end main content -->
+
+      </section>
+
+      <section>
+        <div class="video-card">
+          <h2>Upload</h2>
+          <p>This should process the video using multiple child processes</p>
+          <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" id="video_file" name="video[file]">
+            <input type="hidden" name="video[uploader]" value="guest_user">
+            <button type="submit" name="button">Submit</button>
+          </form>
+        </div>
+      </section>
     </div>
 
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css">
     <link rel="stylesheet" href="/public/css/style.css">
-    <style type="text/css">.video-card video{max-width: 100%;}</style>
     <script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
   </body>
 </html>

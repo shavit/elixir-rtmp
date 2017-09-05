@@ -2,6 +2,7 @@
 env
 .profile
 
+priv/static
 .rebar3
 _*
 .eunit
