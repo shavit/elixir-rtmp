@@ -1,8 +1,9 @@
 # Diana
-Elixir Video Chat Streaming Server
 
 [![Build Status](https://travis-ci.org/shavit/Diana.svg?branch=master)](https://travis-ci.org/shavit/Diana)
 [![Code Climate](https://codeclimate.com/github/shavit/Diana/badges/gpa.svg)](https://codeclimate.com/github/shavit/Diana)
+
+Elixir Video Chat Streaming Server
 
 ![Preview](https://github.com/shavit/Diana/blob/master/doc/meme.gif?raw=true)
 
