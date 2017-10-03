@@ -15,4 +15,4 @@ services:
     ports:
       - 3010:3010
       - ${PORT}:${PORT}
-      - ${INCOMING_PORT}:${INCOMING_PORT}
+      - ${INCOMING_PORT}:${INCOMING_PORT}/udp
