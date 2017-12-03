@@ -52,7 +52,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
 COPY config/nginx.conf /etc/nginx/nginx.conf
 
 # Create directories for the index page and video segments
-RUN -p /var/www/media \
+RUN mkdir -p /var/www/media \
   /var/www/media/live \
   /var/www/html
 WORKDIR /var/www/media
