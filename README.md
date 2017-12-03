@@ -21,6 +21,15 @@ This is what it is able to do now:
 **TODO: Complete the quick start guide**
 
 ## Quick start
+Build using `make build`
+
+### Streaming
+1. Use *ffmpeg*, *obs* or any other program to stream to rtmp://localhost:1935/live/diana
+2. Each stream has a unique key `/live/<Key>`. In this example you should stream to `/live/diana`
+
+### Playback
+1. Run `make dev_rtmp`
+2. Visit localhost:80 to watch the video
 
 1. <s>Configure environment variables, or edit `.profile.example.`</s>
 2. <s>Make *tmp* directory with a video file named *video.mp4*</s>

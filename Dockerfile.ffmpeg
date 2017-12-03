@@ -48,14 +48,15 @@ RUN cd /tmp/build/nginx/${NGINX_VERSION} && \
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
-# Set up config file
-COPY config/nginx.conf /etc/nginx/nginx.conf
-
 # Create directories for the index page and video segments
 RUN mkdir -p /var/www/media \
   /var/www/media/live \
   /var/www/html
-WORKDIR /var/www/media
 
+# Set up config file
+COPY config/nginx.conf /etc/nginx/nginx.conf
+ADD $PWD/web/views /var/www/html
+
+WORKDIR /var/www/media
 EXPOSE 1935
 CMD ["nginx", "-g", "daemon off;"]
