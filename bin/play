@@ -1,8 +1,0 @@
-#!/bin/sh
-
-DIR=`dirname $BASH_SOURCE[0]`
-TMP_DIR="${DIR}/../tmp"
-MEDIA_FILE=${TMP_DIR}/video.mp4
-
-echo "---> Playing live video"
-ffplay -i rtmp://127.0.0.1/live/video.mp4
