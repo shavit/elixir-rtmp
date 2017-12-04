@@ -17,4 +17,3 @@ script:
   - docker-compose run web mix test
 after_script:
   - docker stop ffmpeg
-  - rm $TRAVIS_BUILD_DIR/bin/ffmpeg
