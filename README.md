@@ -42,4 +42,4 @@ Build using `make build`
 
 ### MacOS webcam client and video player
 
-You can use [this webcam client](https://github.com/shavit/Monique)
+You can try [this webcam client](https://github.com/shavit/Monique)
