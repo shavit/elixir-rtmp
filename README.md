@@ -1,7 +1,6 @@
 # Diana
 
 [![Build Status](https://travis-ci.org/shavit/Diana.svg?branch=master)](https://travis-ci.org/shavit/Diana)
-[![Code Climate](https://codeclimate.com/github/shavit/Diana/badges/gpa.svg)](https://codeclimate.com/github/shavit/Diana)
 
 Elixir Video Chat Streaming Server
 
