@@ -18,7 +18,7 @@ defmodule VideoChatTest.Router do
     end
 
     test "should ping when stream started" do
-      conn = conn(:get, "/stream/publish")
+      conn = conn(:post, "/stream/publish")
       conn = Router.call(conn, @opts)
 
       assert conn.status == 200
@@ -27,7 +27,7 @@ defmodule VideoChatTest.Router do
     end
 
     test "should ping when playing stream" do
-      conn = conn(:get, "/stream/play")
+      conn = conn(:post, "/stream/play")
       conn = Router.call(conn, @opts)
 
       assert conn.status == 200
@@ -36,14 +36,13 @@ defmodule VideoChatTest.Router do
     end
 
     test "should ping when ending stream" do
-      conn = conn(:get, "/stream/end")
+      conn = conn(:post, "/stream/end")
       conn = Router.call(conn, @opts)
 
       assert conn.status == 200
       assert {:ok, _binary, conn_resp} =  read_body(conn)
       assert %Plug.Conn{} = conn_resp
     end
-
 
   end
 

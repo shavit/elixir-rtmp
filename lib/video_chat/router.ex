@@ -161,21 +161,21 @@ plug :dispatch
     |> send_file(206, file_path)
   end
 
-  get "/stream/publish" do
+  post "/stream/publish" do
     Logger.info "Publishing stream"
 
     conn
     |> send_resp(200, "ok")
   end
 
-  get "/stream/play" do
+  post "/stream/play" do
     Logger.info "Playing stream"
 
     conn
     |> send_resp(200, "ok")
   end
 
-  get "/stream/end" do
+  post "/stream/end" do
     Logger.info "End of stream"
 
     conn
