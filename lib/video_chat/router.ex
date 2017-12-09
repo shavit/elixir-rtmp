@@ -124,8 +124,6 @@ plug :dispatch
 
     case matched && ext do
       "mp4" -> stream_video_file(conn, file_name)
-      "jpg" -> serve_image(conn, file_name)
-      "png" -> serve_image(conn, file_name)
       _ -> send_resp(404)
     end
   end
@@ -133,7 +131,6 @@ plug :dispatch
   # Live stream from the webcam or UDP connection/client.
   get "/videos/live/playlist" do
     # TODO: Parse the packets.
-    IO.inspect "---> Getting live video stream"
 
     # video = VideoChat.Encoding.Encoder.get_one |> List.last
     file_path = Path.join(System.cwd, "tmp/webcam/live.m3u8")
@@ -163,6 +160,7 @@ plug :dispatch
 
   post "/stream/publish" do
     Logger.info "Publishing stream"
+    IO.inspect conn.body_params
 
     conn
     |> send_resp(200, "ok")
@@ -201,20 +199,6 @@ plug :dispatch
     |> put_resp_header("Content-Length", "#{size}")
     |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")
     |> send_file(206, file_path, offset, size-offset)
-  end
-
-  # Stream an image, totally pointless
-  defp serve_image(conn, file_name) do
-    file_path = System.cwd
-      |> Path.join(Application.get_env(:video_chat, :media_directory))
-      |> Path.join(file_name)
-    size = get_file_size(file_path)
-
-    conn
-    |> put_resp_content_type("application/jpg")
-    |> put_resp_header("Accept-Ranges", "bytes")
-    |> put_resp_header("Content-Length", "#{size}")
-    |> send_file(206, file_path)
   end
 
   # Get the file size from a path
