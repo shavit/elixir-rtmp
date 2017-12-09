@@ -1,5 +1,6 @@
 defmodule VideoChat.Router do
   use Plug.Router
+  require Logger
   import VideoChat.Template
   alias VideoChat.Encoding.FileSupervisor, as: FileSupervisor
 

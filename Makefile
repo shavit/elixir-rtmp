@@ -10,3 +10,12 @@ dev_rtmp:
 		-v ${PWD}/config/nginx.conf:/etc/nginx/nginx.conf \
 		-p 80:80 \
 		-ti ffmpeg
+
+dev_api:
+	docker run --rm \
+		--name diana_api \
+		--env-file ${PWD}/.env \
+		-v ${PWD}:/var/www/diana \
+		-p 3000:3000 \
+		-p 3001:3001 \
+		-ti itstommy/diana mix run --no-halt
