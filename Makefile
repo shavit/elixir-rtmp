@@ -11,6 +11,14 @@ dev_rtmp:
 		-p 80:80 \
 		-ti ffmpeg
 
+test_api:
+	docker run --rm \
+		--name diana_api \
+		--env-file ${PWD}/.env \
+		-e "MIX_ENV=test" \
+		-v ${PWD}:/var/www/diana \
+		-ti itstommy/diana mix test
+
 dev_api:
 	docker run --rm \
 		--name diana_api \
