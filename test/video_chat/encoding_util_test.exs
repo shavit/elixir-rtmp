@@ -1,4 +1,4 @@
-defmodule EncodingUtilTest do
+defmodule VideoChatTest.EncodingUtil do
   use ExUnit.Case
   import VideoChat.Encoding.Util
 

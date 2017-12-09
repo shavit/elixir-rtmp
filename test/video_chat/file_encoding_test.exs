@@ -1,4 +1,4 @@
-defmodule FileEncoderTest do
+defmodule VideoChatTest.FileEncoder do
   use ExUnit.Case
   import VideoChat.Encoding.FileSupervisor, only: :functions
   doctest VideoChat

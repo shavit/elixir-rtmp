@@ -1,4 +1,4 @@
-defmodule EncodingSupervisorTest do
+defmodule VideoChatTest.EncodingSupervisor do
   use ExUnit.Case
   doctest VideoChat
 

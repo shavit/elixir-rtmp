@@ -1,4 +1,4 @@
-defmodule StreamEncoderTest do
+defmodule VideoChatTest.StreamEncoder do
   use ExUnit.Case
   doctest VideoChat
 

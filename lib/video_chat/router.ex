@@ -161,6 +161,27 @@ plug :dispatch
     |> send_file(206, file_path)
   end
 
+  get "/stream/publish" do
+    Logger.info "Publishing stream"
+
+    conn
+    |> send_resp(200, "ok")
+  end
+
+  get "/stream/play" do
+    Logger.info "Playing stream"
+
+    conn
+    |> send_resp(200, "ok")
+  end
+
+  get "/stream/end" do
+    Logger.info "End of stream"
+
+    conn
+    |> send_resp(200, "ok")
+  end
+
   match _ do
     conn
     |> send_resp(404, "Page not found")
