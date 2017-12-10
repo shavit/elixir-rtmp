@@ -9,6 +9,7 @@ plug Plug.Static,
   from: :video_chat
 plug :match
 plug :dispatch
+plug Plug.Parsers, parsers: [:urlencoded]
 
   def init(options) do
     options
@@ -159,22 +160,27 @@ plug :dispatch
   end
 
   post "/stream/publish" do
-    Logger.info "Publishing stream"
-    IO.inspect conn.body_params
+    {:ok, body, _conn} = read_body(conn)
+    {app, name} = parse_streaming_body(body)
+    Logger.info "Publishing stream from #{app} #{name}"
 
     conn
     |> send_resp(200, "ok")
   end
 
   post "/stream/play" do
-    Logger.info "Playing stream"
+    {:ok, body, _conn} = read_body(conn)
+    {app, name} = parse_streaming_body(body)
+    Logger.info "Playing stream #{app} #{name}"
 
     conn
     |> send_resp(200, "ok")
   end
 
   post "/stream/end" do
-    Logger.info "End of stream"
+    {:ok, body, _conn} = read_body(conn)
+    {app, name} = parse_streaming_body(body)
+    Logger.info "End of stream #{app} #{name}"
 
     conn
     |> send_resp(200, "ok")
@@ -227,6 +233,23 @@ plug :dispatch
       "h" -> "1280x720"
       _ -> "480x270"
     end
+  end
+
+  defp parse_streaming_body(body) do
+    params = body
+    |> String.split("&")
+    |> Enum.map(fn(x) -> String.split(x, "=") end)
+
+    app = params
+      |> Enum.filter(fn(x) -> Enum.at(x, 0) == "app" end)
+      |> List.flatten
+      |> Enum.at(1)
+    name = params
+      |> Enum.filter(fn(x) -> Enum.at(x, 0) == "name" end)
+      |> List.flatten
+      |> Enum.at(1)
+
+    {app, name}
   end
 
   # No skipping
