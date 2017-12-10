@@ -159,10 +159,16 @@ plug Plug.Parsers, parsers: [:urlencoded]
     |> send_file(206, file_path)
   end
 
+  get "/stream/channels" do
+    conn
+    |> send_resp(200, GenServer.call(:stats, {:get_channels}))
+  end
+
   post "/stream/publish" do
     {:ok, body, _conn} = read_body(conn)
     {app, name} = parse_streaming_body(body)
     Logger.info "Publishing stream from #{app} #{name}"
+    GenServer.call(:stats, {:publish_start, app, name})
 
     conn
     |> send_resp(200, "ok")
@@ -181,6 +187,7 @@ plug Plug.Parsers, parsers: [:urlencoded]
     {:ok, body, _conn} = read_body(conn)
     {app, name} = parse_streaming_body(body)
     Logger.info "End of stream #{app} #{name}"
+    GenServer.call(:stats, {:publish_end, app, name})
 
     conn
     |> send_resp(200, "ok")

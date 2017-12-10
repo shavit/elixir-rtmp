@@ -17,6 +17,12 @@ defmodule VideoChatTest.Router do
       assert %Plug.Conn{} = conn_resp
     end
 
+    test "should get stream channesl" do
+      conn = conn(:get, "/stream/channels")
+      conn = Router.call(conn, @opts)
+      assert conn.status == 200
+    end
+
     test "should ping when stream started" do
       conn = conn(:post, "/stream/publish")
       conn = Router.call(conn, @opts)
