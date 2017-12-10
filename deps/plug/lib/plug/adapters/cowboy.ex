@@ -4,37 +4,40 @@ defmodule Plug.Adapters.Cowboy do
 
   ## Options
 
-  * `:ip` - the ip to bind the server to.
-    Must be a tuple in the format `{x, y, z, w}`.
+    * `:ip` - the ip to bind the server to.
+      Must be either a tuple in the format `{a, b, c, d}` with each value in `0..255` for IPv4
+      or a tuple in the format `{a, b, c, d, e, f, g, h}` with each value in `0..65535` for IPv6.
 
-  * `:port` - the port to run the server.
-    Defaults to 4000 (http) and 4040 (https).
+    * `:port` - the port to run the server.
+      Defaults to 4000 (http) and 4040 (https).
 
-  * `:acceptors` - the number of acceptors for the listener.
-    Defaults to 100.
+    * `:acceptors` - the number of acceptors for the listener.
+      Defaults to 100.
 
-  * `:max_connections` - max number of connections supported.
-    Defaults to `16_384`.
+    * `:max_connections` - max number of connections supported.
+      Defaults to `16_384`.
 
-  * `:dispatch` - manually configure Cowboy's dispatch.
-    If this option is used, the given plug won't be initialized
-    nor dispatched to (and doing so becomes the user's responsibility).
+    * `:dispatch` - manually configure Cowboy's dispatch.
+      If this option is used, the given plug won't be initialized
+      nor dispatched to (and doing so becomes the user's responsibility).
 
-  * `:ref` - the reference name to be used.
-    Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
-    This is the value that needs to be given on shutdown.
+    * `:ref` - the reference name to be used.
+      Defaults to `plug.HTTP` (http) and `plug.HTTPS` (https).
+      This is the value that needs to be given on shutdown.
 
-  * `:compress` - Cowboy will attempt to compress the response body.
-    Defaults to false.
+    * `:compress` - Cowboy will attempt to compress the response body.
+      Defaults to false.
 
-  * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
-    Defaults to 5000ms.
+    * `:timeout` - Time in ms with no requests before Cowboy closes the connection.
+      Defaults to 5000ms.
 
-  * `:protocol_options` - Specifies remaining protocol options,
-    see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
+    * `:protocol_options` - Specifies remaining protocol options,
+      see [Cowboy protocol docs](http://ninenines.eu/docs/en/cowboy/1.0/manual/cowboy_protocol/).
 
   All other options are given to the underlying transport.
   """
+
+  require Logger
 
   # Made public with @doc false for testing.
   @doc false
@@ -113,6 +116,10 @@ defmodule Plug.Adapters.Cowboy do
   @doc """
   Returns a child spec to be supervised by your application.
 
+  This function returns the old child specs used by early OTP
+  and Elixir versions. See `child_spec/1` for the Elixir v1.5
+  based child specifications.
+
   ## Example
 
   Presuming your Plug module is named `MyRouter` you can add it to your
@@ -142,6 +149,40 @@ defmodule Plug.Adapters.Cowboy do
     :ranch.child_spec(ref, nb_acceptors, ranch_module, trans_opts, :cowboy_protocol, proto_opts)
   end
 
+  @doc """
+  A function for starting a Cowboy server under Elixir v1.5 supervisors.
+
+  It expects three options:
+
+    * `:scheme` - either `:http` or `:https`
+    * `:plug` - such as MyPlug or {MyPlug, plug_opts}
+    * `:options` - the server options as specified in the module documentation
+
+  ## Examples
+
+      children = [
+        {Plug.Adapters.Cowboy, scheme: :http, plug: MyApp, options: [port: 4040]}
+      ]
+
+      Supervisor.start_link(children, strategy: :one_for_one)
+
+  """
+  def child_spec(opts) do
+    scheme = Keyword.fetch!(opts, :scheme)
+    cowboy_opts = Keyword.fetch!(opts, :options)
+    {plug, plug_opts} =
+      case Keyword.fetch!(opts, :plug) do
+        {_, _} = tuple -> tuple
+        plug -> {plug, []}
+      end
+
+    {id, start, restart, shutdown, type, modules} =
+      child_spec(scheme, plug, plug_opts, cowboy_opts)
+
+    %{id: id, start: start, restart: restart,
+      shutdown: shutdown, type: type, modules: modules}
+  end
+
   ## Helpers
 
   @protocol_options [:timeout, :compress]
@@ -165,7 +206,7 @@ defmodule Plug.Adapters.Cowboy do
     assert_ssl_options(cowboy_options)
     cowboy_options = Keyword.put_new cowboy_options, :port, 4040
     cowboy_options = Enum.reduce [:keyfile, :certfile, :cacertfile, :dhfile], cowboy_options, &normalize_ssl_file(&1, &2)
-    cowboy_options = Enum.reduce [:password], cowboy_options, &to_char_list(&2, &1)
+    cowboy_options = Enum.reduce [:password], cowboy_options, &to_charlist(&2, &1)
     cowboy_options
   end
 
@@ -178,9 +219,48 @@ defmodule Plug.Adapters.Cowboy do
 
     dispatch = :cowboy_router.compile(dispatch)
     {extra_options, transport_options} = Keyword.split(opts, @protocol_options)
-    protocol_options = [env: [dispatch: dispatch]] ++ protocol_options ++ extra_options
+    protocol_options = [env: [dispatch: dispatch]] ++ add_on_response(protocol_options) ++ extra_options
 
     [ref, acceptors, non_keyword_opts ++ transport_options, protocol_options]
+  end
+
+  defp add_on_response(protocol_options) do
+    case Keyword.pop(protocol_options, :onresponse) do
+      {nil, _} ->
+        [onresponse: &onresponse/4] ++ protocol_options
+      {onresponse, protocol_options} ->
+        [onresponse: fn status, headers, body, request ->
+          onresponse(status, headers, body, request)
+          onresponse.(status, headers, body, request)
+         end] ++ protocol_options
+    end
+  end
+
+  defp onresponse(status, _headers, _body, request) do
+    if status == 400 and empty_headers?(request) do
+      Logger.error """
+      Cowboy returned 400 and there are no headers in the connection.
+
+      This may happen if Cowboy is unable to parse the request headers,
+      for example, because there are too many headers or the header name
+      or value are too large (such as a large cookie).
+
+      You can customize those values when configuring your http/https
+      server. The configuration option and default values are shown below:
+
+          protocol_options: [
+            max_header_name_length: 64,
+            max_header_value_length: 4096,
+            max_headers: 100
+          ]
+      """
+    end
+    request
+  end
+
+  defp empty_headers?(request) do
+    {headers, _} = :cowboy_req.headers(request)
+    headers == []
   end
 
   defp build_ref(plug, scheme) do
@@ -217,7 +297,7 @@ defmodule Plug.Adapters.Cowboy do
   end
 
   defp put_ssl_file(cowboy_options, key, value) do
-    value = to_char_list(value)
+    value = to_charlist(value)
     unless File.exists?(value) do
       fail "the file #{value} required by SSL's #{inspect key} either does not exist, or the application does not have permission to access it"
     end
@@ -233,9 +313,9 @@ defmodule Plug.Adapters.Cowboy do
     end
   end
 
-  defp to_char_list(cowboy_options, key) do
+  defp to_charlist(cowboy_options, key) do
     if value = cowboy_options[key] do
-      Keyword.put cowboy_options, key, to_char_list(value)
+      Keyword.put cowboy_options, key, to_charlist(value)
     else
       cowboy_options
     end

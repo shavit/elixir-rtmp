@@ -53,7 +53,7 @@ defmodule Plug.Conn do
   These fields contain response information:
 
     * `resp_body` - the response body, by default is an empty string. It is set
-      to nil after the response is set, except for test connections.
+      to nil after the response is sent, except for test connections.
     * `resp_charset` - the response charset, defaults to "utf-8"
     * `resp_cookies` - the response cookies with their name and options
     * `resp_headers` - the response headers as a list of tuples, by default `cache-control`
@@ -77,10 +77,11 @@ defmodule Plug.Conn do
       use `Plug.Crypto.KeyGenerator.generate/3` to derive keys from it
     * `state` - the connection state
 
-  The connection state is used to track the connection lifecycle. It starts
-  as `:unset` but is changed to `:set` (via `Plug.Conn.resp/3`) or `:file`
-  (when invoked via `Plug.Conn.send_file/3`). Its final result is
-  `:sent` or `:chunked` depending on the response model.
+  The connection state is used to track the connection lifecycle. It starts as
+  `:unset` but is changed to `:set` (via `resp/3`) or `:set_chunked`
+  (used only for `before_send` callbacks by `send_chunked/2`) or `:file`
+  (when invoked via `send_file/3`). Its final result is `:sent` or
+  `:chunked` depending on the response model.
 
   ## Private fields
 
@@ -157,7 +158,7 @@ defmodule Plug.Conn do
   @type scheme          :: :http | :https
   @type secret_key_base :: binary | nil
   @type segments        :: [binary]
-  @type state           :: :unset | :set | :file | :chunked | :sent
+  @type state           :: :unset | :set | :set_chunked | :set_file | :file | :chunked | :sent
   @type status          :: atom | int_status
 
   @type t :: %__MODULE__{
@@ -190,7 +191,7 @@ defmodule Plug.Conn do
               state:           state,
               status:          int_status}
 
-  defstruct adapter:         {Plug.Conn, nil},
+  defstruct adapter:         {Plug.MissingAdapter, nil},
             assigns:         %{},
             before_send:     [],
             body_params:     %Unfetched{aspect: :body_params},
@@ -268,7 +269,7 @@ defmodule Plug.Conn do
 
   alias Plug.Conn
   @already_sent {:plug_conn, :sent}
-  @unsent [:unset, :set]
+  @unsent [:unset, :set, :set_chunked, :set_file]
 
   @doc """
   Assigns a value to a key in the connection
@@ -362,7 +363,7 @@ defmodule Plug.Conn do
   atoms is available in `Plug.Conn.Status`.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec put_status(t, status) :: t
   def put_status(%Conn{state: :sent}, _status),
@@ -407,7 +408,7 @@ defmodule Plug.Conn do
   the operating system `sendfile` operation.
 
   It expects a connection that has not been `:sent` yet and sets its
-  state to `:sent` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
+  state to `:file` afterwards. Otherwise raises `Plug.Conn.AlreadySentError`.
 
   ## Examples
 
@@ -428,10 +429,10 @@ defmodule Plug.Conn do
       raise ArgumentError, "cannot send_file/5 with null byte"
     end
 
-    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :file)
+    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :set_file)
     {:ok, body, payload} = adapter.send_file(payload, conn.status, conn.resp_headers, file, offset, length)
     send owner, @already_sent
-    %{conn | adapter: {adapter, payload}, state: :sent, resp_body: body}
+    %{conn | adapter: {adapter, payload}, state: :file, resp_body: body}
   end
 
   @doc """
@@ -448,10 +449,10 @@ defmodule Plug.Conn do
   end
 
   def send_chunked(%Conn{adapter: {adapter, payload}, owner: owner} = conn, status) do
-    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :chunked)
+    conn = run_before_send(%{conn | status: Plug.Conn.Status.code(status), resp_body: nil}, :set_chunked)
     {:ok, body, payload} = adapter.send_chunked(payload, conn.status, conn.resp_headers)
     send owner, @already_sent
-    %{conn | adapter: {adapter, payload}, resp_body: body}
+    %{conn | adapter: {adapter, payload}, state: :chunked, resp_body: body}
   end
 
   @doc """
@@ -462,12 +463,15 @@ defmodule Plug.Conn do
   otherwise `{:error, reason}`.
   """
   @spec chunk(t, body) :: {:ok, t} | {:error, term} | no_return
-  def chunk(%Conn{state: :chunked} = conn, ""), do: {:ok, conn}
   def chunk(%Conn{adapter: {adapter, payload}, state: :chunked} = conn, chunk) do
-    case adapter.chunk(payload, chunk) do
-      :ok                  -> {:ok, conn}
-      {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
-      {:error, _} = error  -> error
+    if iodata_empty?(chunk) do
+      {:ok, conn}
+    else
+      case adapter.chunk(payload, chunk) do
+        :ok -> {:ok, conn}
+        {:ok, body, payload} -> {:ok, %{conn | resp_body: body, adapter: {adapter, payload}}}
+        {:error, _} = error -> error
+      end
     end
   end
 
@@ -475,6 +479,11 @@ defmodule Plug.Conn do
     raise ArgumentError, "chunk/2 expects a chunked response. Please ensure " <>
                          "you have called send_chunked/2 before you send a chunk"
   end
+
+  defp iodata_empty?(""), do: true
+  defp iodata_empty?([]), do: true
+  defp iodata_empty?([head | tail]), do: iodata_empty?(head) and iodata_empty?(tail)
+  defp iodata_empty?(_), do: false
 
   @doc """
   Sends a response with the given status and body.
@@ -526,7 +535,7 @@ defmodule Plug.Conn do
   is not lowercase.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec put_req_header(t, binary, binary) :: t
   def put_req_header(%Conn{state: :sent}, _key, _value) do
@@ -535,7 +544,7 @@ defmodule Plug.Conn do
 
   def put_req_header(%Conn{adapter: adapter, req_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
+    validate_header_key_if_test!(adapter, key)
     %{conn | req_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
@@ -543,10 +552,14 @@ defmodule Plug.Conn do
   Deletes a request header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec delete_req_header(t, binary) :: t
   def delete_req_header(%Conn{state: :sent}, _key) do
+    raise AlreadySentError
+  end
+
+  def delete_req_header(%Conn{state: :chunked}, _key) do
     raise AlreadySentError
   end
 
@@ -560,10 +573,14 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec update_req_header(t, binary, binary, (binary -> binary)) :: t
   def update_req_header(%Conn{state: :sent}, _key, _initial, _fun) do
+    raise AlreadySentError
+  end
+
+  def update_req_header(%Conn{state: :chunked}, _key, _initial, _fun) do
     raise AlreadySentError
   end
 
@@ -600,7 +617,7 @@ defmodule Plug.Conn do
   is not lowercase.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
 
   Raises a `Plug.Conn.InvalidHeaderError` if the header value contains control
   feed (\r) or newline (\n) characters.
@@ -610,18 +627,30 @@ defmodule Plug.Conn do
     raise AlreadySentError
   end
 
+  def put_resp_header(%Conn{state: :chunked}, _key, _value) do
+    raise AlreadySentError
+  end
+
   def put_resp_header(%Conn{adapter: adapter, resp_headers: headers} = conn, key, value) when
       is_binary(key) and is_binary(value) do
-    validate_header_key!(adapter, key)
-    validate_header_value!(value)
+    validate_header_key_if_test!(adapter, key)
+    validate_header_value!(key, value)
     %{conn | resp_headers: List.keystore(headers, key, 0, {key, value})}
   end
 
   @doc """
   Merges a series of response headers into the connection.
+
+  ## Example
+
+      iex> conn = merge_resp_headers(conn, [{"content-type", "text/plain"}, {"X-1337", "5P34K"}])
   """
   @spec merge_resp_headers(t, Enum.t) :: t
   def merge_resp_headers(%Conn{state: :sent}, _headers) do
+    raise AlreadySentError
+  end
+
+  def merge_resp_headers(%Conn{state: :chunked}, _headers) do
     raise AlreadySentError
   end
 
@@ -629,11 +658,12 @@ defmodule Plug.Conn do
     conn
   end
 
-  def merge_resp_headers(%Conn{resp_headers: current} = conn, headers) do
+  def merge_resp_headers(%Conn{resp_headers: current, adapter: adapter} = conn, headers) do
     headers =
-      Enum.reduce headers, current, fn
-        {key, value}, acc when is_binary(key) and is_binary(value) ->
-          List.keystore(acc, key, 0, {key, value})
+      Enum.reduce headers, current, fn {key, value}, acc when is_binary(key) and is_binary(value) ->
+        validate_header_key_if_test!(adapter, key)
+        validate_header_value!(key, value)
+        List.keystore(acc, key, 0, {key, value})
       end
     %{conn | resp_headers: headers}
   end
@@ -642,10 +672,14 @@ defmodule Plug.Conn do
   Deletes a response header if present.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec delete_resp_header(t, binary) :: t
   def delete_resp_header(%Conn{state: :sent}, _key) do
+    raise AlreadySentError
+  end
+
+  def delete_resp_header(%Conn{state: :chunked}, _key) do
     raise AlreadySentError
   end
 
@@ -659,10 +693,14 @@ defmodule Plug.Conn do
   value.
 
   Raises a `Plug.Conn.AlreadySentError` if the connection has already been
-  `:sent`.
+  `:sent` or `:chunked`.
   """
   @spec update_resp_header(t, binary, binary, (binary -> binary)) :: t
   def update_resp_header(%Conn{state: :sent}, _key, _initial, _fun) do
+    raise AlreadySentError
+  end
+
+  def update_resp_header(%Conn{state: :chunked}, _key, _initial, _fun) do
     raise AlreadySentError
   end
 
@@ -737,12 +775,12 @@ defmodule Plug.Conn do
 
   ## Options
 
-  * `:length` - sets the maximum number of bytes to read from the body for each
-    chunk, defaults to 8_000_000 bytes
-  * `:read_length` - sets the amount of bytes to read at one time from the
-    underlying socket to fill the chunk, defaults to 1_000_000 bytes
-  * `:read_timeout` - sets the timeout for each socket read, defaults to
-    15_000 ms
+    * `:length` - sets the maximum number of bytes to read from the body on
+      every call, defaults to 8_000_000 bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to 1_000_000 bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      15_000ms
 
   The values above are not meant to be exact. For example, setting the
   length to 8_000_000 may end up reading some hundred bytes more from
@@ -765,6 +803,130 @@ defmodule Plug.Conn do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Reads the headers of a multipart request.
+
+  It returns `{:ok, headers, conn}` with the headers or
+  `{:done, conn}` if there are no more parts.
+
+  Once `read_part_headers/2` is invoked, a developer may call
+  `read_part_body/2` to read the body associated to the headers.
+  If `read_part_headers/2` is called instead, the body is automatically
+  skipped until the next part headers.
+
+  ## Options
+
+    * `:length` - sets the maximum number of bytes to read from the body for
+      each chunk, defaults to 64_000 bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to 64_000 bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      5_000ms
+
+  """
+  @spec read_part_headers(t, Keyword.t) :: {:ok, headers, t} | {:done, t}
+  def read_part_headers(%Conn{adapter: {adapter, state}} = conn, opts \\ []) do
+    opts = opts ++ [length: 64_000, read_length: 64_000, read_timeout: 5000]
+    case init_multipart(conn) do
+      {boundary, buffer} ->
+        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
+        read_part_headers(conn, data, boundary, adapter, state, opts)
+      :done ->
+        {:done, conn}
+    end
+  end
+
+  defp read_part_headers(conn, data, boundary, adapter, state, opts) do
+    case :plug_multipart.parse_headers(data, boundary) do
+      {:ok, headers, rest} ->
+        {:ok, headers, store_multipart(conn, {boundary, rest}, adapter, state)}
+      :more ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_headers(conn, data <> next, boundary, adapter, state, opts)
+      {:more, rest} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_headers(conn, rest <> next, boundary, adapter, state, opts)
+      {:done, _} ->
+        {:done, store_multipart(conn, :done, adapter, state)}
+    end
+  end
+
+  @doc """
+  Reads the body of a multipart request.
+
+  Returns `{:ok, body, conn}` if all body has been read,
+  `{:more, binary, conn}` otherwise.
+
+  It accepts the same options as `read_body/2`.
+  """
+  @spec read_part_body(t, Keyword.t) :: {:ok, binary, t} | {:more, binary, t}
+  def read_part_body(%{adapter: {adapter, state}} = conn, opts) do
+    case init_multipart(conn) do
+      {boundary, buffer} ->
+        # Note we will read the whole length from the socket
+        # and then break it apart as necessary.
+        length = Keyword.get(opts, :length, 8_000_000)
+        {data, state} = read_multipart_from_buffer_or_adapter(buffer, adapter, state, opts)
+        read_part_body(conn, data, "", length, boundary, adapter, state, opts)
+      :done ->
+        {:done, conn}
+    end
+  end
+
+  defp read_part_body(conn, data, acc, length, boundary, adapter, state, _opts) when byte_size(acc) > length do
+    {:more, acc, store_multipart(conn, {boundary, data}, adapter, state)}
+  end
+  defp read_part_body(conn, data, acc, length, boundary, adapter, state, opts) do
+    case :plug_multipart.parse_body(data, boundary) do
+      {:ok, body} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_body(conn, next, prepend_unless_empty(acc, body),
+                       length, boundary, adapter, state, opts)
+      {:ok, body, rest} ->
+        {_, next, state} = next_multipart(adapter, state, opts)
+        read_part_body(conn, prepend_unless_empty(rest, next), prepend_unless_empty(acc, body),
+                       length, boundary, adapter, state, opts)
+      :done ->
+        {:ok, acc, store_multipart(conn, {boundary, ""}, adapter, state)}
+      {:done, body} ->
+        {:ok, acc <> body, store_multipart(conn, {boundary, ""}, adapter, state)}
+      {:done, body, rest} ->
+        {:ok, acc <> body, store_multipart(conn, {boundary, rest}, adapter, state)}
+    end
+  end
+
+  @compile {:inline, prepend_unless_empty: 2}
+  defp prepend_unless_empty("", body), do: body
+  defp prepend_unless_empty(acc, body), do: acc <> body
+
+  defp init_multipart(%{private: %{plug_multipart: plug_multipart}}) do
+    plug_multipart
+  end
+  defp init_multipart(%{req_headers: req_headers}) do
+    {_, content_type} = List.keyfind(req_headers, "content-type", 0)
+    {:ok, "multipart", _, %{"boundary" => boundary}} = Plug.Conn.Utils.content_type(content_type)
+    {boundary, ""}
+  end
+
+  defp next_multipart(adapter, state, opts) do
+    case adapter.read_req_body(state, opts) do
+      {:ok, "", _} -> raise "invalid multipart, body terminated too soon"
+      valid -> valid
+    end
+  end
+
+  defp store_multipart(conn, multipart, adapter, state) do
+    %{put_in(conn.private[:plug_multipart], multipart) | adapter: {adapter, state}}
+  end
+
+  defp read_multipart_from_buffer_or_adapter("", adapter, state, opts) do
+    {_, data, state} = adapter.read_req_body(state, opts)
+    {data, state}
+  end
+  defp read_multipart_from_buffer_or_adapter(buffer, _adapter, state, _opts) do
+    {buffer, state}
   end
 
   @doc """
@@ -990,11 +1152,12 @@ defmodule Plug.Conn do
           "cookie named #{inspect key} exceeds maximum size of 4096 bytes"
   end
   defp verify_cookie!(cookie, _key) do
-    validate_header_value!(cookie)
-    cookie
+    validate_header_value!("set-cookie", cookie)
   end
 
   defp update_cookies(%Conn{state: :sent}, _fun),
+    do: raise AlreadySentError
+  defp update_cookies(%Conn{state: :chunked}, _fun),
     do: raise AlreadySentError
   defp update_cookies(%Conn{cookies: %Unfetched{}} = conn, _fun),
     do: conn
@@ -1020,13 +1183,13 @@ defmodule Plug.Conn do
     %{conn | private: private}
   end
 
-  defp validate_header_key!({Plug.Adapters.Test.Conn, _}, key) do
-    unless valid_header_key?(key) do
+  defp validate_header_key_if_test!({Plug.Adapters.Test.Conn, _}, key) do
+    if Application.get_env(:plug, :validate_header_keys_during_test) and not valid_header_key?(key) do
       raise InvalidHeaderError, "header key is not lowercase: " <> inspect(key)
     end
   end
 
-  defp validate_header_key!(_adapter, _key) do
+  defp validate_header_key_if_test!(_adapter, _key) do
     :ok
   end
 
@@ -1036,10 +1199,10 @@ defmodule Plug.Conn do
   defp valid_header_key?(<<>>), do: true
   defp valid_header_key?(_), do: false
 
-  defp validate_header_value!(value) do
+  defp validate_header_value!(key, value) do
     case :binary.match(value, ["\n", "\r"]) do
-      {_, _}   -> raise InvalidHeaderError, "header value contains control feed (\\r) or newline (\\n): " <> inspect(value)
-      :nomatch -> :ok
+      {_, _}   -> raise InvalidHeaderError, "value for header #{inspect key} contains control feed (\\r) or newline (\\n): #{inspect(value)}"
+      :nomatch -> value
     end
   end
 end

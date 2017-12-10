@@ -13,7 +13,7 @@
     </div>
 
     <div class="container">
-      <section>
+      <section id="players">
         <div class="video-card">
           <div class="video player">
             <video autoplay controls>
@@ -29,18 +29,36 @@
 
       </section>
 
-      <section>
-        <div class="video-card">
-          <h2>Upload</h2>
-          <p>This should process the video using multiple child processes</p>
-          <form action="/upload" method="post" enctype="multipart/form-data">
-            <input type="file" id="video_file" name="video[file]">
-            <input type="hidden" name="video[uploader]" value="guest_user">
-            <button type="submit" name="button">Submit</button>
-          </form>
-        </div>
-      </section>
     </div>
+
+    <script>
+      let liveChannels = fetch('/stream/channels')
+        .then(data => data.json())
+        .then(data => {
+          let playerSection = document.querySelector('#players')
+          if (data.channels.length > 0){
+            playerSection.innerHTML = ""
+          }
+
+          data.channels.map(channel => {
+            let div = document.createElement('div')
+            div.className = 'video-card'
+            let playerBox = document.createElement('div')
+            playerBox.className = 'video player'
+            let player = document.createElement("video")
+            player.autoplay = true
+            player.controls = true
+            let source = document.createElement("source")
+            source.type = 'application/x-mpegurl'
+            source.src = 'http://localhost/live/' + channel + '/index.m3u8'
+
+            playerSection.appendChild(div)
+            div.appendChild(playerBox)
+            playerBox.appendChild(player)
+            player.appendChild(source)
+          })
+        })
+    </script>
 
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">

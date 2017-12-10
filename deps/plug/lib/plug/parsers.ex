@@ -62,9 +62,18 @@ defmodule Plug.Parsers do
         * `["text/html", "application/*"]` - doesn't raise for those values
         * `[]` - always raises (default)
 
-  All options supported by `Plug.Conn.read_body/2` are also supported here (for
-  example the `:length` option which specifies the max body length to read) and
-  are passed to the underlying call to `Plug.Conn.read_body/1`.
+  All options supported by `Plug.Conn.read_body/2` are also supported here.
+  They are repeated here for convenience:
+
+    * `:length` - sets the maximum number of bytes to read from the request,
+      defaults to 8_000_000 bytes
+    * `:read_length` - sets the amount of bytes to read at one time from the
+      underlying socket to fill the chunk, defaults to 1_000_000 bytes
+    * `:read_timeout` - sets the timeout for each socket read, defaults to
+      15_000ms
+
+  So by default, `Plug.Parsers` will read 1_000_000 bytes at a time from the
+  socket with an overall limit of 8_000_000 bytes.
 
   This plug also fetches query params in the connection through
   `Plug.Conn.fetch_query_params/2`.
@@ -104,13 +113,13 @@ defmodule Plug.Parsers do
 
   Plug ships with the following parsers:
 
-  * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
-    requests (can be used as `:urlencoded` as well in the `:parsers` option)
-  * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
-    `multipart/mixed` requests (can be used as `:multipart` as well in the
-    `:parsers` option)
-  * `Plug.Parsers.JSON` - parses `application/json` requests with the given
-    `:json_decoder` (can be used as `:json` as well in the `:parsers` option)
+    * `Plug.Parsers.URLENCODED` - parses `application/x-www-form-urlencoded`
+      requests (can be used as `:urlencoded` as well in the `:parsers` option)
+    * `Plug.Parsers.MULTIPART` - parses `multipart/form-data` and
+      `multipart/mixed` requests (can be used as `:multipart` as well in the
+      `:parsers` option)
+    * `Plug.Parsers.JSON` - parses `application/json` requests with the given
+      `:json_decoder` (can be used as `:json` as well in the `:parsers` option)
 
   ## File handling
 
@@ -234,17 +243,9 @@ defmodule Plug.Parsers do
 
   defp merge_params(%{params: params, path_params: path_params} = conn, body_params) do
     params = make_empty_if_unfetched(params)
-    query_params = fetch_query_params(conn)
-    params = query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
-    %{conn | params: params, query_params: query_params, body_params: body_params}
-  end
-
-  defp fetch_query_params(%{query_params: %Plug.Conn.Unfetched{}, query_string: query_string}) do
-    Plug.Conn.Utils.validate_utf8!(query_string, InvalidQueryError, "query string")
-    Plug.Conn.Query.decode(query_string)
-  end
-  defp fetch_query_params(%{query_params: query_params}) do
-    query_params
+    conn = Plug.Conn.fetch_query_params(conn)
+    params = conn.query_params |> Map.merge(params) |> Map.merge(body_params) |> Map.merge(path_params)
+    %{conn | params: params, body_params: body_params}
   end
 
   defp make_empty_if_unfetched(%Plug.Conn.Unfetched{}), do: %{}

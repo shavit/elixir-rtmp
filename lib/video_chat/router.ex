@@ -20,50 +20,10 @@ plug Plug.Parsers, parsers: [:urlencoded]
   end
 
   get "/" do
-    # {:ok, _pid1} = FileSupervisor.start_link(name: :file_encoding_supervisor_1, workers: 3, path: "tmp/video.mp4")
 
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(200, render("live"))
-  end
-
-  # Should pick a public channel to broadcast HLS from file, not from memory.
-  # Get live stream from the bucket
-  # get "/live.mp4" do
-  #   video_raw = VideoChat.Encoding.Encoder.get_one(nil, 0) |> Enum.reverse |> Enum.join
-  #
-  #   IO.puts "---> Live mp4 video from the bucket #{byte_size(video_raw)}"
-  #
-  #   conn
-  #   |> put_resp_content_type("video/mp4")
-  #   |> put_resp_header("Accept-Ranges", "bytes")
-  #   |> send_resp(206, video_raw)
-  # end
-
-  post "/upload" do
-    case read_body(conn) do
-      {:ok, _file_data, _} ->
-
-        # TODO: Extract each file data and write to the uploads folder,
-        #   then send the location or binary to the encoder.
-        # File.write("tmp/uploaded-video.mp4", file_data, [:binary])
-
-
-        FileSupervisor.start_link(name: :file_encoding_supervisor_1,
-          workers: 1)
-
-        conn
-        |> put_resp_header("Location", "/")
-        |> send_resp(301, "")
-
-      {:error, _term} ->
-        conn
-        |> send_resp(500, "Error uploading the file")
-
-      _ ->
-        conn
-        |> send_resp(500, "Unknown error")
-    end
   end
 
   # Encode video on demand.
@@ -160,8 +120,14 @@ plug Plug.Parsers, parsers: [:urlencoded]
   end
 
   get "/stream/channels" do
+    data = %{
+      channels: GenServer.call(:stats, {:get_channels})
+    } |> Poison.encode
+    |> elem(1)
+
     conn
-    |> send_resp(200, GenServer.call(:stats, {:get_channels}))
+    |> put_resp_content_type("application/json")
+    |> send_resp(200, data)
   end
 
   post "/stream/publish" do
