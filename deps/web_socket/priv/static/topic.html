@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+  <head>
+    <meta charset="utf-8" />
+    <title>WebSocket Topic Test</title>
+  </head>
+  <body>
+    <h2>WebSocket Topic Test</h2>
+    <div id="output"></div> 
+
+    <script language="javascript" type="text/javascript" src="/socket.js"></script>
+    <script language="javascript" type="text/javascript">
+      var wsUri = "ws://localhost:4000/topic";
+      var output;
+      var websocket;
+      function init() {
+        output = document.getElementById("output");
+        websocket = new Socket({uri: wsUri})
+          .onOpen(function (e) {
+            writeToScreen("CONNECTED");
+            doSend("topic:a", "WebSocket rocks");
+            doSend("topic:b", "WebSocket FTW");
+          })
+          .onClose(function (e) { writeToScreen("DISCONNECTED"); })
+          .onError(function (e) {
+            writeToScreen('<span style="color: red;">ERROR:</span> ' + e.data);
+          })
+          .on('topic:a', function (data) {
+            writeToScreen('<span style="color: blue;">RESPONSE: ' + data.awesome +'</span>');
+          })
+          .on('topic:b', function (data) {
+            writeToScreen('<span style="color: green;">RESPONSE: ' + data.awesome +'</span>');
+          });
+        setTimeout(websocket.close, 60*1000);
+      }
+      
+      function doSend(event, data) {
+        writeToScreen("SENT: " + event);
+        websocket.send(event, data);
+      }
+      function writeToScreen(message) {
+        var pre = document.createElement("p");
+        pre.style.wordWrap = "break-word";
+        pre.innerHTML = message;
+        output.appendChild(pre);
+      }
+      window.addEventListener("load", init, false);
+    </script>
+  </body>
+</html>
