@@ -27,12 +27,13 @@ defmodule VideoChat.Router do
       <> "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     websocket_key = :crypto.hash(:sha, websocket_key)
       |> :base64.encode
+    websocket_protocols = read_header(conn.req_headers, "sec-websocket-protocol")
 
     conn
     |> put_resp_header("Upgrade", "websocket")
     |> put_resp_header("Connection", "Upgrade")
     |> put_resp_header("Sec-WebSocket-Accept", websocket_key)
-    |> put_resp_header("Sec-WebSocket-Protocol", "chat")
+    |> put_resp_header("Sec-WebSocket-Protocol", websocket_protocols)
     |> send_resp(101, "")
   end
 
