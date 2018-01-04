@@ -1,15 +1,18 @@
 defmodule VideoChat.Router do
   use Plug.Router
+  use WebSocket
   require Logger
   import VideoChat.Template
   alias VideoChat.Encoding.FileSupervisor, as: FileSupervisor
 
-plug Plug.Static,
-  at: "/public",
-  from: :video_chat
-plug :match
-plug :dispatch
-plug Plug.Parsers, parsers: [:urlencoded]
+  plug Plug.Static,
+    at: "/public",
+    from: :video_chat
+  plug :match
+  plug :dispatch
+  plug Plug.Parsers, parsers: [:urlencoded]
+
+  socket "/stream/live", VideoChat.IncomingStream.LiveCamera, :do_stream_live
 
   def init(options) do
     options
