@@ -22,6 +22,20 @@ defmodule VideoChat.Router do
     {:ok, _} = Plug.Adapters.Cowboy.http VideoChat.Router, []
   end
 
+  get "/stream/live" do
+    websocket_key = read_header(conn.req_headers, "sec-websocket-key")
+      <> "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+    websocket_key = :crypto.hash(:sha, websocket_key)
+      |> :base64.encode
+
+    conn
+    |> put_resp_header("Upgrade", "websocket")
+    |> put_resp_header("Connection", "Upgrade")
+    |> put_resp_header("Sec-WebSocket-Accept", websocket_key)
+    |> put_resp_header("Sec-WebSocket-Protocol", "chat")
+    |> send_resp(101, "")
+  end
+
   get "/" do
 
     conn
@@ -198,6 +212,13 @@ defmodule VideoChat.Router do
         |> String.to_integer
     nil ->
       0
+    end
+  end
+
+  defp read_header(headers, key) do
+    case List.keyfind(headers, key, 0) do
+      {key, value} -> value
+      nil -> 0
     end
   end
 
