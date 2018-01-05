@@ -7,6 +7,7 @@ dev_rtmp:
 		--name rtmp \
 		-p 1935:1935 \
 		-v ${PWD}/web/views:/var/www/html \
+		-v ${PWD}/tmp:/var/www/media/live/ \
 		-v ${PWD}/config/nginx.conf:/etc/nginx/nginx.conf \
 		-p 80:80 \
 		-ti ffmpeg
