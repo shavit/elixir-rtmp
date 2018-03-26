@@ -22,7 +22,7 @@ defmodule VideoChat.Router do
     {:ok, _} = Plug.Adapters.Cowboy.http VideoChat.Router, []
   end
 
-  get "/stream/live" do
+  get "/socket" do
     websocket_key = read_header(conn.req_headers, "sec-websocket-key")
       <> "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     websocket_key = :crypto.hash(:sha, websocket_key)
@@ -95,15 +95,15 @@ defmodule VideoChat.Router do
 
   # Stream the video, enable seek and skip bytes.
   get "/media/:file_name" do
-    matched = ~r(^[a-zA-Z0-9]+[\\.][a-zA-Z0-9]{2,4}$)
+    matched = ~r(^[a-zA-Z0-9-_]+[\\.][a-zA-Z0-9]{2,4}$)
       |> Regex.match?(file_name)
     ext = (file_name
       |> String.split("."))
         |> List.last
 
     case matched && ext do
-      "mp4" -> stream_video_file(conn, file_name)
-      _ -> send_resp(404)
+      "mp4" -> stream_video_file(conn, file_name, "video/mp4")
+      _ -> send_resp(conn, 404, "not found")
     end
   end
 
@@ -183,7 +183,7 @@ defmodule VideoChat.Router do
   end
 
   # Stream a video file on demand
-  defp stream_video_file(conn, file_name) do
+  defp stream_video_file(conn, file_name, mime_type) do
     file_path = System.cwd
       |> Path.join(Application.get_env(:video_chat, :media_directory))
       |> Path.join(file_name)
@@ -191,7 +191,7 @@ defmodule VideoChat.Router do
     size = get_file_size(file_path)
 
     conn
-    |> put_resp_content_type("application/vnd.apple.mpegurl")
+    |> put_resp_content_type(mime_type)
     |> put_resp_header("Accept-Ranges", "bytes")
     |> put_resp_header("Content-Length", "#{size}")
     |> put_resp_header("Content-Range", "bytes #{offset}-#{size-1}/#{size}")

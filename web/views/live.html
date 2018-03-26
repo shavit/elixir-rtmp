@@ -18,7 +18,7 @@
           <div class="video player">
             <video autoplay controls>
               <!-- <source src="http://localhost:3000/media/video.mp4" type="video/mp4" /> -->
-              <source src="http://localhost/live/diana/index.m3u8"
+              <source src="/live/diana/index.m3u8"
                 type="application/x-mpegurl">
             </video>
           </div>
@@ -27,11 +27,27 @@
           </p>
         </div>
 
+        <div class="video-card">
+          <div class="video player">
+            <video autoplay controls>
+              <!-- <source src="http://localhost:3000/media/video.mp4" type="video/mp4" /> -->
+              <source src="/media/snapchat.mp4"
+                type="video/mp4">
+            </video>
+          </div>
+          <p>
+            Live video from the media directory
+          </p>
+        </div>
+
       </section>
 
     </div>
 
     <script>
+      /*
+        Get the available channels
+      */
       let liveChannels = fetch('/stream/channels')
         .then(data => data.json())
         .then(data => {
@@ -58,6 +74,68 @@
             player.appendChild(source)
           })
         })
+
+        /*
+          Send streaming data to the server
+        */
+        function sendStreamingToServer(chunk){
+          console.log('Data to send', chunk)
+        }
+
+        function tickStreamingToServer(recording){
+          recording.stop()
+          recording.start()
+        }
+
+        let streamingTimer
+
+        function startStreamingTimer(recording){
+          let wsURL = 'ws://' + location.host + '/socket'
+          let socket = new WebSocket(wsURL, ["webcam"])
+          socket.onopen = (event) => {
+            console.log('On open event', event)
+            socket.send('First message')
+          }
+          socket.onclose = (closeEvent) => {
+            console.log('On close event', closeEvent)
+          }
+          socket.onmessage = (message, e) => {
+            console.log('On message event', message)
+            console.log(e)
+          }
+          window.socket = socket
+          console.log(socket)
+          // recording.start()
+          // streamingTimer = setInterval(tickStreamingToServer.bind(this, recording), 1000)
+        }
+
+        function stopStreamingTimer(){
+          clearInterval(streamingTimer)
+        }
+
+        /*
+          Stream the webcam
+          * You might need to allow insecure sites in your browser
+        */
+        let captureDevices = navigator.mediaDevices
+          .getUserMedia({audio: false, video: true, frameRate: {ideal: 10, max: 15}})
+          .then((stream) => {
+            window.stream = stream
+            let rec = new MediaRecorder(stream, {mimeType: 'video/webm;codecs=vp9'})
+            rec.ondataavailable = (event) => {
+              console.log('Start recording', event)
+              if (event.data.size > 0){
+                console.log(event.data)
+                sendStreamingToServer(event.data)
+              }
+            }
+            startStreamingTimer(rec)
+
+            //document.querySelector('video').src = window.URL.createObjectURL(stream)
+          })
+          .catch((err) => console.log(err))
+
+
     </script>
 
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
