@@ -1,5 +1,8 @@
 # MIME
 
+[![Build Status](https://travis-ci.org/elixir-plug/mime.svg?branch=master)](https://travis-ci.org/elixir-plug/mime)
+[![Inline docs](http://inch-ci.org/github/elixir-plug/mime.svg?branch=master)](http://inch-ci.org/github/elixir-plug/mime)
+
 A library that maps mime types to extensions and vice-versa.
 
 ## Installation
@@ -8,19 +11,19 @@ The package can be installed as:
 
 1. Add mime to your list of dependencies in `mix.exs`:
 
-  ```elixir
-  def deps do
-    [{:mime, "~> 1.1"}]
-  end
-  ```
+    ```elixir
+    def deps do
+      [{:mime, "~> 1.2"}]
+    end
+    ```
 
 2. If there is an `applications` key in your `mix.exs`, add `:mime` to the list. This step is not necessary if you have `extra_applications` instead.
 
-  ```elixir
-  def application do
-    [applications: [:mime]]
-  end
-  ```
+    ```elixir
+    def application do
+      [applications: [:mime]]
+    end
+    ```
   
 ## Usage
 

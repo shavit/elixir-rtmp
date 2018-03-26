@@ -1,5 +1,17 @@
 ## Changelog
 
+## v1.4.5
+
+* Enhancements
+  * Add more entries to .formatter.exs
+
+## v1.4.4
+
+* Enhancements
+  * Optimize query decoding
+  * Provide per parser limit in Plug.Parsers
+  * Limit query string size and urlencoded POST body to 1MB by default
+
 ## v1.4.3
 
 * Bug fixes
