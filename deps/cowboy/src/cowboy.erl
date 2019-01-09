@@ -1,4 +1,4 @@
-%% Copyright (c) 2011-2014, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2011-2017, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -14,53 +14,57 @@
 
 -module(cowboy).
 
--export([start_http/4]).
--export([start_https/4]).
--export([start_spdy/4]).
+-export([start_clear/3]).
+-export([start_tls/3]).
 -export([stop_listener/1]).
 -export([set_env/3]).
 
--type http_headers() :: [{binary(), iodata()}].
+%% Internal.
+-export([log/2]).
+-export([log/4]).
+
+-type opts() :: cowboy_http:opts() | cowboy_http2:opts().
+-export_type([opts/0]).
+
+-type fields() :: [atom()
+	| {atom(), cowboy_constraints:constraint() | [cowboy_constraints:constraint()]}
+	| {atom(), cowboy_constraints:constraint() | [cowboy_constraints:constraint()], any()}].
+-export_type([fields/0]).
+
+-type http_headers() :: #{binary() => iodata()}.
 -export_type([http_headers/0]).
 
 -type http_status() :: non_neg_integer() | binary().
 -export_type([http_status/0]).
 
--type http_version() :: 'HTTP/1.1' | 'HTTP/1.0'.
+-type http_version() :: 'HTTP/2' | 'HTTP/1.1' | 'HTTP/1.0'.
 -export_type([http_version/0]).
 
--type onrequest_fun() :: fun((Req) -> Req).
--export_type([onrequest_fun/0]).
+-spec start_clear(ranch:ref(), ranch:opts(), opts())
+	-> {ok, pid()} | {error, any()}.
+start_clear(Ref, TransOpts0, ProtoOpts0) ->
+	TransOpts1 = ranch:normalize_opts(TransOpts0),
+	{TransOpts, ConnectionType} = ensure_connection_type(TransOpts1),
+	ProtoOpts = ProtoOpts0#{connection_type => ConnectionType},
+	ranch:start_listener(Ref, ranch_tcp, TransOpts, cowboy_clear, ProtoOpts).
 
--type onresponse_fun() ::
-	fun((http_status(), http_headers(), iodata(), Req) -> Req).
--export_type([onresponse_fun/0]).
+-spec start_tls(ranch:ref(), ranch:opts(), opts())
+	-> {ok, pid()} | {error, any()}.
+start_tls(Ref, TransOpts0, ProtoOpts0) ->
+	TransOpts1 = ranch:normalize_opts(TransOpts0),
+	SocketOpts = maps:get(socket_opts, TransOpts1, []),
+	TransOpts2 = TransOpts1#{socket_opts => [
+		{next_protocols_advertised, [<<"h2">>, <<"http/1.1">>]},
+		{alpn_preferred_protocols, [<<"h2">>, <<"http/1.1">>]}
+	|SocketOpts]},
+	{TransOpts, ConnectionType} = ensure_connection_type(TransOpts2),
+	ProtoOpts = ProtoOpts0#{connection_type => ConnectionType},
+	ranch:start_listener(Ref, ranch_ssl, TransOpts, cowboy_tls, ProtoOpts).
 
--spec start_http(ranch:ref(), non_neg_integer(), ranch_tcp:opts(),
-	cowboy_protocol:opts()) -> {ok, pid()} | {error, any()}.
-start_http(Ref, NbAcceptors, TransOpts, ProtoOpts)
-		when is_integer(NbAcceptors), NbAcceptors > 0 ->
-	ranch:start_listener(Ref, NbAcceptors,
-		ranch_tcp, TransOpts, cowboy_protocol, ProtoOpts).
-
--spec start_https(ranch:ref(), non_neg_integer(), ranch_ssl:opts(),
-	cowboy_protocol:opts()) -> {ok, pid()} | {error, any()}.
-start_https(Ref, NbAcceptors, TransOpts, ProtoOpts)
-		when is_integer(NbAcceptors), NbAcceptors > 0 ->
-	ranch:start_listener(Ref, NbAcceptors,
-		ranch_ssl, TransOpts, cowboy_protocol, ProtoOpts).
-
--spec start_spdy(ranch:ref(), non_neg_integer(), ranch_ssl:opts(),
-	cowboy_spdy:opts()) -> {ok, pid()} | {error, any()}.
-start_spdy(Ref, NbAcceptors, TransOpts, ProtoOpts)
-		when is_integer(NbAcceptors), NbAcceptors > 0 ->
-	TransOpts2 = [
-		{connection_type, supervisor},
-		{next_protocols_advertised,
-			[<<"spdy/3">>, <<"http/1.1">>, <<"http/1.0">>]}
-	|TransOpts],
-	ranch:start_listener(Ref, NbAcceptors,
-		ranch_ssl, TransOpts2, cowboy_spdy, ProtoOpts).
+ensure_connection_type(TransOpts=#{connection_type := ConnectionType}) ->
+	{TransOpts, ConnectionType};
+ensure_connection_type(TransOpts) ->
+	{TransOpts#{connection_type => supervisor}, supervisor}.
 
 -spec stop_listener(ranch:ref()) -> ok | {error, not_found}.
 stop_listener(Ref) ->
@@ -69,7 +73,33 @@ stop_listener(Ref) ->
 -spec set_env(ranch:ref(), atom(), any()) -> ok.
 set_env(Ref, Name, Value) ->
 	Opts = ranch:get_protocol_options(Ref),
-	{_, Env} = lists:keyfind(env, 1, Opts),
-	Opts2 = lists:keyreplace(env, 1, Opts,
-		{env, lists:keystore(Name, 1, Env, {Name, Value})}),
+	Env = maps:get(env, Opts, #{}),
+	Opts2 = maps:put(env, maps:put(Name, Value, Env), Opts),
 	ok = ranch:set_protocol_options(Ref, Opts2).
+
+%% Internal.
+
+-spec log({log, logger:level(), io:format(), list()}, opts()) -> ok.
+log({log, Level, Format, Args}, Opts) ->
+	log(Level, Format, Args, Opts).
+
+-spec log(logger:level(), io:format(), list(), opts()) -> ok.
+log(Level, Format, Args, #{logger := Logger})
+		when Logger =/= error_logger ->
+	_ = Logger:Level(Format, Args),
+	ok;
+%% We use error_logger by default. Because error_logger does
+%% not have all the levels we accept we have to do some
+%% mapping to error_logger functions.
+log(Level, Format, Args, _) ->
+	Function = case Level of
+		emergency -> error_msg;
+		alert -> error_msg;
+		critical -> error_msg;
+		error -> error_msg;
+		warning -> warning_msg;
+		notice -> warning_msg;
+		info -> info_msg;
+		debug -> info_msg
+	end,
+	error_logger:Function(Format, Args).

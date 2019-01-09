@@ -55,7 +55,7 @@ defmodule Plug.Test do
       conn("patch", "/", "") |> put_req_header("content-type", "application/json")
 
   """
-  @spec conn(String.Chars.t, binary, params) :: Conn.t
+  @spec conn(String.Chars.t(), binary, params) :: Conn.t()
   def conn(method, path, params_or_body \\ nil) do
     Plug.Adapters.Test.Conn.conn(%Plug.Conn{}, method, path, params_or_body)
   end
@@ -71,12 +71,14 @@ defmodule Plug.Test do
     case receive_resp(ref) do
       :no_resp ->
         raise "no sent response available for the given connection. " <>
-              "Maybe the application did not send anything?"
+                "Maybe the application did not send anything?"
+
       response ->
         case receive_resp(ref) do
           :no_resp ->
             send(self(), {ref, response})
             response
+
           _otherwise ->
             raise "a response for the given connection has been sent more than once"
         end
@@ -92,29 +94,56 @@ defmodule Plug.Test do
   end
 
   @doc """
+  Return the assets that have been pushed.
+
+  This function depends on gathering the messages sent by the test adapter
+  when assets are pushed. Calling this function will clear the pushed message
+  from the inbox for the process. To assert on multiple pushes, the result
+  of the function should be stored in a variable.
+
+  ## Examples
+
+      conn = conn(:get, "/foo", "bar=10")
+      pushes = Plug.Test.sent_pushes(conn)
+      assert {"/static/application.css", [{"accept", "text/css"}]} in pushes
+      assert {"/static/application.js", [{"accept", "application/javascript"}]} in pushes
+  """
+  def sent_pushes(%Conn{adapter: {Plug.Adapters.Test.Conn, %{ref: ref}}}) do
+    Enum.reverse(receive_pushes(ref, []))
+  end
+
+  defp receive_pushes(ref, pushes) do
+    receive do
+      {^ref, :push, response} ->
+        receive_pushes(ref, [response | pushes])
+    after
+      0 -> pushes
+    end
+  end
+
+  @doc """
   Puts a request cookie.
   """
-  @spec put_req_cookie(Conn.t, binary, binary) :: Conn.t
+  @spec put_req_cookie(Conn.t(), binary, binary) :: Conn.t()
   def put_req_cookie(conn, key, value) when is_binary(key) and is_binary(value) do
     conn = delete_req_cookie(conn, key)
-    %{conn | req_headers: [{"cookie", "#{key}=#{value}"}|conn.req_headers]}
+    %{conn | req_headers: [{"cookie", "#{key}=#{value}"} | conn.req_headers]}
   end
 
   @doc """
   Deletes a request cookie.
   """
-  @spec delete_req_cookie(Conn.t, binary) :: Conn.t
+  @spec delete_req_cookie(Conn.t(), binary) :: Conn.t()
   def delete_req_cookie(%Conn{req_cookies: %Plug.Conn.Unfetched{}} = conn, key)
       when is_binary(key) do
-    key  = "#{key}="
+    key = "#{key}="
     size = byte_size(key)
-    fun  = &match?({"cookie", value} when binary_part(value, 0, size) == key, &1)
+    fun = &match?({"cookie", value} when binary_part(value, 0, size) == key, &1)
     %{conn | req_headers: Enum.reject(conn.req_headers, fun)}
   end
 
   def delete_req_cookie(_conn, key) when is_binary(key) do
-    raise ArgumentError,
-      message: "cannot put/delete request cookies after cookies were fetched"
+    raise ArgumentError, message: "cannot put/delete request cookies after cookies were fetched"
   end
 
   @doc """
@@ -124,11 +153,11 @@ defmodule Plug.Test do
   emulating multiple requests done by clients where cookies are always passed
   forward, and returns the new version of `new_conn`.
   """
-  @spec recycle_cookies(Conn.t, Conn.t) :: Conn.t
+  @spec recycle_cookies(Conn.t(), Conn.t()) :: Conn.t()
   def recycle_cookies(new_conn, old_conn) do
-    Enum.reduce Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn
-      {key, value}, acc -> put_req_cookie(acc, to_string(key), value)
-    end
+    Enum.reduce(Plug.Conn.fetch_cookies(old_conn).cookies, new_conn, fn {key, value}, acc ->
+      put_req_cookie(acc, to_string(key), value)
+    end)
   end
 
   @doc """
@@ -137,7 +166,7 @@ defmodule Plug.Test do
   If the session has already been initialized, the new contents will be merged
   with the previous ones.
   """
-  @spec init_test_session(Conn.t, %{(String.t | atom) => any}) :: Conn.t
+  @spec init_test_session(Conn.t(), %{(String.t() | atom) => any}) :: Conn.t()
   def init_test_session(conn, session) do
     conn =
       if conn.private[:plug_session_fetch] do

@@ -1,26 +1,8 @@
-%% Copyright (c) 2013-2014, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-{application, cowlib, [
+{application, 'cowlib', [
 	{description, "Support library for manipulating Web protocols."},
-	{vsn, "1.0.2"},
-	{id, "git"},
-	{modules, []},
+	{vsn, "2.7.0"},
+	{modules, ['cow_base64url','cow_cookie','cow_date','cow_hpack','cow_http','cow_http2','cow_http2_machine','cow_http_hd','cow_http_te','cow_iolists','cow_mimetypes','cow_multipart','cow_qs','cow_spdy','cow_sse','cow_uri','cow_ws']},
 	{registered, []},
-	{applications, [
-		kernel,
-		stdlib,
-		crypto
-	]}
+	{applications, [kernel,stdlib,crypto]},
+	{env, []}
 ]}.

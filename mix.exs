@@ -3,8 +3,8 @@ defmodule VideoChat.Mixfile do
 
   def project do
     [app: :video_chat,
-     version: "0.1.1",
-     elixir: "~> 1.5",
+     version: "0.2.0",
+     elixir: "~> 1.7.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps()]
@@ -14,7 +14,7 @@ defmodule VideoChat.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [extra_applications: [:logger, :cowboy, :plug],
+    [extra_applications: [:logger, :cowboy],
      mod: {VideoChat, []}]
   end
 
@@ -28,9 +28,7 @@ defmodule VideoChat.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:cowboy, "~> 1.0.4"},
-    {:plug, "~> 1.4.3"},
-    {:web_socket, "~> 0.1.0"},
-    {:poison, "~> 3.1"}]
+    [{:cowboy, "~> 2.6.1"},
+    {:poison, "~> 4.0.1"}]
   end
 end

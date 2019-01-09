@@ -1,3 +1,0 @@
-#!/bin/sh
-
-sass --watch --style compressed web/scss/main.scss:priv/static/css/style.css

@@ -1,20 +1,51 @@
 # See LICENSE for licensing information.
 
 PROJECT = cowlib
-PLT_APPS = crypto
-CI_OTP = OTP_R15B OTP_R15B01 OTP_R15B02 OTP_R15B03-1 OTP_R16B OTP_R16B01 OTP_R16B02 OTP_R16B03-1 OTP-17.0.2 OTP-17.1.2 OTP-17.2.2 OTP-17.3.4 OTP-17.4.1 OTP-17.5.6.3 OTP-18.0.3
+PROJECT_DESCRIPTION = Support library for manipulating Web protocols.
+PROJECT_VERSION = 2.7.0
+
+# Options.
+
+#ERLC_OPTS += +bin_opt_info
+ifdef HIPE
+	ERLC_OPTS += -smp +native
+	TEST_ERLC_OPTS += -smp +native
+endif
+
+DIALYZER_OPTS = -Werror_handling -Wunmatched_returns
+
+# Dependencies.
+
+LOCAL_DEPS = crypto
+
+TEST_DEPS = $(if $(CI_ERLANG_MK),ci.erlang.mk) horse proper
+dep_horse = git https://github.com/ninenines/horse.git master
+
+# CI configuration.
+
+dep_ci.erlang.mk = git https://github.com/ninenines/ci.erlang.mk master
+DEP_EARLY_PLUGINS = ci.erlang.mk
+
+AUTO_CI_OTP ?= OTP-19+
+AUTO_CI_HIPE ?= OTP-LATEST
+# AUTO_CI_ERLLVM ?= OTP-LATEST
+AUTO_CI_WINDOWS ?= OTP-19+
+
+# Standard targets.
 
 include erlang.mk
 
-TEST_ERLC_OPTS += +'{parse_transform, eunit_autoexport}' -DEXTRA=1
+# Compile options.
 
-.PHONY: gen perfs
+TEST_ERLC_OPTS += +'{parse_transform, eunit_autoexport}' +'{parse_transform, horse_autoexport}'
 
 # Mimetypes module generator.
 
 GEN_URL = http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
 GEN_SRC = src/cow_mimetypes.erl.src
 GEN_OUT = src/cow_mimetypes.erl
+
+.PHONY: gen
 
 gen:
 	$(gen_verbose) cat $(GEN_SRC) \
@@ -35,12 +66,11 @@ gen:
 
 # Performance testing.
 
-deps/horse:
-	git clone -n -- https://github.com/extend/horse $(DEPS_DIR)/horse
-	cd $(DEPS_DIR)/horse ; git checkout -q master
-	$(MAKE) -C $(DEPS_DIR)/horse
+ifeq ($(MAKECMDGOALS),perfs)
+.NOTPARALLEL:
+endif
 
-perfs: ERLC_OPTS += -DPERF=1 +'{parse_transform, horse_autoexport}' -DEXTRA=1
-perfs: clean deps deps/horse app
-	$(gen_verbose) erl -noshell -pa ebin deps/horse/ebin \
-		-eval 'horse:app_perf($(PROJECT)), init:stop().'
+.PHONY: perfs
+
+perfs: test-build
+	$(gen_verbose) erl -noshell -pa ebin -eval 'horse:app_perf($(PROJECT)), erlang:halt().'

@@ -8,12 +8,8 @@ defmodule VideoChat do
 
     # Define workers and child supervisors to be supervised
     children = [
-      Plug.Adapters.Cowboy.child_spec(:http, VideoChat.Router, [], [port: Application.get_env(:video_chat, :port)]),
-      # Starts a worker by calling: VideoChat.Worker.start_link(arg1, arg2, arg3)
-      # worker(VideoChat.Worker, [arg1, arg2, arg3]),
-      worker(VideoChat.IncomingStream, []),
-      worker(VideoChat.Encoding.StreamSupervisor, []),
-      worker(VideoChat.LiveStats, [name: :stats]),
+      # Plug.Adapters.Cowboy.child_spec(:http, VideoChat.Router, [], [port: Application.get_env(:video_chat, :port)]),
+      worker(VideoChat.RTMP, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

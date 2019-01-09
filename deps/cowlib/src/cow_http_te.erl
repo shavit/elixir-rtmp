@@ -1,4 +1,4 @@
-%% Copyright (c) 2014, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2014-2018, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -34,7 +34,9 @@
 	| {done, Data::binary(), TotalLen::non_neg_integer(), Rest::binary()}.
 -export_type([decode_ret/0]).
 
--ifdef(EXTRA).
+-include("cow_parse.hrl").
+
+-ifdef(TEST).
 dripfeed(<< C, Rest/bits >>, Acc, State, F) ->
 	case F(<< Acc/binary, C >>, State) of
 		more ->
@@ -92,11 +94,8 @@ stream_identity_parts_test() ->
 	{done, << 0:7992 >>, 2999, <<>>}
 		= stream_identity(<< 0:7992 >>, S2),
 	ok.
--endif.
 
--ifdef(PERF).
 %% Using the same data as the chunked one for comparison.
-
 horse_stream_identity() ->
 	horse:repeat(10000,
 		stream_identity(<<
@@ -129,10 +128,10 @@ horse_stream_identity_dripfeed() ->
 %% @doc Decode a chunked stream.
 
 -spec stream_chunked(Data, State)
-	-> more | {more, Data, State} | {more, Data, Len, State}
+	-> more | {more, Data, State} | {more, Data, non_neg_integer(), State}
 	| {more, Data, Data, State}
-	| {done, Len, Data} | {done, Data, Len, Data}
-	when Data::binary(), State::state(), Len::non_neg_integer().
+	| {done, HasTrailers, Data} | {done, Data, HasTrailers, Data}
+	when Data::binary(), State::state(), HasTrailers::trailers | no_trailers.
 stream_chunked(Data, State) ->
 	stream_chunked(Data, State, <<>>).
 
@@ -167,8 +166,9 @@ stream_chunked(Data, {Rem, Streamed}, Acc) when Rem > 2 ->
 			stream_chunked(Rest, {0, Streamed + RemSize}, << Acc/binary, Chunk/binary >>);
 		<< Chunk:RemSize/binary, "\r" >> ->
 			{more, << Acc/binary, Chunk/binary >>, {1, Streamed + RemSize}};
-		%% Everything in Data is part of the chunk.
-		_ ->
+		%% Everything in Data is part of the chunk. If we have more
+		%% data than the chunk accepts, then this is an error and we crash.
+		_ when DataSize =< RemSize ->
 			Rem2 = Rem - DataSize,
 			{more, << Acc/binary, Data/binary >>, Rem2, {Rem2, Streamed + DataSize}}
 	end.
@@ -195,9 +195,22 @@ chunked_len(<< $c, R/bits >>, S, A, Len) -> chunked_len(R, S, A, Len * 16 + 12);
 chunked_len(<< $d, R/bits >>, S, A, Len) -> chunked_len(R, S, A, Len * 16 + 13);
 chunked_len(<< $e, R/bits >>, S, A, Len) -> chunked_len(R, S, A, Len * 16 + 14);
 chunked_len(<< $f, R/bits >>, S, A, Len) -> chunked_len(R, S, A, Len * 16 + 15);
+%% Chunk extensions.
+%%
+%% Note that we currently skip the first character we encounter here,
+%% and not in the skip_chunk_ext function. If we latter implement
+%% chunk extensions (unlikely) we will need to change this clause too.
+chunked_len(<< C, R/bits >>, S, A, Len) when ?IS_WS(C); C =:= $; -> skip_chunk_ext(R, S, A, Len, 0);
 %% Final chunk.
-chunked_len(<< "\r\n\r\n", R/bits >>, S, <<>>, 0) -> {done, S, R};
-chunked_len(<< "\r\n\r\n", R/bits >>, S, A, 0) -> {done, A, S, R};
+%%
+%% When trailers are following we simply return them as the Rest.
+%% Then the user code can decide to call the stream_trailers function
+%% to parse them. The user can therefore ignore trailers as necessary
+%% if they do not wish to handle them.
+chunked_len(<< "\r\n\r\n", R/bits >>, _, <<>>, 0) -> {done, no_trailers, R};
+chunked_len(<< "\r\n\r\n", R/bits >>, _, A, 0) -> {done, A, no_trailers, R};
+chunked_len(<< "\r\n", R/bits >>, _, <<>>, 0) when byte_size(R) > 2 -> {done, trailers, R};
+chunked_len(<< "\r\n", R/bits >>, _, A, 0) when byte_size(R) > 2 -> {done, A, trailers, R};
 chunked_len(_, _, _, 0) -> more;
 %% Normal chunk. Add 2 to Len for the trailing \r\n.
 chunked_len(<< "\r\n", R/bits >>, S, A, Len) -> {next, R, {Len + 2, S}, A};
@@ -205,6 +218,16 @@ chunked_len(<<"\r">>, _, <<>>, _) -> more;
 chunked_len(<<"\r">>, S, A, _) -> {more, {0, S}, A};
 chunked_len(<<>>, _, <<>>, _) -> more;
 chunked_len(<<>>, S, A, _) -> {more, {0, S}, A}.
+
+skip_chunk_ext(R = << "\r", _/bits >>, S, A, Len, _) -> chunked_len(R, S, A, Len);
+skip_chunk_ext(R = <<>>, S, A, Len, _) -> chunked_len(R, S, A, Len);
+%% We skip up to 128 characters of chunk extensions. The value
+%% is hardcoded: chunk extensions are very rarely seen in the
+%% wild and Cowboy doesn't do anything with them anyway.
+%%
+%% Line breaks are not allowed in the middle of chunk extensions.
+skip_chunk_ext(<< C, R/bits >>, S, A, Len, Skipped) when C =/= $\n, Skipped < 128 ->
+	skip_chunk_ext(R, S, A, Len, Skipped + 1).
 
 %% @doc Encode a chunk.
 
@@ -221,7 +244,7 @@ last_chunk() ->
 
 -ifdef(TEST).
 stream_chunked_identity_test() ->
-	{done, <<"Wikipedia in\r\n\r\nchunks.">>, 23, <<>>}
+	{done, <<"Wikipedia in\r\n\r\nchunks.">>, no_trailers, <<>>}
 		= stream_chunked(iolist_to_binary([
 			chunk("Wiki"),
 			chunk("pedia"),
@@ -231,8 +254,8 @@ stream_chunked_identity_test() ->
 	ok.
 
 stream_chunked_one_pass_test() ->
-	{done, 0, <<>>} = stream_chunked(<<"0\r\n\r\n">>, {0, 0}),
-	{done, <<"Wikipedia in\r\n\r\nchunks.">>, 23, <<>>}
+	{done, no_trailers, <<>>} = stream_chunked(<<"0\r\n\r\n">>, {0, 0}),
+	{done, <<"Wikipedia in\r\n\r\nchunks.">>, no_trailers, <<>>}
 		= stream_chunked(<<
 			"4\r\n"
 			"Wiki\r\n"
@@ -242,6 +265,30 @@ stream_chunked_one_pass_test() ->
 			" in\r\n\r\nchunks.\r\n"
 			"0\r\n"
 			"\r\n">>, {0, 0}),
+	%% Same but with extra spaces or chunk extensions.
+	{done, <<"Wikipedia in\r\n\r\nchunks.">>, no_trailers, <<>>}
+		= stream_chunked(<<
+			"4 \r\n"
+			"Wiki\r\n"
+			"5 ; ext = abc\r\n"
+			"pedia\r\n"
+			"e;ext=abc\r\n"
+			" in\r\n\r\nchunks.\r\n"
+			"0;ext\r\n"
+			"\r\n">>, {0, 0}),
+	%% Same but with trailers.
+	{done, <<"Wikipedia in\r\n\r\nchunks.">>, trailers, Rest}
+		= stream_chunked(<<
+			"4\r\n"
+			"Wiki\r\n"
+			"5\r\n"
+			"pedia\r\n"
+			"e\r\n"
+			" in\r\n\r\nchunks.\r\n"
+			"0\r\n"
+			"x-foo-bar: bar foo\r\n"
+			"\r\n">>, {0, 0}),
+	{[{<<"x-foo-bar">>, <<"bar foo">>}], <<>>} = cow_http:parse_headers(Rest),
 	ok.
 
 stream_chunked_n_passes_test() ->
@@ -251,7 +298,7 @@ stream_chunked_n_passes_test() ->
 	{more, <<"Wiki">>, 0, S2} = stream_chunked(<<"Wiki\r\n">>, S1),
 	{more, <<"pedia">>, <<"e\r">>, S3} = stream_chunked(<<"5\r\npedia\r\ne\r">>, S2),
 	{more, <<" in\r\n\r\nchunks.">>, 2, S4} = stream_chunked(<<"e\r\n in\r\n\r\nchunks.">>, S3),
-	{done, 23, <<>>} = stream_chunked(<<"\r\n0\r\n\r\n">>, S4),
+	{done, no_trailers, <<>>} = stream_chunked(<<"\r\n0\r\n\r\n">>, S4),
 	%% A few extra for coverage purposes.
 	more = stream_chunked(<<"\n3">>, {1, 0}),
 	{more, <<"abc">>, 2, {2, 3}} = stream_chunked(<<"\n3\r\nabc">>, {1, 0}),
@@ -296,9 +343,7 @@ stream_chunked_error_test_() ->
 	[{lists:flatten(io_lib:format("value ~p state ~p", [V, S])),
 		fun() -> {'EXIT', _} = (catch stream_chunked(V, S)) end}
 			|| {V, S} <- Tests].
--endif.
 
--ifdef(PERF).
 horse_stream_chunked() ->
 	horse:repeat(10000,
 		stream_chunked(<<

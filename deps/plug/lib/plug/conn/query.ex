@@ -64,14 +64,20 @@ defmodule Plug.Conn.Query do
 
   def decode(query, initial) do
     parts = :binary.split(query, "&", [:global])
-    Enum.reduce(Enum.reverse(parts), initial, &decode_string_pair(&1, &2))
+
+    Enum.reduce(Enum.reverse(parts), initial, &decode_www_pair(&1, &2))
   end
 
-  defp decode_string_pair(binary, acc) do
+  defp decode_www_pair("", acc) do
+    acc
+  end
+
+  defp decode_www_pair(binary, acc) do
     current =
       case :binary.split(binary, "=") do
         [key, value] ->
           {decode_www_form(key), decode_www_form(value)}
+
         [key] ->
           {decode_www_form(key), nil}
       end
@@ -128,8 +134,10 @@ defmodule Plug.Conn.Query do
     case acc do
       %{^key => current} ->
         Map.put(acc, key, assign_split(parts, value, current, pattern))
+
       %{} ->
         Map.put(acc, key, assign_split(parts, value, :none, pattern))
+
       _ ->
         %{key => assign_split(parts, value, :none, pattern)}
     end
@@ -166,7 +174,7 @@ defmodule Plug.Conn.Query do
   Encodes the given map or list of tuples.
   """
   def encode(kv, encoder \\ &to_string/1) do
-    IO.iodata_to_binary encode_pair("", kv, encoder)
+    IO.iodata_to_binary(encode_pair("", kv, encoder))
   end
 
   # covers structs
@@ -186,14 +194,19 @@ defmodule Plug.Conn.Query do
 
   # covers non-keyword lists
   defp encode_pair(parent_field, list, encoder) when is_list(list) do
-    prune Enum.flat_map list, fn
+    mapper = fn
       value when is_map(value) and map_size(value) != 1 ->
         raise ArgumentError,
-          "cannot encode maps inside lists when the map has 0 or more than 1 elements, " <>
-          "got: #{inspect(value)}"
+              "cannot encode maps inside lists when the map has 0 or more than 1 elements, " <>
+                "got: #{inspect(value)}"
+
       value ->
         [?&, encode_pair(parent_field <> "[]", value, encoder)]
     end
+
+    list
+    |> Enum.flat_map(mapper)
+    |> prune()
   end
 
   # covers nil
@@ -203,13 +216,14 @@ defmodule Plug.Conn.Query do
 
   # encoder fallback
   defp encode_pair(field, value, encoder) do
-    [field, ?=|encode_value(value, encoder)]
+    [field, ?= | encode_value(value, encoder)]
   end
 
   defp encode_kv(kv, parent_field, encoder) do
-    prune Enum.flat_map kv, fn
+    mapper = fn
       {_, value} when value in [%{}, []] ->
         []
+
       {field, value} ->
         field =
           if parent_field == "" do
@@ -217,18 +231,23 @@ defmodule Plug.Conn.Query do
           else
             parent_field <> "[" <> encode_key(field) <> "]"
           end
+
         [?&, encode_pair(field, value, encoder)]
     end
+
+    kv
+    |> Enum.flat_map(mapper)
+    |> prune()
   end
 
   defp encode_key(item) do
-    item |> to_string |> URI.encode_www_form
+    item |> to_string |> URI.encode_www_form()
   end
 
   defp encode_value(item, encoder) do
-    item |> encoder.() |> URI.encode_www_form
+    item |> encoder.() |> URI.encode_www_form()
   end
 
-  defp prune([?&|t]), do: t
+  defp prune([?& | t]), do: t
   defp prune([]), do: []
 end

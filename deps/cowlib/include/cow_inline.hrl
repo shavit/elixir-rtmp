@@ -1,4 +1,4 @@
-%% Copyright (c) 2014, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2014-2018, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -15,12 +15,50 @@
 -ifndef(COW_INLINE_HRL).
 -define(COW_INLINE_HRL, 1).
 
-%% INLINE_LOWERCASE(Function, Rest, Acc, ...)
+%% LC(Character)
+
+-define(LC(C), case C of
+	$A -> $a;
+	$B -> $b;
+	$C -> $c;
+	$D -> $d;
+	$E -> $e;
+	$F -> $f;
+	$G -> $g;
+	$H -> $h;
+	$I -> $i;
+	$J -> $j;
+	$K -> $k;
+	$L -> $l;
+	$M -> $m;
+	$N -> $n;
+	$O -> $o;
+	$P -> $p;
+	$Q -> $q;
+	$R -> $r;
+	$S -> $s;
+	$T -> $t;
+	$U -> $u;
+	$V -> $v;
+	$W -> $w;
+	$X -> $x;
+	$Y -> $y;
+	$Z -> $z;
+	_ -> C
+end).
+
+%% LOWER(Bin)
+%%
+%% Lowercase the entire binary string in a binary comprehension.
+
+-define(LOWER(Bin), << << ?LC(C) >> || << C >> <= Bin >>).
+
+%% LOWERCASE(Function, Rest, Acc, ...)
 %%
 %% To be included at the end of a case block.
 %% Defined for up to 10 extra arguments.
 
--define(INLINE_LOWERCASE(Function, Rest, Acc),
+-define(LOWER(Function, Rest, Acc), case C of
 	$A -> Function(Rest, << Acc/binary, $a >>);
 	$B -> Function(Rest, << Acc/binary, $b >>);
 	$C -> Function(Rest, << Acc/binary, $c >>);
@@ -48,9 +86,9 @@
 	$Y -> Function(Rest, << Acc/binary, $y >>);
 	$Z -> Function(Rest, << Acc/binary, $z >>);
 	C -> Function(Rest, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, Acc),
+-define(LOWER(Function, Rest, A0, Acc), case C of
 	$A -> Function(Rest, A0, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, << Acc/binary, $c >>);
@@ -78,9 +116,9 @@
 	$Y -> Function(Rest, A0, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, Acc),
+-define(LOWER(Function, Rest, A0, A1, Acc), case C of
 	$A -> Function(Rest, A0, A1, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, << Acc/binary, $c >>);
@@ -108,9 +146,9 @@
 	$Y -> Function(Rest, A0, A1, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, << Acc/binary, $c >>);
@@ -138,9 +176,9 @@
 	$Y -> Function(Rest, A0, A1, A2, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, << Acc/binary, $c >>);
@@ -168,9 +206,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, $c >>);
@@ -198,9 +236,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, A5, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, A5, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, $c >>);
@@ -228,9 +266,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, A5, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, A5, A6, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, A5, A6, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, $c >>);
@@ -258,9 +296,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, $c >>);
@@ -288,9 +326,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, $c >>);
@@ -318,9 +356,9 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, << Acc/binary, C >>)
-).
+end).
 
--define(INLINE_LOWERCASE(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, Acc),
+-define(LOWER(Function, Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, Acc), case C of
 	$A -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, $a >>);
 	$B -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, $b >>);
 	$C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, $c >>);
@@ -348,41 +386,6 @@
 	$Y -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, $y >>);
 	$Z -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, $z >>);
 	C -> Function(Rest, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, << Acc/binary, C >>)
-).
-
-%% INLINE_LOWERCASE_BC(Bin)
-%%
-%% Lowercase the entire binary string in a binary comprehension.
-
--define(INLINE_LOWERCASE_BC(Bin),
-	<< << case C of
-		$A -> $a;
-		$B -> $b;
-		$C -> $c;
-		$D -> $d;
-		$E -> $e;
-		$F -> $f;
-		$G -> $g;
-		$H -> $h;
-		$I -> $i;
-		$J -> $j;
-		$K -> $k;
-		$L -> $l;
-		$M -> $m;
-		$N -> $n;
-		$O -> $o;
-		$P -> $p;
-		$Q -> $q;
-		$R -> $r;
-		$S -> $s;
-		$T -> $t;
-		$U -> $u;
-		$V -> $v;
-		$W -> $w;
-		$X -> $x;
-		$Y -> $y;
-		$Z -> $z;
-		C -> C
-	end >> || << C >> <= Bin >>).
+end).
 
 -endif.

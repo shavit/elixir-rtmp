@@ -1,19 +1,6 @@
-dist: trusty
 language: elixir
 elixir:
-  - 1.5.1
-sudo: required
-services:
-  - docker
-
-before_install:
-  - mkdir $PWD/tmp
+  - 1.6
 
 script:
-  - docker build -t ffmpeg --file Dockerfile.ffmpeg .
-  - docker build -t itstommy/diana .
-  - docker run -td --rm --name ffmpeg ffmpeg
-  - docker build -t itstommy/diana .
-  - docker-compose run web mix test
-after_script:
-  - docker stop ffmpeg
+  - mix test

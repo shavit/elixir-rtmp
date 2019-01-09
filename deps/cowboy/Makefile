@@ -1,75 +1,82 @@
 # See LICENSE for licensing information.
 
 PROJECT = cowboy
+PROJECT_DESCRIPTION = Small, fast, modern HTTP server.
+PROJECT_VERSION = 2.6.1
+PROJECT_REGISTERED = cowboy_clock
 
 # Options.
 
-ERLC_OPTS ?= -Werror +debug_info +warn_export_all +warn_export_vars \
-	+warn_shadow_vars +warn_obsolete_guard +warn_missing_spec
-COMPILE_FIRST = cowboy_middleware cowboy_sub_protocol
-CT_OPTS += -pa test -ct_hooks cowboy_ct_hook []
-PLT_APPS = crypto public_key ssl
-CI_OTP = OTP_R16B01 OTP_R16B02 OTP_R16B03-1 OTP-17.0.2 OTP-17.1.2 OTP-17.2.2 OTP-17.3.4 OTP-17.4.1 OTP-17.5.6.2 OTP-18.0.2
+PLT_APPS = public_key ssl
+CT_OPTS += -ct_hooks cowboy_ct_hook [] # -boot start_sasl
 
 # Dependencies.
 
+LOCAL_DEPS = crypto
+
 DEPS = cowlib ranch
-TEST_DEPS = ct_helper gun
-dep_ct_helper = git https://github.com/extend/ct_helper.git master
-dep_gun = git https://github.com/ninenines/gun b85c1f726ca49ac0e3abdcf717317cb95b06207d
+dep_cowlib = git https://github.com/ninenines/cowlib 2.7.0
+dep_ranch = git https://github.com/ninenines/ranch 1.7.1
+
+DOC_DEPS = asciideck
+
+TEST_DEPS = $(if $(CI_ERLANG_MK),ci.erlang.mk) ct_helper gun proper
+dep_ct_helper = git https://github.com/extend/ct_helper master
+dep_gun = git https://github.com/ninenines/gun master
+
+# CI configuration.
+
+dep_ci.erlang.mk = git https://github.com/ninenines/ci.erlang.mk master
+DEP_EARLY_PLUGINS = ci.erlang.mk
+
+AUTO_CI_OTP ?= OTP-19+
+AUTO_CI_HIPE ?= OTP-LATEST
+# AUTO_CI_ERLLVM ?= OTP-LATEST
+AUTO_CI_WINDOWS ?= OTP-19+
 
 # Standard targets.
 
 include erlang.mk
 
-# Documentation.
+# Don't run the examples test suite by default.
 
-dep_ezdoc = git https://github.com/ninenines/ezdoc master
-$(eval $(call dep_target,ezdoc))
+ifndef FULL
+CT_SUITES := $(filter-out examples ws_autobahn,$(CT_SUITES))
+endif
 
-build-doc-deps: $(DEPS_DIR)/ezdoc
-	$(MAKE) -C $(DEPS_DIR)/ezdoc
+# Compile options.
 
-define ezdoc_script
-io:format("Building manual~n"),
-[begin
-	AST = ezdoc:parse_file(F),
-	BF = filename:rootname(filename:basename(F)),
-	io:format("  ~s~n", [BF]),
-	file:write_file("doc/markdown/manual/" ++ BF ++ ".md", ezdoc_markdown:export(AST)),
-	case BF of
-		"cowboy" ++ _ when BF =/= "cowboy_app" ->
-			file:write_file("doc/man3/" ++ BF ++ ".3", ezdoc_man:export(3, AST));
-		_ when BF =/= "index" ->
-			file:write_file("doc/man7/" ++ BF ++ ".7", ezdoc_man:export(7, AST));
-		_ ->
-			ok
-	end
-end || F <- filelib:wildcard("doc/src/manual/*.ezdoc")],
-io:format("Building guide~n"),
-[begin
-	AST = ezdoc:parse_file(F),
-	BF = filename:rootname(filename:basename(F)),
-	io:format("  ~s~n", [BF]),
-	file:write_file("doc/markdown/guide/" ++ BF ++ ".md", ezdoc_markdown:export(AST))
-end || F <- filelib:wildcard("doc/src/guide/*.ezdoc")],
-io:format("Done.~n"),
-init:stop().
-endef
-export ezdoc_script
+ERLC_OPTS += +warn_missing_spec +warn_untyped_record
+TEST_ERLC_OPTS += +'{parse_transform, eunit_autoexport}'
 
-docs:: clean-docs build-doc-deps
-	@mkdir -p doc/man3 doc/man7 doc/markdown/guide doc/markdown/manual
-	$(gen_verbose) erl -noinput -pa ebin deps/ezdoc/ebin -eval "$$ezdoc_script"
-	@gzip doc/man3/*.3 doc/man7/*.7
-	@cp doc/src/guide/*.png doc/markdown/guide
+# Generate rebar.config on build.
 
-clean-docs:
-	$(gen_verbose) rm -rf doc/man3 doc/man7 doc/markdown
+app:: rebar.config
 
-MAN_INSTALL_PATH ?= /usr/local/share/man
+# Dialyze the tests.
 
-install-docs:
-	mkdir -p $(MAN_INSTALL_PATH)/man3/ $(MAN_INSTALL_PATH)/man7/
-	install -g 0 -o 0 -m 0644 doc/man3/*.gz $(MAN_INSTALL_PATH)/man3/
-	install -g 0 -o 0 -m 0644 doc/man7/*.gz $(MAN_INSTALL_PATH)/man7/
+DIALYZER_OPTS += --src -r test
+
+# h2spec setup.
+
+GOPATH := $(ERLANG_MK_TMP)/gopath
+export GOPATH
+
+H2SPEC := $(GOPATH)/src/github.com/summerwind/h2spec/h2spec
+export H2SPEC
+
+# @todo It would be better to allow these dependencies to be specified
+# on a per-target basis instead of for all targets.
+test-build:: $(H2SPEC)
+
+$(H2SPEC):
+	$(gen_verbose) mkdir -p $(GOPATH)/src/github.com/summerwind
+	$(verbose) git clone --depth 1 https://github.com/summerwind/h2spec $(dir $(H2SPEC))
+	$(verbose) $(MAKE) -C $(dir $(H2SPEC)) build MAKEFLAGS=
+
+# Use erl_make_certs from the tested release during CI
+# and ensure that ct_helper is always recompiled.
+
+ci-setup:: clean deps test-deps
+	$(gen_verbose) cp ~/.kerl/builds/$(CI_OTP_RELEASE)/otp_src_git/lib/ssl/test/erl_make_certs.erl deps/ct_helper/src/ || true
+	$(gen_verbose) $(MAKE) -C $(DEPS_DIR)/ct_helper clean app

@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2014, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2013-2017, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -14,12 +14,11 @@
 
 -module(cowboy_middleware).
 
--type env() :: [{atom(), any()}].
+-type env() :: #{atom() => any()}.
 -export_type([env/0]).
 
 -callback execute(Req, Env)
 	-> {ok, Req, Env}
 	| {suspend, module(), atom(), [any()]}
-	| {halt, Req}
-	| {error, cowboy:http_status(), Req}
+	| {stop, Req}
 	when Req::cowboy_req:req(), Env::env().

@@ -9,15 +9,35 @@ defmodule VideoChat.RTMP.Handshake do
     # TODO: Complete the 6 messages
   end
 
-  defp c0, do: <<_::bits-size(8)>> = 3
+  defp c0, do: <<0x03::size(8)>>
 
   defp c1 do
-    <<_::bytes-size(1536)>>
-    = <<_time::bits-size(32),
+    # <<_::bytes-size(1536)>>
+    <<_time::bytes-size(4),
       _zero::bytes-size(4),
       _rand::bytes-size(1528)>>
     = <<timestamp, zero, rand>>
   end
+
+  # TODO: Invalid message
+  # TODO: Replace the zero with time (receive)
+  # Echos c1
+  defp c2, do: c1
+
+  defp s0, do: <<0x03::size(8)>>
+
+  defp s1 do
+    # <<_::bytes-size(1536)>>
+    <<_time::bytes-size(4),
+      _zero::bytes-size(4),
+      _rand::bytes-size(1528)>>
+    = <<timestamp, zero, rand>>
+  end
+
+  # TODO: Invalid message
+  # TODO: Replace the zero with time
+  # Echos s1
+  defp s2, do: s1
 
   defp timestamp do
     # 4 = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned |> byte_size

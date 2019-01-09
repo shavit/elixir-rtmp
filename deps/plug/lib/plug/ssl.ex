@@ -42,6 +42,8 @@ defmodule Plug.SSL do
     * `:host` - a new host to redirect to if the request's scheme is `http`,
       defaults to `conn.host`. It may be set to a binary or a tuple
       `{module, function, args}` that will be invoked on demand
+    * `:log` - The log level at which this plug should log its request info.
+      Default is `:info`. Can be `false` to disable logging.
 
   ## Port
 
@@ -52,33 +54,38 @@ defmodule Plug.SSL do
   """
   @behaviour Plug
 
+  require Logger
   import Plug.Conn
   alias Plug.Conn
 
   def init(opts) do
-    {hsts_header(opts), Keyword.get(opts, :host), Keyword.get(opts, :rewrite_on, [])}
+    host = Keyword.get(opts, :host)
+    rewrite_on = Keyword.get(opts, :rewrite_on, [])
+    log = Keyword.get(opts, :log, :info)
+    {hsts_header(opts), host, rewrite_on, log}
   end
 
-  def call(conn, {hsts, host, rewrites}) do
+  def call(conn, {hsts, host, rewrites, log_level}) do
     conn = rewrite_on(conn, rewrites)
-    if conn.scheme == :https do
-      put_hsts_header(conn, hsts)
-    else
-      redirect_to_https(conn, host)
+
+    case conn do
+      %{scheme: :https} -> put_hsts_header(conn, hsts)
+      %{} -> redirect_to_https(conn, host, log_level)
     end
   end
 
   defp rewrite_on(conn, rewrites) do
-    Enum.reduce rewrites, conn, fn
+    Enum.reduce(rewrites, conn, fn
       :x_forwarded_proto, acc ->
-        if get_req_header(acc, "x-forwarded-proto") == ["https"] do
-          %{acc | scheme: :https}
-        else
-          acc
+        case get_req_header(acc, "x-forwarded-proto") do
+          ["https"] -> %{acc | scheme: :https}
+          ["http"] -> %{acc | scheme: :http}
+          _ -> acc
         end
+
       other, _acc ->
-        raise "unknown rewrite: #{inspect other}"
-    end
+        raise "unknown rewrite: #{inspect(other)}"
+    end)
   end
 
   # http://tools.ietf.org/html/draft-hodges-strict-transport-sec-02
@@ -97,13 +104,28 @@ defmodule Plug.SSL do
   defp put_hsts_header(conn, hsts_header) when is_binary(hsts_header) do
     put_resp_header(conn, "strict-transport-security", hsts_header)
   end
+
   defp put_hsts_header(conn, _), do: conn
 
-  defp redirect_to_https(%Conn{host: host} = conn, custom_host) do
+  defp redirect_to_https(%Conn{host: host} = conn, custom_host, log_level) do
     status = if conn.method in ~w(HEAD GET), do: 301, else: 307
 
-    location = "https://" <> host(custom_host, host) <>
-                             conn.request_path <> qs(conn.query_string)
+    scheme_and_host = "https://" <> host(custom_host, host)
+    location = scheme_and_host <> conn.request_path <> qs(conn.query_string)
+
+    log_level &&
+      Logger.log(log_level, fn ->
+        [
+          "Plug.SSL is redirecting ",
+          conn.method,
+          ?\s,
+          conn.request_path,
+          " to ",
+          scheme_and_host,
+          " with status ",
+          Integer.to_string(status)
+        ]
+      end)
 
     conn
     |> put_resp_header("location", location)

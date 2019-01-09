@@ -15,8 +15,6 @@ dev_rtmp:
 shell_rtmp:
 	docker exec -ti rtmp bash
 
-
-
 test_api:
 	docker run --rm \
 		--name diana_api \

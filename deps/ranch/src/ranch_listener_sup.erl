@@ -1,4 +1,4 @@
-%% Copyright (c) 2011-2017, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2011-2018, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -15,28 +15,27 @@
 -module(ranch_listener_sup).
 -behaviour(supervisor).
 
--export([start_link/6]).
+-export([start_link/5]).
 -export([init/1]).
 
--spec start_link(ranch:ref(), non_neg_integer(), module(), any(), module(), any())
+-spec start_link(ranch:ref(), module(), any(), module(), any())
 	-> {ok, pid()}.
-start_link(Ref, NumAcceptors, Transport, TransOpts, Protocol, ProtoOpts) ->
-	MaxConns = proplists:get_value(max_connections, TransOpts, 1024),
-	ranch_server:set_new_listener_opts(Ref, MaxConns, ProtoOpts),
+start_link(Ref, Transport, TransOpts, Protocol, ProtoOpts) ->
+	MaxConns = maps:get(max_connections, TransOpts, 1024),
+	ranch_server:set_new_listener_opts(Ref, MaxConns, TransOpts, ProtoOpts,
+		[Ref, Transport, TransOpts, Protocol, ProtoOpts]),
 	supervisor:start_link(?MODULE, {
-		Ref, NumAcceptors, Transport, TransOpts, Protocol
+		Ref, Transport, Protocol
 	}).
 
-init({Ref, NumAcceptors, Transport, TransOpts, Protocol}) ->
-	AckTimeout = proplists:get_value(ack_timeout, TransOpts, 5000),
-	ConnType = proplists:get_value(connection_type, TransOpts, worker),
-	Shutdown = proplists:get_value(shutdown, TransOpts, 5000),
+init({Ref, Transport, Protocol}) ->
+	ok = ranch_server:set_listener_sup(Ref, self()),
 	ChildSpecs = [
 		{ranch_conns_sup, {ranch_conns_sup, start_link,
-				[Ref, ConnType, Shutdown, Transport, AckTimeout, Protocol]},
+				[Ref, Transport, Protocol]},
 			permanent, infinity, supervisor, [ranch_conns_sup]},
 		{ranch_acceptors_sup, {ranch_acceptors_sup, start_link,
-				[Ref, NumAcceptors, Transport, TransOpts]},
+				[Ref, Transport]},
 			permanent, infinity, supervisor, [ranch_acceptors_sup]}
 	],
 	{ok, {{rest_for_one, 1, 5}, ChildSpecs}}.

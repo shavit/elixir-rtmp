@@ -1,4 +1,4 @@
-%% Copyright (c) 2013-2014, Loïc Hoguin <essen@ninenines.eu>
+%% Copyright (c) 2013-2018, Loïc Hoguin <essen@ninenines.eu>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -19,13 +19,14 @@
 
 -type cookie_option() :: {max_age, non_neg_integer()}
 	| {domain, binary()} | {path, binary()}
-	| {secure, boolean()} | {http_only, boolean()}.
+	| {secure, boolean()} | {http_only, boolean()}
+	| {same_site, lax | strict}.
 -type cookie_opts() :: [cookie_option()].
 -export_type([cookie_opts/0]).
 
 %% @doc Parse a cookie header string and return a list of key/values.
 
--spec parse_cookie(binary()) -> [{binary(), binary()}] | {error, badarg}.
+-spec parse_cookie(binary()) -> [{binary(), binary()}].
 parse_cookie(Cookie) ->
 	parse_cookie(Cookie, []).
 
@@ -53,28 +54,28 @@ skip_cookie(<< $;, Rest/binary >>, Acc) ->
 skip_cookie(<< _, Rest/binary >>, Acc) ->
 	skip_cookie(Rest, Acc).
 
-parse_cookie_name(<<>>, _, _) ->
-	{error, badarg};
+parse_cookie_name(<<>>, Acc, Name) ->
+	lists:reverse([{Name, <<>>}|Acc]);
 parse_cookie_name(<< $=, _/binary >>, _, <<>>) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $=, Rest/binary >>, Acc, Name) ->
 	parse_cookie_value(Rest, Acc, Name, <<>>);
 parse_cookie_name(<< $,, _/binary >>, _, _) ->
-	{error, badarg};
-parse_cookie_name(<< $;, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
+parse_cookie_name(<< $;, Rest/binary >>, Acc, Name) ->
+	parse_cookie(Rest, [{Name, <<>>}|Acc]);
 parse_cookie_name(<< $\s, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $\t, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $\r, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $\n, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $\013, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< $\014, _/binary >>, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_name(<< C, Rest/binary >>, Acc, Name) ->
 	parse_cookie_name(Rest, Acc, << Name/binary, C >>).
 
@@ -83,15 +84,15 @@ parse_cookie_value(<<>>, Acc, Name, Value) ->
 parse_cookie_value(<< $;, Rest/binary >>, Acc, Name, Value) ->
 	parse_cookie(Rest, [{Name, parse_cookie_trim(Value)}|Acc]);
 parse_cookie_value(<< $\t, _/binary >>, _, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_value(<< $\r, _/binary >>, _, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_value(<< $\n, _/binary >>, _, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_value(<< $\013, _/binary >>, _, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_value(<< $\014, _/binary >>, _, _, _) ->
-	{error, badarg};
+	error(badarg);
 parse_cookie_value(<< C, Rest/binary >>, Acc, Name, Value) ->
 	parse_cookie_value(Rest, Acc, Name, << Value/binary, C >>).
 
@@ -148,17 +149,27 @@ parse_cookie_test_() ->
 		]},
 		%% Potential edge cases (initially from Mochiweb).
 		{<<"foo=\\x">>, [{<<"foo">>, <<"\\x">>}]},
-		{<<"=">>, {error, badarg}},
-		{<<"  foo ; bar  ">>, {error, badarg}},
 		{<<"foo=;bar=">>, [{<<"foo">>, <<>>}, {<<"bar">>, <<>>}]},
-		{<<"foo=\\\";;bar ">>, {error, badarg}},
 		{<<"foo=\\\";;bar=good ">>,
 			[{<<"foo">>, <<"\\\"">>}, {<<"bar">>, <<"good">>}]},
-		{<<"foo=\"\\\";bar">>, {error, badarg}},
-		{<<>>, []},
-		{<<"foo=bar , baz=wibble ">>, [{<<"foo">>, <<"bar , baz=wibble">>}]}
+		{<<"foo=\"\\\";bar=good">>,
+			[{<<"foo">>, <<"\"\\\"">>}, {<<"bar">>, <<"good">>}]},
+		{<<>>, []}, %% Flash player.
+		{<<"foo=bar , baz=wibble ">>, [{<<"foo">>, <<"bar , baz=wibble">>}]},
+		%% Technically invalid, but seen in the wild
+		{<<"foo">>, [{<<"foo">>, <<>>}]},
+		{<<"foo;">>, [{<<"foo">>, <<>>}]},
+		{<<"bar;foo=1">>, [{<<"bar">>, <<"">>}, {<<"foo">>, <<"1">>}]}
 	],
 	[{V, fun() -> R = parse_cookie(V) end} || {V, R} <- Tests].
+
+parse_cookie_error_test_() ->
+	%% Value.
+	Tests = [
+		<<"=">>,
+		<<"foo ">>
+	],
+	[{V, fun() -> {'EXIT', {badarg, _}} = (catch parse_cookie(V)) end} || V <- Tests].
 -endif.
 
 %% @doc Convert a cookie name, value and options to its iodata form.
@@ -205,8 +216,13 @@ setcookie(Name, Value, Opts) ->
 		{_, false} -> <<>>;
 		{_, true} -> <<"; HttpOnly">>
 	end,
+	SameSiteBin = case lists:keyfind(same_site, 1, Opts) of
+		false -> <<>>;
+		{_, lax} -> <<"; SameSite=Lax">>;
+		{_, strict} -> <<"; SameSite=Strict">>
+	end,
 	[Name, <<"=">>, Value, <<"; Version=1">>,
-		MaxAgeBin, DomainBin, PathBin, SecureBin, HttpOnlyBin].
+		MaxAgeBin, DomainBin, PathBin, SecureBin, HttpOnlyBin, SameSiteBin].
 
 -ifdef(TEST).
 setcookie_test_() ->
@@ -225,6 +241,12 @@ setcookie_test_() ->
 		{<<"Customer">>, <<"WILE_E_COYOTE">>,
 			[{secure, false}, {http_only, false}],
 			<<"Customer=WILE_E_COYOTE; Version=1">>},
+		{<<"Customer">>, <<"WILE_E_COYOTE">>,
+			[{same_site, lax}],
+			<<"Customer=WILE_E_COYOTE; Version=1; SameSite=Lax">>},
+		{<<"Customer">>, <<"WILE_E_COYOTE">>,
+			[{same_site, strict}],
+			<<"Customer=WILE_E_COYOTE; Version=1; SameSite=Strict">>},
 		{<<"Customer">>, <<"WILE_E_COYOTE">>,
 			[{path, <<"/acme">>}, {badoption, <<"negatory">>}],
 			<<"Customer=WILE_E_COYOTE; Version=1; Path=/acme">>}
