@@ -8,13 +8,17 @@ defmodule VideoChat do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Plug.Adapters.Cowboy.child_spec(:http, VideoChat.Router, [], [port: Application.get_env(:video_chat, :port)]),
-      worker(VideoChat.RTMP, []),
+      worker(VideoChat.RTMP, [rtmp_options()]),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: VideoChat.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp rtmp_options do
+    {Application.get_env(:video_chat, :rtmp_port),
+      :ex_rtmp}
   end
 end
