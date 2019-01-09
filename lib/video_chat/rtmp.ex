@@ -16,8 +16,9 @@ defmodule VideoChat.RTMP do
   def init({rtmp_port, _name}) do
     # TODO: Adjust the buffer
     # tcp_opts = [:binary, {:active, true}, {:buffer, 4096}]
+    tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
     # TODO: For debugging. Remove this.
-    tcp_opts = [:binary, {:active, true}, {:buffer, 16}]
+    # tcp_opts = [:binary, {:active, true}, {:buffer, 16}]
 
     with {:ok, socket} <- :gen_tcp.listen(rtmp_port, tcp_opts),
       :ok <- GenServer.cast(self(), {:accept, socket}) do
@@ -50,14 +51,12 @@ defmodule VideoChat.RTMP do
   def handle_cast({:unregister_client, client}, state) do
     IO.inspect "[RTMP] Unregister client"
     clients = Enum.filter(state.clients, &(&1 != client))
-
     {:noreply, Map.put(state, :clients, clients)}
   end
 
   @doc """
   External calls
 
-  # TODO: Missing implementations
   """
   def handle_info({:tcp, from, message}, state) do
     IO.inspect "[RTMP] Received #{byte_size(message)} bytes"
@@ -66,29 +65,9 @@ defmodule VideoChat.RTMP do
     {:noreply, state}
   end
 
-  def handle_info({:tcp, from, _ip, _port, message}, state) do
-    IO.inspect "[RTMP] #{from} | Received #{byte_size(message)} bytes"
-
-    :gen_tcp.send(from, <<0x03>>)
-
-    {:noreply, state}
-  end
-
-  def handle_info({:tcp_passive, from}, state) do
-    IO.inspect "[RTMP] #{from} | Connection passive"
-
-    {:noreply, state}
-  end
-
   def handle_info({:tcp_closed, from}, state) do
     IO.inspect "[RTMP] #{from} | Connection closed"
 
-    {:noreply, state}
-  end
-
-  def handle_info(type, state) do
-    IO.inspect "[RTMP] Unhandled"
-    IO.inspect type
     {:noreply, state}
   end
 end

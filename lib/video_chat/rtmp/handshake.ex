@@ -39,7 +39,7 @@ defmodule VideoChat.RTMP.Handshake do
   # Echos s1
   defp s2, do: s1
 
-  defp timestamp do
+  def timestamp do
     # 4 = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned |> byte_size
     <<_time::bits-size(32)>>
       = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned
@@ -47,9 +47,10 @@ defmodule VideoChat.RTMP.Handshake do
 
   defp zero, do: <<0, 0, 0, 0>>
 
-  defp rand do
+  def rand do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
     |> Stream.repeatedly
     |> Enum.take(1528)
+    |> to_string
   end
 end

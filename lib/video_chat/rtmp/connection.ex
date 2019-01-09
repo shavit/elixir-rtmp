@@ -4,6 +4,12 @@ defmodule VideoChat.RTMP.Connection do
   """
   use GenServer
   alias VideoChat.RTMP.Connection
+  alias VideoChat.RTMP.Handshake
+
+  @state %{
+    server_timestamp: nil,
+    time: nil
+  }
 
   def start_link(server, socket, opts) do
     GenServer.start_link(__MODULE__, {server, socket}, opts)
@@ -12,7 +18,7 @@ defmodule VideoChat.RTMP.Connection do
   def init({server, socket}) do
     GenServer.cast(self(), {:accept, socket})
 
-    {:ok, %{server: server, socket: socket, buffer: <<>>}}
+    {:ok, Enum.into(%{server: server, socket: socket}, @state)}
   end
   def init(_opts), do: {:error, :invalid_options}
 
@@ -40,14 +46,45 @@ defmodule VideoChat.RTMP.Connection do
   end
 
   def handle_info({:tcp, from, message}, state) do
-    IO.inspect "[Connection] message"
-    IO.inspect from
-    IO.inspect message
+    # TODO: Move this
+    case message do
+      # The buffer is larger than the first 1 byte
+      <<0x03,
+        time::bytes-size(4),
+        0, 0, 0, 0,
+        rand::bytes-size(1528)>> ->
+        # TODO: Use a timestamp
+        # server_timestamp = Handshake.timestamp
+        server_timestamp = <<0, 0, 0, 0>>
 
-    IO.inspect :gen_tcp.send(from, [<<0x03>>])
-    # TODO: Implement
+        :gen_tcp.send(from, <<0x03>>)
+        :gen_tcp.send(from, server_timestamp <> <<0, 0, 0, 0>> <> Handshake.rand)
 
-    {:noreply, state}
+        IO.inspect time
+
+        new_state = state
+          |> Map.put(:time, time)
+          |> Map.put(:server_timestamp, server_timestamp)
+          |> Map.put(:rand, rand)
+
+        {:noreply, new_state}
+
+      <<_server_timestamp::bytes-size(4),
+        _time::bytes-size(4),
+        _rand::bytes-size(1528)>> ->
+        IO.inspect "[Connection] C2"
+
+        :gen_tcp.send(from, state.time <> state.server_timestamp <> state.rand)
+
+        {:noreply, state}
+
+      _ ->
+        IO.inspect "[Connection] Message"
+        IO.inspect byte_size(message)
+        IO.inspect message
+
+        {:noreply, state}
+    end
   end
 
   def handle_info({:tcp_closed, from}, state) do

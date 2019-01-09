@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.HandshakeTest do
+defmodule VideoChat.RTMPTest do
   use ExUnit.Case
 
   describe "rtmp server" do
@@ -13,12 +13,6 @@ defmodule VideoChat.RTMP.HandshakeTest do
       assert {:ok, _pid} = VideoChat.RTMP.start_link {3001, :server_2}
       assert {:ok, _pid} = VideoChat.RTMP.start_link {3002, :server_3}
       assert {:ok, _pid} = VideoChat.RTMP.start_link {3003, :server_4}
-    end
-  end
-
-  describe "rtmp handshake" do
-    test "handshake/0 reads 2 messages" do
-      # TODO: Test the protocol
     end
   end
 end
