@@ -12,7 +12,7 @@ defmodule VideoChat.RTMP.Handshake do
         <-----  S2
     C2  ----->
   """
-  
+
   @doc """
   Send the s0 message to the client
 
@@ -34,7 +34,7 @@ defmodule VideoChat.RTMP.Handshake do
     * 1528 bytes random
   """
   def send_s1(socket, {time, rand}, state) do
-    :ok = :gen_tcp.send(socket, <<0, 0, 0, 0>> <> <<0, 0, 0, 0>> <> rand)
+    :gen_tcp.send(socket, <<0, 0, 0, 0>> <> <<0, 0, 0, 0>> <> rand)
 
     state
       |> Map.put(:time, time)
