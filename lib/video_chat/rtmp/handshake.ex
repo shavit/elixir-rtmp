@@ -52,7 +52,6 @@ defmodule VideoChat.RTMP.Handshake do
   end
 
   def timestamp do
-    # 4 = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned |> byte_size
     <<_time::bits-size(32)>>
       = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned
   end

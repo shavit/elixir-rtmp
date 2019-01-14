@@ -48,20 +48,14 @@ defmodule VideoChat.RTMP.Connection do
   def handle_info({:tcp, from, message}, state) do
     case message do
       <<0x03>> -> {:noreply, Handshake.send_s0(from, state)}
-      # The buffer is larger than the first 1 byte
-      <<0x03,
-        time::bytes-size(4),
-        0, 0, 0, 0,
-        rand::bytes-size(1528)>> ->
 
+      <<0x03, time::bytes-size(4), 0, 0, 0, 0, rand::bytes-size(1528)>> ->
         Handshake.send_s0(from, state)
         {:noreply, Handshake.send_s1(from, {time, rand}, state)}
 
-      <<_server_timestamp::bytes-size(4),
-        _time::bytes-size(4),
-        _rand::bytes-size(1528)>> ->
-
+      <<_server_timestamp::bytes-size(4), _time::bytes-size(4), _rand::bytes-size(1528)>> ->
         {:noreply, Handshake.send_s2(from, state)}
+
       _ ->
         IO.inspect "[Connection] AMF message"
         IO.inspect byte_size(message)
