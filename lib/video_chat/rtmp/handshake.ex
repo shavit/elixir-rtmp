@@ -1,43 +1,55 @@
 defmodule VideoChat.RTMP.Handshake do
+  @moduledoc """
+  Implementation of the RTMP handshake
+
+  http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf
+
+    C0  ----->
+    C1  ----->
+        <-----  S0
+        <-----  S1
+    C1  ----->
+        <-----  S2
+    C2  ----->
+  """
+  
+  @doc """
+  Send the s0 message to the client
+
+    * 1 byte 0x03
+
+  Returns an updated state
+  """
+  def send_s0(socket, state) do
+    :gen_tcp.send(socket, <<0x03>>)
+
+    state
+  end
 
   @doc """
-  Create a handshake with the RTMP server
+  Send the s1 message
 
-  TODO: Write an example here
+    * 4 bytes time
+    * 4 bytes zero
+    * 1528 bytes random
   """
-  def handshake do
-    # TODO: Complete the 6 messages
+  def send_s1(socket, {time, rand}, state) do
+    :ok = :gen_tcp.send(socket, <<0, 0, 0, 0>> <> <<0, 0, 0, 0>> <> rand)
+
+    state
+      |> Map.put(:time, time)
+      |> Map.put(:server_timestamp, <<0, 0, 0, 0>>)
+      |> Map.put(:rand, rand)
   end
 
-  defp c0, do: <<0x03::size(8)>>
+  @doc """
+  Send the s2 message
+  """
+  def send_s2(socket, state) do
+    :gen_tcp.send(socket, state.time <> state.server_timestamp <> state.rand)
 
-  defp c1 do
-    # <<_::bytes-size(1536)>>
-    <<_time::bytes-size(4),
-      _zero::bytes-size(4),
-      _rand::bytes-size(1528)>>
-    = <<timestamp, zero, rand>>
+    state
   end
-
-  # TODO: Invalid message
-  # TODO: Replace the zero with time (receive)
-  # Echos c1
-  defp c2, do: c1
-
-  defp s0, do: <<0x03::size(8)>>
-
-  defp s1 do
-    # <<_::bytes-size(1536)>>
-    <<_time::bytes-size(4),
-      _zero::bytes-size(4),
-      _rand::bytes-size(1528)>>
-    = <<timestamp, zero, rand>>
-  end
-
-  # TODO: Invalid message
-  # TODO: Replace the zero with time
-  # Echos s1
-  defp s2, do: s1
 
   def timestamp do
     # 4 = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned |> byte_size
