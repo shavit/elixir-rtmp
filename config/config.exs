@@ -1,4 +1,4 @@
 use Mix.Config
 
 config :video_chat,
-  rtmp_port: System.get_env("RTMP_PORT") || 1935
+  rtmp_port: (System.get_env("RTMP_PORT") || "1935") |> String.to_integer
