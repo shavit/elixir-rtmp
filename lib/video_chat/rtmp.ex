@@ -3,6 +3,7 @@ defmodule VideoChat.RTMP do
   RTMP server
   """
   use GenServer
+  require Logger
 
   # TOOD: Create a pool
   @state %{clients: []}
@@ -14,19 +15,18 @@ defmodule VideoChat.RTMP do
 
 
   def init({rtmp_port, _name}) do
-    # TODO: Adjust the buffer
-    # tcp_opts = [:binary, {:active, true}, {:buffer, 4096}]
-    tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
+    # tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
+    tcp_opts = [:binary, {:active, true}, {:buffer, 100_000}]
     # TODO: For debugging. Remove this.
     # tcp_opts = [:binary, {:active, true}, {:buffer, 16}]
 
     with {:ok, socket} <- :gen_tcp.listen(rtmp_port, tcp_opts),
       :ok <- GenServer.cast(self(), {:accept, socket}) do
-        IO.inspect "[RTMP] Accepting connections on port #{rtmp_port}"
+        Logger.info "[RTMP] Accepting connections on port #{rtmp_port}"
 
         {:ok, Enum.into(%{port: rtmp_port}, @state)}
     else error ->
-      IO.inspect :stderr, error
+      Logger.error "#{inspect error}"
       error
     end
   end
@@ -49,7 +49,7 @@ defmodule VideoChat.RTMP do
   end
 
   def handle_cast({:unregister_client, client}, state) do
-    IO.inspect "[RTMP] Unregister client"
+    Logger.debug "[RTMP] Unregister client"
     clients = Enum.filter(state.clients, &(&1 != client))
     {:noreply, Map.put(state, :clients, clients)}
   end
@@ -59,14 +59,14 @@ defmodule VideoChat.RTMP do
 
   """
   def handle_info({:tcp, from, message}, state) do
-    IO.inspect "[RTMP] Received #{byte_size(message)} bytes"
-    IO.inspect from
+    Logger.debug "[RTMP] Received #{byte_size(message)} bytes"
+    Logger.debug "[RTMP] From: #{inspect from}"
 
     {:noreply, state}
   end
 
   def handle_info({:tcp_closed, from}, state) do
-    IO.inspect "[RTMP] #{from} | Connection closed"
+    Logger.debug "[RTMP] #{from} | Connection closed"
 
     {:noreply, state}
   end
