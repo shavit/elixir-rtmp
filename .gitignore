@@ -24,3 +24,5 @@ videos
 tmp
 .vagrant
 .sass-cache
+*\~
+*\#

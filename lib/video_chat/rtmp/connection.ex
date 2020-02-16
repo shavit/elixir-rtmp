@@ -20,6 +20,7 @@ defmodule VideoChat.RTMP.Connection do
 
     {:ok, Enum.into(%{server: server, socket: socket}, @state)}
   end
+
   def init(_opts), do: {:error, :invalid_options}
 
   @doc """
@@ -39,15 +40,16 @@ defmodule VideoChat.RTMP.Connection do
   External calls
   """
   def handle_info({:tcp, from, _ip, _port, message}, state) do
-    IO.inspect "[Connection] TCP message"
-    IO.inspect from
+    IO.inspect("[Connection] TCP message")
+    IO.inspect(from)
 
     {:noreply, state}
   end
 
   def handle_info({:tcp, from, message}, state) do
     case message do
-      <<0x03>> -> {:noreply, Handshake.send_s0(from, state)}
+      <<0x03>> ->
+        {:noreply, Handshake.send_s0(from, state)}
 
       <<0x03, time::bytes-size(4), 0, 0, 0, 0, rand::bytes-size(1528)>> ->
         Handshake.send_s0(from, state)
@@ -57,16 +59,16 @@ defmodule VideoChat.RTMP.Connection do
         {:noreply, Handshake.send_s2(from, state)}
 
       _ ->
-        IO.inspect "[Connection] AMF message"
-        IO.inspect byte_size(message)
-        IO.inspect message
+        IO.inspect("[Connection] AMF message")
+        IO.inspect(byte_size(message))
+        IO.inspect(message)
 
         {:noreply, state}
     end
   end
 
   def handle_info({:tcp_closed, from}, state) do
-    IO.inspect "[Connection] Closed"
+    IO.inspect("[Connection] Closed")
 
     GenServer.cast(state.server, {:unregister_client, from})
     GenServer.stop(self(), :normal)
@@ -78,8 +80,8 @@ defmodule VideoChat.RTMP.Connection do
   Register the client with the server
   """
   def register_client(client, state) do
-    IO.inspect "[Connection] Registered"
-    IO.inspect client
+    IO.inspect("[Connection] Registered")
+    IO.inspect(client)
     {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
     :ok = GenServer.cast(state.server, {:register_client, client})
   end
@@ -90,7 +92,7 @@ defmodule VideoChat.RTMP.Connection do
   Thie function will be called after a connection timeout
   """
   def start_another(state) do
-    IO.inspect "[Connection] Timeout. Starting another process"
+    IO.inspect("[Connection] Timeout. Starting another process")
     {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
     GenServer.stop(self(), :normal)
   end

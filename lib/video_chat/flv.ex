@@ -1,22 +1,20 @@
 defmodule VideoChat.FLV do
-@moduledoc """
-`FLV` Decodes flv to mpeg
-"""
+  @moduledoc """
+  `FLV` Decodes flv to mpeg
+  """
 
   # TODO: Remove this
   def type(data) do
     case data do
-      <<0x46, 0x4c, 0x56, 0x1, 0x01, length::unsigned-32, _::bits>> -> :video
+      <<0x46, 0x4C, 0x56, 0x1, 0x01, length::unsigned-32, _::bits>> -> :video
       # Expanded header
-      <<0x46, 0x4c, 0x56, 0x1, 0x01, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :video
-
-      <<0x46, 0x4c, 0x56, 0x1, 0x04, length::unsigned-32, _::bits>> -> :audio
+      <<0x46, 0x4C, 0x56, 0x1, 0x01, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :video
+      <<0x46, 0x4C, 0x56, 0x1, 0x04, length::unsigned-32, _::bits>> -> :audio
       # Expanded header
-      <<0x46, 0x4c, 0x56, 0x1, 0x04, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :audio
-
-      <<0x46, 0x4c, 0x56, 0x1, 0x05, length::unsigned-32, _::bits>> -> :audio_video
+      <<0x46, 0x4C, 0x56, 0x1, 0x04, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :audio
+      <<0x46, 0x4C, 0x56, 0x1, 0x05, length::unsigned-32, _::bits>> -> :audio_video
       # Expanded header
-      <<0x46, 0x4c, 0x56, 0x1, 0x05, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :audio_video
+      <<0x46, 0x4C, 0x56, 0x1, 0x05, 0x0, 0x0, 0x0, 0x9, _::bits>> -> :audio_video
       _ -> :undefined
     end
   end
@@ -47,17 +45,14 @@ defmodule VideoChat.FLV do
   """
   def parse(data) do
     case data do
-      <<0x46, 0x4c, 0x56, 0x1,
-        _type::bytes-size(1),
-        _length::bytes-size(4),
-        previous_size::unsigned-32,
-        packet_type::bytes-size(1),
-        payload_size::unsigned-24,
-        timestamp_lower::unsigned-24,
-        timestamp_upper::bytes-size(1),
-        stream_id::unsigned-24,
-        payload_data::bits>> -> stream_id
-      _ -> nil
+      <<0x46, 0x4C, 0x56, 0x1, _type::bytes-size(1), _length::bytes-size(4),
+        previous_size::unsigned-32, packet_type::bytes-size(1), payload_size::unsigned-24,
+        timestamp_lower::unsigned-24, timestamp_upper::bytes-size(1), stream_id::unsigned-24,
+        payload_data::bits>> ->
+        stream_id
+
+      _ ->
+        nil
     end
   end
 end

@@ -11,8 +11,8 @@ defmodule VideoChat.RTMP do
   def start_link({_rtmp_port, name} = opts) do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
-  def start_link(_opts), do: {:error, nil}
 
+  def start_link(_opts), do: {:error, nil}
 
   def init({rtmp_port, _name}) do
     # tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
@@ -21,15 +21,17 @@ defmodule VideoChat.RTMP do
     # tcp_opts = [:binary, {:active, true}, {:buffer, 16}]
 
     with {:ok, socket} <- :gen_tcp.listen(rtmp_port, tcp_opts),
-      :ok <- GenServer.cast(self(), {:accept, socket}) do
-        Logger.info "[RTMP] Accepting connections on port #{rtmp_port}"
+         :ok <- GenServer.cast(self(), {:accept, socket}) do
+      Logger.info("[RTMP] Accepting connections on port #{rtmp_port}")
 
-        {:ok, Enum.into(%{port: rtmp_port}, @state)}
-    else error ->
-      Logger.error "#{inspect error}"
-      error
+      {:ok, Enum.into(%{port: rtmp_port}, @state)}
+    else
+      error ->
+        Logger.error("#{inspect(error)}")
+        error
     end
   end
+
   def init(_opts), do: {:error, :missing_port}
 
   alias VideoChat.RTMP.Connection
@@ -49,7 +51,7 @@ defmodule VideoChat.RTMP do
   end
 
   def handle_cast({:unregister_client, client}, state) do
-    Logger.debug "[RTMP] Unregister client"
+    Logger.debug("[RTMP] Unregister client")
     clients = Enum.filter(state.clients, &(&1 != client))
     {:noreply, Map.put(state, :clients, clients)}
   end
@@ -59,14 +61,14 @@ defmodule VideoChat.RTMP do
 
   """
   def handle_info({:tcp, from, message}, state) do
-    Logger.debug "[RTMP] Received #{byte_size(message)} bytes"
-    Logger.debug "[RTMP] From: #{inspect from}"
+    Logger.debug("[RTMP] Received #{byte_size(message)} bytes")
+    Logger.debug("[RTMP] From: #{inspect(from)}")
 
     {:noreply, state}
   end
 
   def handle_info({:tcp_closed, from}, state) do
-    Logger.debug "[RTMP] #{from} | Connection closed"
+    Logger.debug("[RTMP] #{from} | Connection closed")
 
     {:noreply, state}
   end

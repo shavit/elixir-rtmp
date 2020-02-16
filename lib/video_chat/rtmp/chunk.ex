@@ -85,7 +85,7 @@ defmodule VideoChat.RTMP.Chunk do
       :header_data,
       :num_bytes_a_header,
       :num_bytes,
-      :body,
+      :body
     ]
 
     @control_messages %{
@@ -98,7 +98,7 @@ defmodule VideoChat.RTMP.Chunk do
       0x07 => :virtual_control,
       0x08 => :audio_packet,
       0x09 => :video_packet,
-      0x0f => :data_extended,
+      0x0F => :data_extended,
       0x10 => :container_extended,
       0x11 => :command_extended,
       0x12 => :data,
@@ -106,15 +106,14 @@ defmodule VideoChat.RTMP.Chunk do
       0x14 => :command,
       0x15 => :udp,
       0x16 => :aggregate,
-      0x17 => :present,
+      0x17 => :present
     }
 
     def get_control_message(message_type_id), do: Map.get(@control_messages, message_type_id)
-
   end
 
   def parse(message) do
-    IO.inspect "[Chunk] | #{byte_size(message)}"
+    IO.inspect("[Chunk] | #{byte_size(message)}")
 
     case message do
       # This must be used at the start of a chunk stream
@@ -123,22 +122,8 @@ defmodule VideoChat.RTMP.Chunk do
       #   field must be 16777215, indicating the presence of the extended
       #    timestamp.
       # Type 0 - 11 bytes
-      <<0::size(2), 0::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-          create_message_response(%Message{
-            message_stream_id: msg_stream_id,
-            message_type_id: message_type_id,
-            message_control: Message.get_control_message(message_type_id),
-            chunk_type: 0,
-            length: message_length,
-            time: timestamp,
-            body: rest,
-          })
-
-      <<0::size(2), 0::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), rest::binary>> ->
+      <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -146,52 +131,49 @@ defmodule VideoChat.RTMP.Chunk do
           chunk_type: 0,
           length: message_length,
           time: timestamp,
-          body: rest,
-          })
-
-      # Type 1 - 7 bytes
-      <<1::size(2), 0::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest,
-          })
-
-      <<1::size(2), 0::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest})
-
-      # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 0::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<2::size(2), 0::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        msg_stream_id::size(32), rest::binary>> ->
+      <<0::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        create_message_response(%Message{
+          message_stream_id: msg_stream_id,
+          message_type_id: message_type_id,
+          message_control: Message.get_control_message(message_type_id),
+          chunk_type: 0,
+          length: message_length,
+          time: timestamp,
+          body: rest
+        })
+
+      # Type 1 - 7 bytes
+      <<1::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
+        create_message_response(%Message{
+          message_stream_id: msg_stream_id,
+          message_type_id: message_type_id,
+          message_control: Message.get_control_message(message_type_id),
+          chunk_type: 1,
+          length: message_length,
+          time: timestamp,
+          body: rest
+        })
+
+      <<1::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        create_message_response(%Message{
+          message_stream_id: msg_stream_id,
+          message_type_id: message_type_id,
+          message_control: Message.get_control_message(message_type_id),
+          chunk_type: 1,
+          length: message_length,
+          time: timestamp,
+          body: rest
+        })
+
+      # Type 2 - 3 bytes. Without stream ID or message length.
+      <<2::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -199,108 +181,110 @@ defmodule VideoChat.RTMP.Chunk do
           chunk_type: 2,
           length: message_length,
           time: timestamp,
-          body: rest,
-          })
+          body: rest
+        })
+
+      <<2::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        create_message_response(%Message{
+          message_stream_id: msg_stream_id,
+          message_type_id: message_type_id,
+          message_control: Message.get_control_message(message_type_id),
+          chunk_type: 2,
+          length: message_length,
+          time: timestamp,
+          body: rest
+        })
 
       # Type 3 - No message header
       <<3::size(2), 0::size(6), csid::size(8), rest::binary>> ->
         create_message_response(%Message{
-            chunk_stream_id: csid,
-            chunk_type: 3,
-            body: rest,
-          })
+          chunk_stream_id: csid,
+          chunk_type: 3,
+          body: rest
+        })
 
       # Type 0 - 11 bytes
-      <<0::size(2), 1::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        timestamp::size(32), rest::binary>> ->
+      <<0::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 1,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<0::size(2), 1::size(6),
-        timestamp::size(24),
-        message_length::size(24),
-        message_type_id::size(8),
-        rest::binary>> ->
+      <<0::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 0,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 1 - 7 bytes
-      <<1::size(2), 1::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        timestamp::size(32), rest::binary>> ->
+      <<1::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 1,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<1::size(2), 1::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        rest::binary>> ->
+      <<1::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 1,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 1::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        timestamp::size(32), rest::binary>> ->
+      <<2::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 2,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<2::size(2), 1::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        rest::binary>> ->
+      <<2::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 2,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 3 - No message header
       <<3::size(2), 1::size(6), csid::size(16), rest::binary>> ->
-      create_message_response(%Message{
-        chunk_stream_id: csid,
-        chunk_type: 3,
-        body: rest,
-      })
+        create_message_response(%Message{
+          chunk_stream_id: csid,
+          chunk_type: 3,
+          body: rest
+        })
 
       # Type 0 - 11 bytes
       # Chunk stream ID (csid) for values from 2-63
-      <<0::size(2), csid::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        message_stream_id::size(32)-little,
-        timestamp::size(32),
+      <<0::size(2), csid::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), message_stream_id::size(32)-little, timestamp::size(32),
         rest::binary>> ->
         create_message_response(%Message{
           chunk_stream_id: csid,
@@ -310,13 +294,11 @@ defmodule VideoChat.RTMP.Chunk do
           message_stream_id: message_stream_id,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<0::size(2), csid::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        message_stream_id::size(32)-little,
-        rest::binary>> ->
+      <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), message_stream_id::size(32)-little, rest::binary>> ->
         create_message_response(%Message{
           chunk_stream_id: csid,
           chunk_type: 0,
@@ -325,13 +307,12 @@ defmodule VideoChat.RTMP.Chunk do
           message_stream_id: message_stream_id,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 1 - 7 bytes
-      <<1::size(2), csid::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        timestamp::size(32), rest::binary>> ->
+      <<1::size(2), csid::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           chunk_stream_id: csid,
           chunk_type: 1,
@@ -339,12 +320,11 @@ defmodule VideoChat.RTMP.Chunk do
           message_control: Message.get_control_message(message_type_id),
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<1::size(2), csid::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        rest::binary>> ->
+      <<1::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), rest::binary>> ->
         create_message_response(%Message{
           chunk_stream_id: csid,
           message_type_id: message_type_id,
@@ -352,32 +332,30 @@ defmodule VideoChat.RTMP.Chunk do
           chunk_type: 1,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 1::size(6),
-        0xFFFFFF::size(24), message_length::size(24), message_type_id::size(8),
-        timestamp::size(32), rest::binary>> ->
+      <<2::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 2,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
-      <<2::size(2), 1::size(6),
-        timestamp::size(24), message_length::size(24), message_type_id::size(8),
-        rest::binary>> ->
+      <<2::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), rest::binary>> ->
         create_message_response(%Message{
           message_type_id: message_type_id,
           message_control: Message.get_control_message(message_type_id),
           chunk_type: 2,
           length: message_length,
           time: timestamp,
-          body: rest,
+          body: rest
         })
 
       # Type 3 - No message header
@@ -385,10 +363,11 @@ defmodule VideoChat.RTMP.Chunk do
         create_message_response(%Message{
           message_stream_id: csid,
           chunk_type: 3,
-          body: rest,
+          body: rest
         })
 
-      _ -> nil
+      _ ->
+        nil
     end
   end
 

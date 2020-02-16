@@ -42,14 +42,14 @@ defmodule VideoChat.RTMP.AMF do
   defstruct [:amf, :body, :command, :length, :marker, :tail, :version]
 
   @type t :: %__MODULE__{
-    amf:                  nil,
-    body:                 nil,
-    command:              nil,
-    length:               nil,
-    marker:               nil,
-    tail:                 nil,
-    version:              nil
-  }
+          amf: nil,
+          body: nil,
+          command: nil,
+          length: nil,
+          marker: nil,
+          tail: nil,
+          version: nil
+        }
 
   def deserialize(<<0x0, _rest::bits>> = message), do: deserialize(message, {:amf_version, :amf0})
 
@@ -57,18 +57,23 @@ defmodule VideoChat.RTMP.AMF do
 
   def deserialize(_invalid_message), do: {:error, :invalid_message_format}
 
-  def deserialize(<<version::unsigned-16-little, header_count::unsigned-16-little, _rest::bits>> = message, {:amf_version, amf_version}) do
+  def deserialize(
+        <<version::unsigned-16-little, header_count::unsigned-16-little, _rest::bits>> = message,
+        {:amf_version, amf_version}
+      ) do
     case read_message(message) do
       {:ok, message_map} ->
         {:ok,
-        %__MODULE__{
-          amf: amf_version,
-          version: version,
-          body: message_map
-          # command: get_command_from(parsed_body),
-          # marker: :object_marker
-          }}
-      error -> error
+         %__MODULE__{
+           amf: amf_version,
+           version: version,
+           body: message_map
+           # command: get_command_from(parsed_body),
+           # marker: :object_marker
+         }}
+
+      error ->
+        error
     end
   end
 
@@ -86,8 +91,9 @@ defmodule VideoChat.RTMP.AMF do
     case body do
       <<key::bytes-size(key_length), rest::bits>> ->
         read_message({:value, key}, rest, message_map)
+
       _ ->
-      {:error, :invalid_message_format}
+        {:error, :invalid_message_format}
     end
   end
 
@@ -99,10 +105,11 @@ defmodule VideoChat.RTMP.AMF do
     case body do
       <<value::bytes-size(value_length), rest::bits>> ->
         read_message(rest, Enum.into(%{key => value}, message_map))
-      _ -> {:error, :invalid_message_format}
+
+      _ ->
+        {:error, :invalid_message_format}
     end
   end
 
   def read_message(_invalid_message, _empty, _message_map), do: {:error, :invalid_message_format}
-
 end

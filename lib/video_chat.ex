@@ -8,7 +8,7 @@ defmodule VideoChat do
 
     # Define workers and child supervisors to be supervised
     children = [
-      worker(VideoChat.RTMP, [rtmp_options()]),
+      worker(VideoChat.RTMP, [rtmp_options()])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -18,7 +18,6 @@ defmodule VideoChat do
   end
 
   defp rtmp_options do
-    {Application.get_env(:video_chat, :rtmp_port),
-      :ex_rtmp}
+    {Application.get_env(:video_chat, :rtmp_port), :ex_rtmp}
   end
 end

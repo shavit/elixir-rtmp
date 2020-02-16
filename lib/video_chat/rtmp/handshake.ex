@@ -37,9 +37,9 @@ defmodule VideoChat.RTMP.Handshake do
     :gen_tcp.send(socket, <<0, 0, 0, 0>> <> <<0, 0, 0, 0>> <> rand)
 
     state
-      |> Map.put(:time, time)
-      |> Map.put(:server_timestamp, <<0, 0, 0, 0>>)
-      |> Map.put(:rand, rand)
+    |> Map.put(:time, time)
+    |> Map.put(:server_timestamp, <<0, 0, 0, 0>>)
+    |> Map.put(:rand, rand)
   end
 
   @doc """
@@ -52,15 +52,15 @@ defmodule VideoChat.RTMP.Handshake do
   end
 
   def timestamp do
-    <<_time::bits-size(32)>>
-      = DateTime.utc_now |> DateTime.to_unix |> :binary.encode_unsigned
+    <<_time::bits-size(32)>> =
+      DateTime.utc_now() |> DateTime.to_unix() |> :binary.encode_unsigned()
   end
 
   defp zero, do: <<0, 0, 0, 0>>
 
   def rand do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
-    |> Stream.repeatedly
+    |> Stream.repeatedly()
     |> Enum.take(1528)
     |> to_string
   end
