@@ -1,8 +1,8 @@
-defmodule VideoChat.RTMP.AMF do
+defmodule VideoChat.RTMP.AMF3 do
   @moduledoc """
-  AMF0 reader and writer
+  AMF3 reader and writer
 
-  Command messages have message type value of 20 for AMF0, and 17 for AMF3.
+  Command messages have message type value of 17 for AMF3.
     Each command consists of a name, transaction ID and object
 
   https://www.adobe.com/content/dam/acom/en/devnet/pdf/amf0-file-format-specification.pdf
@@ -51,65 +51,53 @@ defmodule VideoChat.RTMP.AMF do
           version: nil
         }
 
-  def deserialize(<<0x0, _rest::bits>> = message), do: deserialize(message, {:amf_version, :amf0})
+  @type data_type ::
+          :undefined
+          | :null
+          | false
+          | true
+          | :integer
+          | :double
+          | :string
+          | :xml
+          | :date
+          | :array
+          | :object
+          | :xml_end
+          | :byte_array
+          | :vector_int
+          | :vector_uint
+          | :vector_double
+          | :vector_object
+          | :dictionary
 
-  def deserialize(<<0x3, _rest::bits>> = message), do: deserialize(message, {:amf_version, :amf3})
+  @data_types %{
+    0x0 => :undefined,
+    0x1 => :null,
+    0x2 => false,
+    0x3 => true,
+    0x4 => :integer,
+    0x5 => :double,
+    0x6 => :string,
+    0x7 => :xml,
+    0x8 => :date,
+    0x9 => :array,
+    0xA => :object,
+    0xB => :xml_end,
+    0xC => :byte_array,
+    0xD => :vector_int,
+    0xE => :vector_uint,
+    0xF => :vector_double,
+    0x10 => :vector_object,
+    0x11 => :dictionary
+  }
 
-  def deserialize(_invalid_message), do: {:error, :invalid_message_format}
-
-  def deserialize(
-        <<version::unsigned-16-little, header_count::unsigned-16-little, _rest::bits>> = message,
-        {:amf_version, amf_version}
-      ) do
-    case read_message(message) do
-      {:ok, message_map} ->
-        {:ok,
-         %__MODULE__{
-           amf: amf_version,
-           version: version,
-           body: message_map
-           # command: get_command_from(parsed_body),
-           # marker: :object_marker
-         }}
-
-      error ->
-        error
-    end
+  @doc """
+  new/2 create a new AMF3 message
+  """
+  def new(body, data_type \\ :byte_array) do
+    # TODO: Complete this
+    l = byte_size(body)
+    <<0x0c, 0x0, l>> <>  body <> <<0x9>>
   end
-
-  def read_message(<<0x3, 0x0, body::bits>> = message) do
-    read_message(body, %{})
-  end
-
-  def read_message(_invalid_message), do: {:error, :invalid_message_format}
-
-  def read_message(<<0x0, rest::bits>>, message_map), do: read_message(rest, message_map)
-
-  def read_message(<<0x9, _rest::bits>>, message_map), do: {:ok, message_map}
-
-  def read_message(<<key_length::unsigned, body::bits>>, message_map) do
-    case body do
-      <<key::bytes-size(key_length), rest::bits>> ->
-        read_message({:value, key}, rest, message_map)
-
-      _ ->
-        {:error, :invalid_message_format}
-    end
-  end
-
-  def read_message({:value, key}, <<0x0, value::float-64, rest::bits>>, message_map) do
-    read_message(rest, Enum.into(%{key => value}, message_map))
-  end
-
-  def read_message({:value, key}, <<0x2, 0x0, value_length::unsigned, body::bits>>, message_map) do
-    case body do
-      <<value::bytes-size(value_length), rest::bits>> ->
-        read_message(rest, Enum.into(%{key => value}, message_map))
-
-      _ ->
-        {:error, :invalid_message_format}
-    end
-  end
-
-  def read_message(_invalid_message, _empty, _message_map), do: {:error, :invalid_message_format}
 end

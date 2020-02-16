@@ -1,9 +1,9 @@
-defmodule VideoChat.RTMP.AMFTest do
+defmodule VideoChat.RTMP.AMF0Test do
   use ExUnit.Case
 
   describe "amf" do
 
-    alias VideoChat.RTMP.AMF
+    alias VideoChat.RTMP.AMF0
 
     test "deserialize/1 creates a struct from amf message" do
       raw_message = <<0x03, 0x00, 0x04,
@@ -15,7 +15,7 @@ defmodule VideoChat.RTMP.AMFTest do
         0x02, 0x00, 0x04,
         0x4d, 0x69, 0x6b, 0x65,
         0x00, 0x00, 0x09>>
-      assert {:ok, %AMF{} = amf} = AMF.deserialize raw_message
+      assert {:ok, %AMF0{} = amf} = AMF0.deserialize raw_message
       assert 30.0 == Map.get(amf.body, "age")
       assert "Mike" == Map.get(amf.body, "alias")
       assert "Mike" == Map.get(amf.body, "name")

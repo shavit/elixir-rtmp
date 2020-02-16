@@ -57,6 +57,8 @@ defmodule VideoChat.RTMP.ChunkTest do
           0x5
         >>
 
+      IO.inspect "PArse"
+	IO.inspect Chunk.parse(msg)
       assert {:message, message, _reply} = Chunk.parse(msg)
       assert %Message{} = message
       assert 0x0 == message.chunk_type
