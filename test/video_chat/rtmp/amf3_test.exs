@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.AMF0Test do
+defmodule VideoChat.RTMP.AMF3Test do
   use ExUnit.Case
   alias VideoChat.RTMP.AMF3
 
