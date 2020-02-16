@@ -2,6 +2,7 @@
 env
 .profile
 
+deps
 priv/static
 .rebar3
 _*
