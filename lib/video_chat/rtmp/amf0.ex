@@ -76,7 +76,7 @@ defmodule VideoChat.RTMP.AMF0 do
   def new(body, data_type \\ :string) do
     type_ = @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
     l = byte_size(body)
-    <<type_, 0x0, l>> <> body <> <<0x9>>
+    <<type_, 0x0, l>> <> body
   end
 
   # TOOD: Remove and rename

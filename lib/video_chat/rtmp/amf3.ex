@@ -97,9 +97,9 @@ defmodule VideoChat.RTMP.AMF3 do
   """
   def new(body, data_type \\ :byte_array) do
     type_ = @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
-    l = byte_size(body)
+    l = 1 + byte_size(body) * 2
     # TODO: Encode different types and lengths
-    # TODO: Remove the tail
-    <<type_, 0x0, l>> <> body <> <<0x9>>
+    # <<type_, 0x0, l>> <> body <> <<0x9>>
+    <<type_, l>> <> body
   end
 end
