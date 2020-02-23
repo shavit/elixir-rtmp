@@ -73,10 +73,32 @@ defmodule VideoChat.RTMP.AMF0 do
   @doc """
   new/2 create a new AMF0 message
   """
+  def new(body) when is_integer(body) do
+    type_ = get_data_type_code(:number)
+    <<type_, body::float-64>>
+  end
+
   def new(body, data_type \\ :string) do
-    type_ = @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
-    l = byte_size(body)
-    <<type_, 0x0, l>> <> body
+    type_ = get_data_type_code(data_type)
+
+    IO.inspect("Type: #{type_}")
+
+    cond do
+      is_binary(body) ->
+        l = byte_size(body)
+        <<type_, 0x0, l>> <> body
+
+      is_integer(body) ->
+        <<type_, 0x0, 2>>
+
+      # TODO: Remove this
+      true ->
+        throw("Not implemented")
+    end
+  end
+
+  defp get_data_type_code(data_type) do
+    @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
   end
 
   # TOOD: Remove and rename
