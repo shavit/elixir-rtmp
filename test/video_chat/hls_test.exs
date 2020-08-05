@@ -18,8 +18,7 @@ defmodule VideoChat.HLSTest do
       assert [segment] == segments
 
       assert %HLS{segments: segments} = HLS.add_segment(hls, segment)
-      assert [segment] == List.last(segments)
-      assert [segment] == List.first(segments)
+      assert [segment] == segments
     end
   end
 
