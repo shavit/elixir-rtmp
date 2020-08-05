@@ -5,7 +5,7 @@ defmodule VideoChat.Mixfile do
     [
       app: :video_chat,
       version: "0.2.0",
-      elixir: "~> 1.9.4",
+      elixir: "~> 1.10.4",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps()
