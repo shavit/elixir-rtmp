@@ -1,9 +1,11 @@
 defmodule VideoChat.FLV do
   @moduledoc """
-  `FLV` Decodes flv to mpeg
+  `FLV` container file format
   """
+  defstruct [
+    :type, :size, :stream_id, :timestamp_lower, :timestamp_upper, :payload
+  ]
 
-  # TODO: Remove this
   def type(data) do
     case data do
       <<0x46, 0x4C, 0x56, 0x1, 0x01, length::unsigned-32, _::bits>> -> :video
@@ -45,11 +47,13 @@ defmodule VideoChat.FLV do
   """
   def parse(data) do
     case data do
+      # TODO: This is an example
+      # TODO: Should return a struct
       <<0x46, 0x4C, 0x56, 0x1, _type::bytes-size(1), _length::bytes-size(4),
         previous_size::unsigned-32, packet_type::bytes-size(1), payload_size::unsigned-24,
         timestamp_lower::unsigned-24, timestamp_upper::bytes-size(1), stream_id::unsigned-24,
         payload_data::bits>> ->
-        stream_id
+	payload_data
 
       _ ->
         nil

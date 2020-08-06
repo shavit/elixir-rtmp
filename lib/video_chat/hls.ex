@@ -5,7 +5,9 @@ defmodule VideoChat.HLS do
 
   # TODO: Add tags
   # TODO: Add versions
-
+  # TODO: Read the header Content-Range:
+  #  Content-Range: bytes 0
+  
   defmodule Segment do
     @moduledoc """
     `VideoChat.HLS.Segment`
