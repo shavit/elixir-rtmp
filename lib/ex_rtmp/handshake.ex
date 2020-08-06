@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.Handshake do
+defmodule ExRTMP.Handshake do
   @moduledoc """
   Implementation of the RTMP handshake
 

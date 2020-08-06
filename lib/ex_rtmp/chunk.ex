@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.Chunk do
+defmodule ExRTMP.Chunk do
   @moduledoc """
 
   Chunk format

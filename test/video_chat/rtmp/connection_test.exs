@@ -1,8 +1,8 @@
-defmodule VideoChat.RTMP.ConnectionTest do
+defmodule ExRTMP.ConnectionTest do
   use ExUnit.Case
 
   describe "connection" do
-    alias VideoChat.RTMP.Connection
+    alias ExRTMP.Connection
 
     test "start_link/3 starts a connection process" do
       assert {:ok, pid} = Connection.start_link nil, nil, []
@@ -12,7 +12,7 @@ defmodule VideoChat.RTMP.ConnectionTest do
 
     test "register_client/2 call the server to register a client" do
       {:ok, pid} = Connection.start_link nil, nil, []
-      assert {:ok, server} = VideoChat.RTMP.start_link {3300, :test_server}
+      assert {:ok, server} = ExRTMP.start_link {3300, :test_server}
       assert :ok = Connection.register_client(pid, %{server: server, socket: nil})
     end
   end

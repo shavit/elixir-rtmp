@@ -1,10 +1,10 @@
-defmodule VideoChat.RTMP.Connection do
+defmodule ExRTMP.Connection do
   @moduledoc """
   RTMP client connection
   """
   use GenServer
-  alias VideoChat.RTMP.Connection
-  alias VideoChat.RTMP.Handshake
+  alias ExRTMP.Connection
+  alias ExRTMP.Handshake
 
   @state %{
     server_timestamp: nil,

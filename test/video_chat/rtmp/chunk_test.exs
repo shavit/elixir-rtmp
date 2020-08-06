@@ -1,7 +1,7 @@
-defmodule VideoChat.RTMP.ChunkTest do
+defmodule ExRTMP.ChunkTest do
   use ExUnit.Case
-  alias VideoChat.RTMP.Chunk
-  alias VideoChat.RTMP.Chunk.Message
+  alias ExRTMP.Chunk
+  alias ExRTMP.Chunk.Message
 
   describe "chunk" do
     test "parse/1 parse amf string message" do

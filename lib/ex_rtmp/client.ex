@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.Client do
+defmodule ExRTMP.Client do
     @moduledoc """
     `VideoChat.RTMP.Client`
     """

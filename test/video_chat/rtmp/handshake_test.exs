@@ -1,8 +1,8 @@
-defmodule VideoChat.RTMP.HandshakeTest do
+defmodule ExRTMP.HandshakeTest do
   use ExUnit.Case
 
   describe "handshake" do
-    alias VideoChat.RTMP.Handshake
+    alias ExRTMP.Handshake
 
     setup do
       tcp_opts = [:binary, {:active, false}, {:buffer, 1800}]

@@ -1,8 +1,9 @@
-defmodule VideoChat.RTMP do
+defmodule ExRTMP do
   @moduledoc """
   RTMP server
   """
   use GenServer
+  alias ExRTMP.Connection
   require Logger
 
   # TOOD: Create a pool
@@ -33,8 +34,6 @@ defmodule VideoChat.RTMP do
   end
 
   def init(_opts), do: {:error, :missing_port}
-
-  alias VideoChat.RTMP.Connection
 
   @doc """
   Async calls to accept connections

@@ -1,6 +1,6 @@
-defmodule VideoChat.RTMP.AMF3Test do
+defmodule ExRTMP.AMF3Test do
   use ExUnit.Case
-  alias VideoChat.RTMP.AMF3
+  alias ExRTMP.AMF3
 
   describe "amf3" do
     test "new/2 creates string message" do

@@ -1,4 +1,4 @@
-defmodule VideoChat.RTMP.AMF0 do
+defmodule ExRTMP.AMF0 do
   @moduledoc """
   AMF0 reader and writer
 
