@@ -36,7 +36,7 @@ defmodule ExRTMP.Client do
   def handle_call({:handshake}, _ref, state) do
     Handshake.send_c0(state.conn)
     Handshake.send_c1(state.conn)
-    
+
     {:reply, :ok, state}
   end
 end

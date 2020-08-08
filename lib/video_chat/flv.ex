@@ -1,10 +1,14 @@
-
 defmodule VideoChat.FLV do
   @moduledoc """
   `FLV` container file format
   """
   defstruct [
-    :type, :size, :stream_id, :timestamp_lower, :timestamp_upper, :payload
+    :type,
+    :size,
+    :stream_id,
+    :timestamp_lower,
+    :timestamp_upper,
+    :payload
   ]
 
   def type(data) do
@@ -54,7 +58,7 @@ defmodule VideoChat.FLV do
         previous_size::unsigned-32, packet_type::bytes-size(1), payload_size::unsigned-24,
         timestamp_lower::unsigned-24, timestamp_upper::bytes-size(1), stream_id::unsigned-24,
         payload_data::bits>> ->
-	payload_data
+        payload_data
 
       _ ->
         nil
