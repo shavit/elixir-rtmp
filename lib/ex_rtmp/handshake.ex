@@ -14,6 +14,30 @@ defmodule ExRTMP.Handshake do
   """
 
   @doc """
+  send_c0/2 send the c0 message to the server
+
+    * 1 byte 0x03
+
+  """
+  def send_c0(socket) do
+    :ok = :gen_tcp.send(socket, <<0x03>>)
+  end
+
+  @doc """
+  send_c1/2 send the c1 message to the server
+
+    * 1536 octets
+
+  """
+  def send_c1(socket) do
+    # time 4 bytes +  + 1528 = 1536 octets
+    time = <<0, 0, 0, 0>>
+    zeros = <<0::4*4>>
+    rand = :crypto.strong_rand_bytes(1528)
+    :ok = :gen_tcp.send(socket, time <> zeros <> rand)
+  end
+
+  @doc """
   Send the s0 message to the client
 
     * 1 byte 0x03
@@ -21,7 +45,7 @@ defmodule ExRTMP.Handshake do
   Returns an updated state
   """
   def send_s0(socket, state) do
-    :gen_tcp.send(socket, <<0x03>>)
+    :ok = :gen_tcp.send(socket, <<0x03>>)
 
     state
   end

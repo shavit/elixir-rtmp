@@ -16,12 +16,16 @@ defmodule ExRTMP.Connection do
   end
 
   def init({server, socket}) do
-    GenServer.cast(self(), {:accept, socket})
-
-    {:ok, Enum.into(%{server: server, socket: socket}, @state)}
+    {:ok, Enum.into(%{server: server, socket: socket}, @state), {:continue, :accept}}
   end
 
   def init(_opts), do: {:error, :invalid_options}
+
+  def handle_continue(:accept, state) do
+    :ok = GenServer.cast(self(), {:accept, state.socket})
+
+    {:noreply, state}
+  end
 
   @doc """
   Async calls to accept connections
@@ -93,6 +97,7 @@ defmodule ExRTMP.Connection do
   """
   def start_another(state) do
     IO.inspect("[Connection] Timeout. Starting another process")
+    IO.inspect state
     {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
     GenServer.stop(self(), :normal)
   end
