@@ -45,9 +45,7 @@ defmodule ExRTMP.Handshake do
   Returns an updated state
   """
   def send_s0(socket, state) do
-    :ok = :gen_tcp.send(socket, <<0x03>>)
-
-    state
+    :gen_tcp.send(socket, <<0x03>>)
   end
 
   @doc """

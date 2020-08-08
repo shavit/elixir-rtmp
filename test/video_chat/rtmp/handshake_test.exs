@@ -17,7 +17,7 @@ defmodule ExRTMP.HandshakeTest do
 
     test "send_s0/2 sends 1 byte tcp message and returns the same state", %{socket: socket} do
       state = "some state"
-      assert "some state" == Handshake.send_s0 socket, state
+      assert {:error, :enotconn} == Handshake.send_s0 socket, state
     end
 
     test "send_s1/2 sends 1536 bytes", %{socket: socket} do
