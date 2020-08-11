@@ -3,6 +3,7 @@ defmodule ExRTMP.Client do
   `ExRTMP.Client` RTMP client
   """
   use GenServer, restart: :transient
+  alias ExRTMP.Chunk
   alias ExRTMP.Handshake
   require Logger
 
@@ -18,10 +19,10 @@ defmodule ExRTMP.Client do
   def init(opts) do
     ip = opts |> Keyword.get(:ip, "127.0.0.1") |> String.to_charlist()
     port = opts |> Keyword.get(:port, "1939") |> String.to_integer()
-    opts = [:binary, {:active, false}, {:buffer, 1800}]
+    opts = [:binary, {:active, true}, {:packet, 0}]
     {:ok, sock} = :gen_tcp.connect(ip, port, opts)
 
-    {:ok, %{conn: sock}}
+    {:ok, %{conn: sock, handshake: true}, {:continue, :handshake}}
   end
 
   @doc """
@@ -29,14 +30,32 @@ defmodule ExRTMP.Client do
   """
   def new(args \\ []), do: start_link(args)
 
-  def handshake do
-    GenServer.call(__MODULE__, {:handshake})
+  def handle_continue(:handshake, state) do
+    Logger.info "Handshake"
+    :ok = Handshake.send_c0(state.conn)
+    :ok = Handshake.send_c1(state.conn)
+    :ok = Handshake.send_c1(state.conn)
+
+    {:noreply, state}
   end
 
-  def handle_call({:handshake}, _ref, state) do
-    Handshake.send_c0(state.conn)
-    Handshake.send_c1(state.conn)
+  def handle_info({:tcp, _from, msg}, state) do
+    Logger.info("TCP message")
+    IO.inspect Chunk.parse(msg)
 
-    {:reply, :ok, state}
+    {:noreply, state}
+  end
+
+  def handle_info({:tcp_closed, _port}, state) do
+    Logger.info("TCP closed")
+    Process.exit(self(), :normal)
+
+    {:noreply, Map.delete(state, :conn)}
+  end
+
+  def handle_info(msg, state) do
+    Logger.error "handle_info/2 not implemented"
+
+    {:noreply, state}
   end
 end
