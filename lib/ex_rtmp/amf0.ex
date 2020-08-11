@@ -108,9 +108,9 @@ defmodule ExRTMP.AMF0 do
   end
 
   def c1(rand) do
-    # time 4 bytes +  + 1528 = 1536 octets
-    time = <<0, 0, 0, 0>>
-    zeros = <<0::4*4>>
+    # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
+    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    zeros = <<0::8*4>>
     time <> zeros <> rand
   end
 
@@ -124,7 +124,7 @@ defmodule ExRTMP.AMF0 do
 
   def s1(rand) do
     time = <<0, 0, 0, 0>>
-    zeros = <<0::4*4>>
+    zeros = <<0::8*4>>
     time <> zeros <> rand
   end
 
