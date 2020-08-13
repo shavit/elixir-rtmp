@@ -12,15 +12,18 @@ defmodule ExRTMP.Connection do
     time: nil
   }
 
-  def start_link(server, socket, opts) do
-    GenServer.start_link(__MODULE__, {server, socket}, opts)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  def init({server, socket}) do
-    {:ok, Enum.into(%{server: server, socket: socket}, @state), {:continue, :accept}}
-  end
+  def init(opts) do
+    state = %{
+      server: Keyword.get(opts, :server),
+      socket: Keyword.get(opts, :socket)
+    }
 
-  def init(_opts), do: {:error, :invalid_options}
+    {:ok, state, {:continue, :accept}}
+  end
 
   def handle_continue(:accept, state) do
     :ok = GenServer.cast(self(), {:accept, state.socket})
@@ -87,7 +90,8 @@ defmodule ExRTMP.Connection do
   def register_client(client, state) do
     IO.inspect("[Connection] Registered")
     IO.inspect(client)
-    {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
+
+    {:ok, _pid} = Connection.start_link(server: state.server, socket: state.socket)
     :ok = GenServer.cast(state.server, {:register_client, client})
   end
 
