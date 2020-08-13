@@ -53,21 +53,22 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: false} = state) do
     state = Map.update(state, :buf, msg, fn x -> x <> msg end)
-    case Handshake.parse(msg) do
-      {:s0, msg} ->
-	Logger.info "C0"
-        {:noreply, %{state | buf: msg}}
 
-      {:s1, time, msg} ->
-	Logger.info "C1"
-        :ok = Handshake.send_s1(state.conn, time)
+    case Handshake.parse_server(msg) do
+      {0, msg} ->
+        Logger.info("C0")
+        IO.inspect(msg)
+        :ok = Handshake.send_s0(from)
+
+      {n, msg} ->
+        Logger.debug("Debug message #{inspect(n)}")
+        IO.inspect(msg)
         {:noreply, %{state | buf: msg}}
 
       _ ->
         Logger.error("Could not parse message")
-	IO.inspect msg
+        IO.inspect(msg)
         {:noreply, state}
-	
     end
   end
 

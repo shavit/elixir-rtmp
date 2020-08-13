@@ -21,7 +21,7 @@ defmodule ExRTMP.Handshake do
 
   """
   def send_c0(socket) do
-    :ok = :gen_tcp.send(socket, <<0x03>>)
+    :gen_tcp.send(socket, <<0x03>>)
   end
 
   @doc """
@@ -36,11 +36,11 @@ defmodule ExRTMP.Handshake do
     zeros = <<0::8*4>>
     msg = time <> zeros <> rand()
 
-    :ok = :gen_tcp.send(socket, msg)
+    :gen_tcp.send(socket, msg)
   end
 
   @doc """
-  send_c2/3 send the c2 message to the server
+  send_c2/2 send the c2 message to the server
 
   It must include the timestamp from s1
 
@@ -48,49 +48,48 @@ defmodule ExRTMP.Handshake do
   def send_c2(socket, time) do
     time2 = :erlang.timestamp() |> elem(0)
     msg = <<time::size(32), time2::size(32)>> <> rand()
-    :ok = :gen_tcp.send(socket, msg)
+    :gen_tcp.send(socket, msg)
   end
 
   @doc """
-  Send the s0 message to the client
+  send_s0/1 Send the s0 message to the client
 
     * 1 byte 0x03
 
   Returns an updated state
   """
-  def send_s0(socket, state) do
+  def send_s0(socket) do
     :gen_tcp.send(socket, <<0x03>>)
   end
 
   @doc """
-  Send the s1 message
+  send_s1/2 Send the s1 message
 
     * 4 bytes time
     * 4 bytes zero
     * 1528 bytes random
   """
-  def send_s1(socket, {time, rand}, state) do
-    :gen_tcp.send(socket, <<0, 0, 0, 0>> <> <<0, 0, 0, 0>> <> rand)
+  def send_s1(socket, time) do
+    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    zeros = <<0::8*4>>
+    msg = time <> zeros <> rand()
 
-    state
-    |> Map.put(:time, time)
-    |> Map.put(:server_timestamp, <<0, 0, 0, 0>>)
-    |> Map.put(:rand, rand)
+    :gen_tcp.send(socket, msg)
   end
 
   @doc """
-  Send the s2 message
+  send_s2/2 Send the s2 message
   """
-  def send_s2(socket, state) do
-    :gen_tcp.send(socket, state.time <> state.server_timestamp <> state.rand)
-
-    state
+  def send_s2(socket, time) do
+    time2 = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    msg = <<time::size(32)>> <> time2 <> rand()
+    :gen_tcp.send(socket, msg)
   end
 
-  def timestamp do
-    <<_time::bits-size(32)>> =
-      DateTime.utc_now() |> DateTime.to_unix() |> :binary.encode_unsigned()
-  end
+  # def timestamp do
+  #   <<_time::bits-size(32)>> =
+  #     DateTime.utc_now() |> DateTime.to_unix() |> :binary.encode_unsigned()
+  # end
 
   def rand do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
@@ -111,6 +110,26 @@ defmodule ExRTMP.Handshake do
       <<_time::size(32), _time2::size(32), _garbage::binary-size(1528), rest::binary>> ->
         # Server must until C2 is received
         {:s2, rest}
+
+      _ ->
+        {:invalid, msg}
+    end
+  end
+
+  # combine them later
+  # server parse client messages
+  def parse_server(msg) do
+    case msg do
+      <<0x03::size(8), rest::binary>> ->
+        {0, rest}
+
+      <<0x03::size(8), 0::size(32), time::size(32), _garbage::size(1528), rest::binary>> ->
+        # Server must wait for C1 before sending S2
+        {1, time, rest}
+
+      <<time::size(32), _time2::size(32), _garbage::binary-size(1528), rest::binary>> ->
+        # Server must until C2 is received
+        {2, time, rest}
 
       _ ->
         {:invalid, msg}

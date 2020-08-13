@@ -15,39 +15,31 @@ defmodule ExRTMP.HandshakeTest do
       %{socket: socket}
     end
 
-    test "send_s0/2 sends 1 byte tcp message and returns the same state", %{socket: socket} do
-      state = "some state"
-      assert {:error, :enotconn} == Handshake.send_s0(socket, state)
+    test "send_c0/2 sends 1 byte tcp message", %{socket: socket} do
+      assert {:error, _reason} = Handshake.send_c0(socket)
+    end
+
+    test "send_c1/2 sends a tcp message", %{socket: socket} do
+      assert {:error, _reason} = Handshake.send_c1(socket)
+    end
+
+    test "send_c2/2 sends a tcp message", %{socket: socket} do
+      time = elem(:erlang.timestamp(), 0)
+      assert {:error, _reason} = Handshake.send_c2(socket, time)
+    end
+
+    test "send_s0/2 sends 1 byte tcp message", %{socket: socket} do
+      assert {:error, _reason} = Handshake.send_s0(socket)
     end
 
     test "send_s1/2 sends 1536 bytes", %{socket: socket} do
-      state = %{
-        server_timestamp: Handshake.timestamp(),
-        time: Handshake.timestamp(),
-        rand: Handshake.rand()
-      }
-
-      assert new_state = Handshake.send_s1(socket, {state.time, state.rand}, state)
-      assert new_state.server_timestamp == <<0, 0, 0, 0>>
-      assert new_state.time == state.time
-      assert new_state.rand == state.rand
+      time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+      assert {:error, _reason} = Handshake.send_s1(socket, time)
     end
 
     test "send_s2/2 sends 1536 bytes", %{socket: socket} do
-      state = %{
-        server_timestamp: Handshake.timestamp(),
-        time: Handshake.timestamp(),
-        rand: Handshake.rand()
-      }
-
-      assert new_state = Handshake.send_s2(socket, state)
-      assert new_state.server_timestamp == state.server_timestamp
-      assert new_state.time == state.time
-      assert new_state.rand == state.rand
-    end
-
-    test "timestamp/0 creates a 4 byte timestamp" do
-      assert <<_timestamp::bytes-size(4)>> = Handshake.timestamp()
+      time = elem(:erlang.timestamp(), 0)
+      assert {:error, _reason} = Handshake.send_s2(socket, time)
     end
 
     test "rand/0 creates a random string of 1528 bytes" do

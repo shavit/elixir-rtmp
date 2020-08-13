@@ -17,7 +17,7 @@ defmodule ExRTMP.Server do
     state = %{
       clients: [],
       port: port,
-      socket: socket
+      conn: socket
     }
 
     {:ok, state, {:continue, :accept_connections}}
@@ -25,11 +25,11 @@ defmodule ExRTMP.Server do
 
   def handle_continue(:accept_connections, state) do
     # This need to be supervised better
-    {:ok, pid} = Connection.start_link(server: self(), socket: state.socket)
-    :ok = :gen_tcp.controlling_process(state.socket, pid)
+    {:ok, pid} = Connection.start_link(server: self(), socket: state.conn)
+    :ok = :gen_tcp.controlling_process(state.conn, pid)
 
     Logger.info("[RTMP] Accepting connections on port #{state.port}")
-    {:ok, _erl_port} = :gen_tcp.accept(state.socket)
+    {:ok, _erl_port} = :gen_tcp.accept(state.conn)
 
     {:noreply, state}
   end
