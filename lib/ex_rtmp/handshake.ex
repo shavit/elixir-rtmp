@@ -92,8 +92,6 @@ defmodule ExRTMP.Handshake do
       DateTime.utc_now() |> DateTime.to_unix() |> :binary.encode_unsigned()
   end
 
-  defp zero, do: <<0, 0, 0, 0>>
-
   def rand do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
     |> Stream.repeatedly()

@@ -1,6 +1,6 @@
 defmodule ExRTMP.Connection do
   @moduledoc """
-  RTMP client connection
+  `ExRTMP.Connection` RTMP client connection
   """
   use GenServer
   alias ExRTMP.Connection

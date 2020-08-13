@@ -1,39 +1,30 @@
-defmodule ExRTMP do
+defmodule ExRTMP.Server do
   @moduledoc """
-  RTMP server
+  `ExRTMP.Server` RTMP server
   """
   use GenServer
   alias ExRTMP.Connection
   require Logger
 
-  # TOOD: Create a pool
-  @state %{clients: []}
-
-  def start_link({_rtmp_port, name} = opts) do
-    GenServer.start_link(__MODULE__, opts, name: name)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  def start_link(_opts), do: {:error, nil}
-
-  def init({rtmp_port, _name}) do
+  def init(opts) do
     # tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
     tcp_opts = [:binary, {:active, true}, {:buffer, 100_000}]
-    # TODO: For debugging. Remove this.
-    # tcp_opts = [:binary, {:active, true}, {:buffer, 16}]
+    port = Keyword.get(opts, :port, 1935)
+    {:ok, socket} = :gen_tcp.listen(port, tcp_opts)
+    :ok = GenServer.cast(self(), {:accept, socket})
+    Logger.info("[RTMP] Accepting connections on port #{port}")
 
-    with {:ok, socket} <- :gen_tcp.listen(rtmp_port, tcp_opts),
-         :ok <- GenServer.cast(self(), {:accept, socket}) do
-      Logger.info("[RTMP] Accepting connections on port #{rtmp_port}")
+    state = %{
+      clients: [],
+      port: port
+    }
 
-      {:ok, Enum.into(%{port: rtmp_port}, @state)}
-    else
-      error ->
-        Logger.error("#{inspect(error)}")
-        error
-    end
+    {:ok, state}
   end
-
-  def init(_opts), do: {:error, :missing_port}
 
   @doc """
   Async calls to accept connections

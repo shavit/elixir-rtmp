@@ -1,5 +1,11 @@
 defmodule ExRTMP.ConnectionTest do
   use ExUnit.Case
+  alias ExRTMP.Server
+
+  setup do
+    {:ok, pid} = Server.start_link(port: 3300)
+    %{server: pid}
+  end
 
   describe "connection" do
     alias ExRTMP.Connection
@@ -10,9 +16,8 @@ defmodule ExRTMP.ConnectionTest do
       assert {:ok, _pid} = Connection.start_link(pid, pid2, [])
     end
 
-    test "register_client/2 call the server to register a client" do
+    test "register_client/2 call the server to register a client", %{server: server} do
       {:ok, pid} = Connection.start_link(nil, nil, [])
-      assert {:ok, server} = ExRTMP.start_link({3300, :test_server})
       assert :ok = Connection.register_client(pid, %{server: server, socket: nil})
     end
   end
