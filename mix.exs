@@ -13,7 +13,9 @@ defmodule VideoChat.Mixfile do
   end
 
   defp deps do
-    [{:credo, "~> 0.8", only: [:dev, :test], runtime: false}]
+    [
+      {:credo, "~> 0.8", only: [:dev, :test], runtime: false}
+    ]
   end
 
   # Configuration for the OTP application

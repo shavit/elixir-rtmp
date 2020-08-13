@@ -2,7 +2,7 @@ defmodule VideoChat do
   @moduledoc """
   `VideoChat` RTMP server application
   """
-    
+
   use Application
   alias ExRTMP.Server, as: ExRTMPServer
 

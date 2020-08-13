@@ -7,17 +7,14 @@ defmodule ExRTMP.Connection do
   alias ExRTMP.Handshake
   require Logger
 
-  @state %{
-    server_timestamp: nil,
-    time: nil
-  }
-
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
 
   def init(opts) do
     state = %{
+      buf: <<>>,
+      handshake: false,
       server: Keyword.get(opts, :server),
       socket: Keyword.get(opts, :socket)
     }
@@ -54,25 +51,30 @@ defmodule ExRTMP.Connection do
     {:noreply, state}
   end
 
-  def handle_info({:tcp, from, message}, state) do
-    case message do
-      <<0x03>> ->
-        {:noreply, Handshake.send_s0(from, state)}
+  def handle_info({:tcp, from, msg}, %{handshake: false} = state) do
+    state = Map.update(state, :buf, msg, fn x -> x <> msg end)
+    case Handshake.parse(msg) do
+      {:s0, msg} ->
+	Logger.info "C0"
+        {:noreply, %{state | buf: msg}}
 
-      <<0x03, time::bytes-size(4), 0, 0, 0, 0, rand::bytes-size(1528)>> ->
-        Handshake.send_s0(from, state)
-        {:noreply, Handshake.send_s1(from, {time, rand}, state)}
-
-      <<_server_timestamp::bytes-size(4), _time::bytes-size(4), _rand::bytes-size(1528)>> ->
-        {:noreply, Handshake.send_s2(from, state)}
+      {:s1, time, msg} ->
+	Logger.info "C1"
+        :ok = Handshake.send_s1(state.conn, time)
+        {:noreply, %{state | buf: msg}}
 
       _ ->
-        IO.inspect("[Connection] AMF message")
-        IO.inspect(byte_size(message))
-        IO.inspect(message)
-
+        Logger.error("Could not parse message")
+	IO.inspect msg
         {:noreply, state}
+	
     end
+  end
+
+  def handle_info({:tcp, from, message}, %{handshake: true} = state) do
+    IO.inspect("[Connection] AMF message")
+    IO.inspect(byte_size(message))
+    IO.inspect(message)
   end
 
   def handle_info({:tcp_closed, from}, state) do
@@ -101,6 +103,7 @@ defmodule ExRTMP.Connection do
   Thie function will be called after a connection timeout
   """
   def start_another(state) do
+    # Kill it later
     Logger.debug("[Connection] Timeout. Starting another process: #{inspect(state)}")
     {:ok, _pid} = Connection.start_link(server: state.server, socket: state.socket)
     # GenServer.stop(self(), :normal)

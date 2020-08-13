@@ -12,7 +12,7 @@ defmodule ExRTMP.ConnectionTest do
 
     test "start_link/3 starts a connection process", %{server: server} do
       assert {:error, _reason} = Connection.start_link(nil)
-      assert {:ok, _pid} = Connection.start_link([server: server])
+      assert {:ok, _pid} = Connection.start_link(server: server)
     end
 
     test "register_client/2 call the server to register a client", %{server: server} do
