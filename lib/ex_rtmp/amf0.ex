@@ -101,35 +101,6 @@ defmodule ExRTMP.AMF0 do
     @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
   end
 
-  def c0, do: <<0x03>>
-
-  def c1 do
-    1528 |> :crypto.strong_rand_bytes() |> c1()
-  end
-
-  def c1(rand) do
-    # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
-    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
-    zeros = <<0::8*4>>
-    time <> zeros <> rand
-  end
-
-  def c2, do: nil
-
-  def s0, do: <<0x03>>
-
-  def s1 do
-    1528 |> :crypto.strong_rand_bytes() |> s1()
-  end
-
-  def s1(rand) do
-    time = <<0, 0, 0, 0>>
-    zeros = <<0::8*4>>
-    time <> zeros <> rand
-  end
-
-  def s2, do: nil
-
   # TOOD: Remove and rename
 
   defstruct [:amf, :body, :command, :length, :marker, :tail, :version]

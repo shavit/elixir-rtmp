@@ -2,6 +2,7 @@ defmodule ExRTMP.Handshake do
   @moduledoc """
   Implementation of the RTMP handshake
 
+  The handshake consists of three static-sized chunks rather than variable-sized chunks with headers.
   http://wwwimages.adobe.com/www.adobe.com/content/dam/acom/en/devnet/rtmp/pdf/rtmp_specification_1.0.pdf
 
     C0  ----->
@@ -12,7 +13,6 @@ defmodule ExRTMP.Handshake do
         <-----  S2
     C2  ----->
   """
-  alias ExRTMP.AMF0
 
   @doc """
   send_c0/2 send the c0 message to the server
@@ -21,7 +21,7 @@ defmodule ExRTMP.Handshake do
 
   """
   def send_c0(socket) do
-    :ok = :gen_tcp.send(socket, AMF0.c0())
+    :ok = :gen_tcp.send(socket, <<0x03>>)
   end
 
   @doc """
@@ -31,7 +31,24 @@ defmodule ExRTMP.Handshake do
 
   """
   def send_c1(socket) do
-    :ok = :gen_tcp.send(socket, AMF0.c1())
+    # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
+    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    zeros = <<0::8*4>>
+    msg = time <> zeros <> rand()
+
+    :ok = :gen_tcp.send(socket, msg)
+  end
+
+  @doc """
+  send_c2/3 send the c2 message to the server
+
+  It must include the timestamp from s1
+
+  """
+  def send_c2(socket, time) do
+    time2 = :erlang.timestamp() |> elem(0)
+    msg = <<time::size(32), time2::size(32)>> <> rand()
+    :ok = :gen_tcp.send(socket, msg)
   end
 
   @doc """
@@ -42,7 +59,7 @@ defmodule ExRTMP.Handshake do
   Returns an updated state
   """
   def send_s0(socket, state) do
-    :gen_tcp.send(socket, AMF0.s0())
+    :gen_tcp.send(socket, <<0x03>>)
   end
 
   @doc """
@@ -82,5 +99,23 @@ defmodule ExRTMP.Handshake do
     |> Stream.repeatedly()
     |> Enum.take(1528)
     |> to_string
+  end
+
+  def parse(msg) do
+    case msg do
+      <<0x03::size(8), rest::binary>> ->
+        {:s0, rest}
+
+      <<time::size(32), 0::size(32), _garbage::size(1528), rest::binary>> ->
+        # Server must wait for C1 before sending S2
+        {:s1, time, rest}
+
+      <<_time::size(32), _time2::size(32), _garbage::binary-size(1528), rest::binary>> ->
+        # Server must until C2 is received
+        {:s2, rest}
+
+      _ ->
+        {:invalid, msg}
+    end
   end
 end

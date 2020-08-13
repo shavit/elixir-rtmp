@@ -112,8 +112,10 @@ defmodule ExRTMP.Chunk do
     def get_control_message(message_type_id), do: Map.get(@control_messages, message_type_id)
   end
 
+  require Logger
+
   def parse(message) do
-    IO.inspect("[Chunk] | #{byte_size(message)}")
+    IO.inspect("[Chunk] | parsing #{byte_size(message)} bytes")
 
     case message do
       # This must be used at the start of a chunk stream
@@ -124,6 +126,8 @@ defmodule ExRTMP.Chunk do
       # Type 0 - 11 bytes
       <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
+        Logger.debug("Type 0.1")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -136,6 +140,8 @@ defmodule ExRTMP.Chunk do
 
       <<0::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        Logger.debug("Type 0.2")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -149,6 +155,8 @@ defmodule ExRTMP.Chunk do
       # Type 1 - 7 bytes
       <<1::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
+        Logger.debug("Type 1.1")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -161,6 +169,8 @@ defmodule ExRTMP.Chunk do
 
       <<1::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        Logger.debug("Type 1.2")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -174,6 +184,8 @@ defmodule ExRTMP.Chunk do
       # Type 2 - 3 bytes. Without stream ID or message length.
       <<2::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
+        Logger.debug("Type 2.1")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -186,6 +198,8 @@ defmodule ExRTMP.Chunk do
 
       <<2::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
+        Logger.debug("Type 2.2")
+
         create_message_response(%Message{
           message_stream_id: msg_stream_id,
           message_type_id: message_type_id,
@@ -198,177 +212,33 @@ defmodule ExRTMP.Chunk do
 
       # Type 3 - No message header
       <<3::size(2), 0::size(6), csid::size(8), rest::binary>> ->
+        Logger.debug("Type 3.1")
+
         create_message_response(%Message{
           chunk_stream_id: csid,
           chunk_type: 3,
           body: rest
         })
 
-      # Type 0 - 11 bytes
-      <<0::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
+      <<3::size(2), 0::size(6), csid::size(8), rest::binary>> ->
+        Logger.debug("Type 3.2")
+        rest
 
-      <<0::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 0,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 1 - 7 bytes
-      <<1::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<1::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<2::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 3 - No message header
       <<3::size(2), 1::size(6), csid::size(16), rest::binary>> ->
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          chunk_type: 3,
-          body: rest
-        })
+        Logger.debug("Type 3.3")
+        rest
 
-      # Type 0 - 11 bytes
-      # Chunk stream ID (csid) for values from 2-63
-      <<0::size(2), csid::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), message_stream_id::size(32)-little, timestamp::size(32),
-        rest::binary>> ->
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          chunk_type: 0,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          message_stream_id: message_stream_id,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), message_stream_id::size(32)-little, rest::binary>> ->
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          chunk_type: 0,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          message_stream_id: message_stream_id,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 1 - 7 bytes
-      <<1::size(2), csid::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          chunk_type: 1,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<1::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), rest::binary>> ->
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 1::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), timestamp::size(32), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<2::size(2), 1::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), rest::binary>> ->
-        create_message_response(%Message{
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 3 - No message header
       <<3::size(2), csid::size(6), rest::binary>> ->
-        create_message_response(%Message{
-          message_stream_id: csid,
-          chunk_type: 3,
-          body: rest
-        })
+        Logger.debug("Type 3.3")
+        rest
 
-      _ ->
+      msg ->
+        Logger.debug("Error: Type undefined")
+        IO.inspect(msg)
         nil
     end
+
+    message
   end
 
   defp create_message_response(%Message{} = message) do

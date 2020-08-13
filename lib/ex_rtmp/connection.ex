@@ -5,6 +5,7 @@ defmodule ExRTMP.Connection do
   use GenServer
   alias ExRTMP.Connection
   alias ExRTMP.Handshake
+  require Logger
 
   @state %{
     server_timestamp: nil,
@@ -96,9 +97,9 @@ defmodule ExRTMP.Connection do
   Thie function will be called after a connection timeout
   """
   def start_another(state) do
-    IO.inspect("[Connection] Timeout. Starting another process")
-    IO.inspect(state)
+    Logger.debug("[Connection] Timeout. Starting another process: #{inspect(state)}")
     {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
-    GenServer.stop(self(), :normal)
+    # GenServer.stop(self(), :normal)
+    Process.exit(self(), :normal)
   end
 end
