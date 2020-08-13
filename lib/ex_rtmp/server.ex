@@ -11,14 +11,12 @@ defmodule ExRTMP.Server do
   end
 
   def init(opts) do
-    tcp_opts = [:binary, {:active, true}, {:buffer, 65536}]
     port = Keyword.get(opts, :port, 1935)
-    {:ok, socket} = :gen_tcp.listen(port, tcp_opts)
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, {:active, true}, {:buffer, 65536}])
     Logger.info("[RTMP] Accepting connections on port #{port}")
 
     state = %{
-      clients: [],
-      port: port
+      clients: []
     }
 
     {:ok, state}
@@ -27,13 +25,9 @@ defmodule ExRTMP.Server do
   def handle_continue(:accept_connections, state) do
     {:ok, pid} = Connection.start_link(server: self(), socket: state.socket)
     :ok = :gen_tcp.controlling_process(state.socket, pid)
-    
+
     {:noreply, state}
   end
-
-  # def handle_cast({:accept, socket}, state) do
-  #   {:noreply, state}
-  # end
 
   def handle_cast({:register_client, client}, state) do
     {:noreply, Map.put(state, :clients, [client | state.clients])}
@@ -45,10 +39,6 @@ defmodule ExRTMP.Server do
     {:noreply, Map.put(state, :clients, clients)}
   end
 
-  @doc """
-  External calls
-
-  """
   def handle_info({:tcp, from, message}, state) do
     Logger.debug("[RTMP] Received #{byte_size(message)} bytes")
     Logger.debug("[RTMP] From: #{inspect(from)}")

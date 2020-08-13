@@ -102,7 +102,7 @@ defmodule ExRTMP.Connection do
   """
   def start_another(state) do
     Logger.debug("[Connection] Timeout. Starting another process: #{inspect(state)}")
-    {:ok, _pid} = Connection.start_link(state.server, state.socket, [])
+    {:ok, _pid} = Connection.start_link(server: state.server, socket: state.socket)
     # GenServer.stop(self(), :normal)
     Process.exit(self(), :normal)
   end
