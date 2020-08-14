@@ -13,6 +13,16 @@ defmodule ExRTMP.Handshake do
         <-----  S2
     C2  ----->
   """
+  defstruct [:stage, :buf, :complete, :time, :client_time]
+
+  def new do
+    %__MODULE__{stage: :c0, buf: <<>>, complete: false, time: elem(:erlang.timestamp(), 0)}
+  end
+
+  def buffer(%__MODULE__{buf: buf} = handshake, new_buf) do
+    %{handshake | buf: buf <> new_buf}
+    # Map.update(handshake, :buf, msg, fn x -> x <> msg end)
+  end
 
   @doc """
   send_c0/2 send the c0 message to the server
@@ -70,9 +80,8 @@ defmodule ExRTMP.Handshake do
     * 1528 bytes random
   """
   def send_s1(socket, time) do
-    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
     zeros = <<0::8*4>>
-    msg = time <> zeros <> rand()
+    msg = <<time::size(32)>> <> zeros <> rand()
 
     :gen_tcp.send(socket, msg)
   end
@@ -80,22 +89,33 @@ defmodule ExRTMP.Handshake do
   @doc """
   send_s2/2 Send the s2 message
   """
-  def send_s2(socket, time) do
-    time2 = :erlang.timestamp() |> elem(0) |> Integer.to_string()
-    msg = <<time::size(32)>> <> time2 <> rand()
+  def send_s2(socket, time, client_time) do
+    msg = <<time::size(32), client_time::size(32)>> <> rand()
     :gen_tcp.send(socket, msg)
   end
-
-  # def timestamp do
-  #   <<_time::bits-size(32)>> =
-  #     DateTime.utc_now() |> DateTime.to_unix() |> :binary.encode_unsigned()
-  # end
 
   def rand do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
     |> Stream.repeatedly()
     |> Enum.take(1528)
     |> to_string
+  end
+
+  def parse(%__MODULE__{buf: msg} = handshake) do
+    case msg do
+      <<0x03::size(8), rest::binary>> ->
+        %{handshake | buf: rest, stage: :c1}
+
+      <<time::unsigned-size(32), 0::unsigned-size(32), _garbage::binary-size(1528)>> ->
+        %{handshake | buf: <<>>, stage: :c2}
+
+      <<time::unsigned-size(32), time2::unsigned-size(32), _garbage::binary-size(1528),
+        rest::binary>> ->
+        %{handshake | buf: <<>>, stage: :c2, complete: true, client_time: time}
+
+      _ ->
+        {:invalid, msg}
+    end
   end
 
   def parse(msg) do
@@ -110,26 +130,6 @@ defmodule ExRTMP.Handshake do
       <<_time::size(32), _time2::size(32), _garbage::binary-size(1528), rest::binary>> ->
         # Server must until C2 is received
         {:s2, rest}
-
-      _ ->
-        {:invalid, msg}
-    end
-  end
-
-  # combine them later
-  # server parse client messages
-  def parse_server(msg) do
-    case msg do
-      <<0x03::size(8), rest::binary>> ->
-        {0, rest}
-
-      <<0x03::size(8), 0::size(32), time::size(32), _garbage::size(1528), rest::binary>> ->
-        # Server must wait for C1 before sending S2
-        {1, time, rest}
-
-      <<time::size(32), _time2::size(32), _garbage::binary-size(1528), rest::binary>> ->
-        # Server must until C2 is received
-        {2, time, rest}
 
       _ ->
         {:invalid, msg}

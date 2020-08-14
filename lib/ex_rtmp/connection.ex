@@ -14,9 +14,9 @@ defmodule ExRTMP.Connection do
   def init(opts) do
     state = %{
       buf: <<>>,
-      handshake: false,
       server: Keyword.get(opts, :server),
-      socket: Keyword.get(opts, :socket)
+      socket: Keyword.get(opts, :socket),
+      handshake: Handshake.new()
     }
 
     {:ok, state, {:continue, :accept}}
@@ -51,31 +51,34 @@ defmodule ExRTMP.Connection do
     {:noreply, state}
   end
 
-  def handle_info({:tcp, from, msg}, %{handshake: false} = state) do
-    state = Map.update(state, :buf, msg, fn x -> x <> msg end)
+  def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
+    handshake = Handshake.buffer(state.handshake, msg)
 
-    case Handshake.parse_server(msg) do
-      {0, msg} ->
-        Logger.info("C0")
-        IO.inspect(msg)
+    case Handshake.parse(handshake) do
+      %{stage: :c1} = handshake ->
         :ok = Handshake.send_s0(from)
+        :ok = Handshake.send_s1(from, handshake.time)
 
-      {n, msg} ->
-        Logger.debug("Debug message #{inspect(n)}")
-        IO.inspect(msg)
-        {:noreply, %{state | buf: msg}}
+        {:noreply, %{state | handshake: handshake}}
+
+      %{stage: :c2, complete: true} = handshake ->
+        :ok = Handshake.send_s2(from, handshake.time, handshake.client_time)
+        Logger.info("Handshake completed")
+
+        {:noreply, %{state | handshake: nil}}
 
       _ ->
-        Logger.error("Could not parse message")
-        IO.inspect(msg)
+        Logger.error("Could not parse message: #{inspect(msg)}")
         {:noreply, state}
     end
   end
 
-  def handle_info({:tcp, from, message}, %{handshake: true} = state) do
+  def handle_info({:tcp, from, msg}, %{handshake: nil} = state) do
     IO.inspect("[Connection] AMF message")
-    IO.inspect(byte_size(message))
-    IO.inspect(message)
+    IO.inspect(byte_size(msg))
+    IO.inspect(msg)
+
+    {:noreply, state}
   end
 
   def handle_info({:tcp_closed, from}, state) do
