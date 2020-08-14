@@ -34,21 +34,16 @@ defmodule ExRTMP.Connection do
   """
   def handle_cast({:accept, socket}, state) do
     case :gen_tcp.accept(socket, 120_000) do
-      {:ok, client} -> register_client(client, state)
-      {:error, :timeout} -> start_another(state)
+      {:ok, client} ->
+	register_client(client, state)
+        {:noreply, state}
+      {:error, :timeout} ->
+	start_another(state)
+	{:stop, :closed, state}
+      {:error, :closed} ->
+	Process.exit(self(), :normal)
+	{:stop, :closed, state}
     end
-
-    {:noreply, state}
-  end
-
-  @doc """
-  External calls
-  """
-  def handle_info({:tcp, from, _ip, _port, message}, state) do
-    IO.inspect("[Connection] TCP message")
-    IO.inspect(from)
-
-    {:noreply, state}
   end
 
   def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
@@ -81,11 +76,11 @@ defmodule ExRTMP.Connection do
     {:noreply, state}
   end
 
-  def handle_info({:tcp_closed, from}, state) do
+  def handle_info({:tcp_closed, socket}, state) do
     IO.inspect("[Connection] Closed")
 
-    GenServer.cast(state.server, {:unregister_client, from})
-    GenServer.stop(self(), :normal)
+    GenServer.cast(state.server, {:unregister_client, socket})
+    Process.exit(self(), :normal)
 
     {:noreply, state}
   end
@@ -110,7 +105,11 @@ defmodule ExRTMP.Connection do
     # Kill it later
     Logger.debug("[Connection] Timeout. Starting another process: #{inspect(state)}")
     {:ok, _pid} = Connection.start_link(server: state.server, socket: state.socket)
-    # GenServer.stop(self(), :normal)
-    Process.exit(self(), :normal)
+    Process.exit(self(), :exit)
+  end
+
+  def terminate(reason, %{socket: socket}) do
+    :ok = :gen_tcp.close(socket)
+    reason
   end
 end

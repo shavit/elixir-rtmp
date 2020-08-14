@@ -28,21 +28,25 @@ defmodule ExRTMP.Server do
     {:ok, pid} = Connection.start_link(server: self(), socket: state.conn)
     :ok = :gen_tcp.controlling_process(state.conn, pid)
 
-    Logger.info("[RTMP] Accepting connections on port #{state.port}")
-    {:ok, _erl_port} = :gen_tcp.accept(state.conn)
-
-    {:noreply, state}
+    case :gen_tcp.accept(state.conn) do
+      {:error, reason} -> {:stop, reason, state}
+      {:ok, _erl_port} ->
+	Logger.info("[RTMP] Accepting connections on port #{state.port}")
+	:gen_tcp.accept(state.conn)
+	{:noreply, state}
+    end
   end
 
   # def handle_cast({:register_client, client}, state) do
   #   {:noreply, Map.put(state, :clients, [client | state.clients])}
   # end
 
-  # def handle_cast({:unregister_client, client}, state) do
-  #   Logger.debug("[RTMP] Unregister client")
-  #   clients = Enum.filter(state.clients, &(&1 != client))
-  #   {:noreply, Map.put(state, :clients, clients)}
-  # end
+  def handle_cast({:unregister_client, socket}, state) do
+    :ok = :gen_tcp.close(socket)
+    Logger.debug("[RTMP] Unregister client")
+    clients = Enum.filter(state.clients, &(&1 != socket))
+    {:noreply, Map.put(state, :clients, clients)}
+  end
 
   # def handle_info({:tcp, from, message}, state) do
   #   Logger.debug("[RTMP] Received #{byte_size(message)} bytes")
@@ -56,4 +60,18 @@ defmodule ExRTMP.Server do
 
   #   {:noreply, state}
   # end
+
+  def handle_info({_port, {:exit_status, _code}}, state) do
+    Logger.info "Exit"
+    {:stop, :normal, state}
+  end
+   
+  def terminate(reason, %{clients: clients, conn: conn}) do
+    Logger.info "Closing server and #{Enum.count(clients)} connections"
+    Enum.each(clients, fn x -> :gen_tcp.close(x) end)
+    :ok = :gen_tcp.close(conn)
+
+    reason
+  end
+
 end
