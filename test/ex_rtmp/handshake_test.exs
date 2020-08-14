@@ -33,13 +33,14 @@ defmodule ExRTMP.HandshakeTest do
     end
 
     test "send_s1/2 sends 1536 bytes", %{socket: socket} do
-      time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+      time = elem(:erlang.timestamp(), 0)
       assert {:error, _reason} = Handshake.send_s1(socket, time)
     end
 
     test "send_s2/2 sends 1536 bytes", %{socket: socket} do
       time = elem(:erlang.timestamp(), 0)
-      assert {:error, _reason} = Handshake.send_s2(socket, time)
+      client_time = elem(:erlang.timestamp(), 0)
+      assert {:error, _reason} = Handshake.send_s2(socket, time, client_time)
     end
 
     test "rand/0 creates a random string of 1528 bytes" do
