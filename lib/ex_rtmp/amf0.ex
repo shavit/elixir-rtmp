@@ -115,69 +115,6 @@ defmodule ExRTMP.AMF0 do
           version: nil
         }
 
-  def deserialize(<<0x0, _rest::bits>> = message), do: deserialize(message, {:amf_version, :amf0})
-
-  def deserialize(<<0x3, _rest::bits>> = message), do: deserialize(message, {:amf_version, :amf3})
-
-  def deserialize(_invalid_message), do: {:error, :invalid_message_format}
-
-  def deserialize(
-        <<version::unsigned-16-little, header_count::unsigned-16-little, _rest::bits>> = message,
-        {:amf_version, amf_version}
-      ) do
-    case read_message(message) do
-      {:ok, message_map} ->
-        {:ok,
-         %__MODULE__{
-           amf: amf_version,
-           version: version,
-           body: message_map
-           # command: get_command_from(parsed_body),
-           # marker: :object_marker
-         }}
-
-      error ->
-        error
-    end
-  end
-
-  def read_message(<<0x3, 0x0, body::bits>> = message) do
-    read_message(body, %{})
-  end
-
-  def read_message(_invalid_message), do: {:error, :invalid_message_format}
-
-  def read_message(<<0x0, rest::bits>>, message_map), do: read_message(rest, message_map)
-
-  def read_message(<<0x9, _rest::bits>>, message_map), do: {:ok, message_map}
-
-  def read_message(<<key_length::unsigned, body::bits>>, message_map) do
-    case body do
-      <<key::bytes-size(key_length), rest::bits>> ->
-        read_message({:value, key}, rest, message_map)
-
-      _ ->
-        {:error, :invalid_message_format}
-    end
-  end
-
-  def read_message({:value, key}, <<0x0, value::float-64, rest::bits>>, message_map) do
-    read_message(rest, Enum.into(%{key => value}, message_map))
-  end
-
-  def read_message({:value, key}, <<0x2, 0x0, value_length::unsigned, body::bits>>, message_map) do
-    case body do
-      <<value::bytes-size(value_length), rest::bits>> ->
-        read_message(rest, Enum.into(%{key => value}, message_map))
-
-      _ ->
-        {:error, :invalid_message_format}
-    end
-  end
-
-  def read_message(_invalid_message, _empty, _message_map), do: {:error, :invalid_message_format}
-
-
   def decode(<<0x03, msg::binary>>) do
     decode_message(msg, %{})
   end
