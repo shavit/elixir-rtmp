@@ -176,4 +176,36 @@ defmodule ExRTMP.AMF0 do
   end
 
   def read_message(_invalid_message, _empty, _message_map), do: {:error, :invalid_message_format}
+
+
+  def decode(<<0x03, msg::binary>>) do
+    decode_message(msg, %{})
+  end
+
+  defp decode_message(<<>>, obj), do: Map.delete(obj, nil)
+
+  defp decode_message(msg, obj) do
+    {k, msg} = decode_message_key(msg)
+    {v, msg} = decode_message_value(msg)
+
+    decode_message(msg, Enum.into(obj, %{k => v}))
+  end
+
+  defp decode_message_key(<<0x0, 0x0, 0x09>>), do: {nil, ""}
+
+  defp decode_message_key(<<size::size(16), msg::binary>>) do
+    k = binary_part(msg, 0, size)
+    <<_key::binary-size(size), msg::binary>> = msg
+    {k, msg}
+  end
+  
+  defp decode_message_value(<<0x02, size::size(16), msg::binary>>) do
+    v = binary_part(msg, 0, size)
+    <<_value::binary-size(size), msg::binary>> = msg
+    {v, msg}
+  end
+  
+  defp decode_message_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
+
+  defp decode_message_value(<<>>), do: {nil, <<>>}
 end

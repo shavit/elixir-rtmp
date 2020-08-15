@@ -114,6 +114,115 @@ defmodule ExRTMP.Chunk do
 
   require Logger
 
+  def decode(msg) do
+    case msg do
+      <<0::2, 1::6, csid::16, timestamp::3 * 8, size::3 * 8, message_type_id::8, sid::little-size(4)-unit(8), rest::binary>> ->
+	Logger.debug "Type 0.1 cs id #{csid} | Chunk message header 0"
+      <<0::2, csid::6, 16777215::3 * 8, size::3 * 8, message_type_id::8, sid::little-size(4)-unit(8), timestamp::4 * 8, rest::binary>> ->
+	Logger.debug "Type 0.2 cs id #{csid} | Chunk message header 0"
+      <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
+	mtype = Message.get_control_message(message_type_id)
+	Logger.debug "Type 0 | cs id #{csid} | #{mtype}"
+	decode_message_header(rest)
+
+      <<1::size(2), csid::size(6), _rest::binary>> ->	
+	Logger.debug "Type 1"
+      <<2::size(2), csid::size(6), _rest::binary>> ->
+	Logger.debug "Type 2"
+      <<3::size(2), csid::size(6), _rest::binary>> ->
+	Logger.debug "Type 3"
+	
+      <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
+        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
+	Logger.debug("Type 0.1")
+
+      _ ->
+	Logger.error("Could not parse chunk")
+	{:error, "could not parse meessage"}
+    end
+  end
+
+  # TODO: This is the body
+  defp decode_message_header(header) do
+    IO.inspect ">>> header"
+    IO.inspect header
+    IO.inspect "<<< header"
+    # decode command <<0x14>> == <<20>>
+    read_object(header)
+
+    header
+  end
+
+  # keys are strings, values can be anything
+  # <<110, 97, 109, 101, 2, 0, 4, 77, 105, 107, 101, 0, 3, 97, 103, 101, 0, 64, 62>>
+  defp read_object(<<2, size::unsigned-size(16), rest::binary>>) do
+    IO.inspect ">>> Reading string (usually key) of size #{size}"
+    IO.inspect rest
+    IO.inspect ">>> kv"
+    IO.inspect kv = binary_part(rest, 0, size)
+    IO.inspect "<<< kv"
+    <<kv::binary-size(size), rest::binary>> = rest
+    IO.inspect ">>> rest"
+    IO.inspect rest
+    IO.inspect "<<< rest"
+
+    read_object(rest)
+  end
+
+  defp read_object(<<0, size::unsigned-size(16), rest::binary>>) do
+    IO.inspect ">>> read number of size #{size}"
+    IO.inspect kv = binary_part(rest, 0, size)
+    IO.inspect "<<< read number"
+    <<kv::binary-size(size), rest::binary>> = rest
+  end
+  
+  defp read_object(<<type::size(8), size::unsigned-size(16), rest::binary>> = raw) do
+    IO.inspect ">>> raw"
+    IO.inspect raw
+    IO.inspect "<<< raw"    
+    IO.inspect ">>> Reading type #{type} #{Message.get_control_message(type)}"
+    IO.inspect rest
+    IO.inspect ">>> kv size #{size}"
+    kv = binary_part(rest, 0, size)
+    IO.inspect kv
+    IO.inspect "<<< kv"
+
+    kv
+  end
+  
+  defp read_object(rest), do: rest
+  
+  defp decode_message_header_2(header) do
+    case header do	
+      <<message_type::size(8), payload_length::unsigned-size(24), timestamp::size(32), sid::little-size(24), payload::binary>> ->
+	IO.inspect "message type #{message_type}"
+	IO.inspect "payload length #{payload_length}"
+	IO.inspect "timestamp #{timestamp}"
+	IO.inspect "stream id #{sid}"
+	IO.inspect "actual payload size #{byte_size(payload)}"
+	IO.inspect payload
+	IO.inspect decode_message_payload(payload)
+
+      _ -> {:error, "could not parse message header"}
+    end
+  end
+
+  def decode_message_payload(payload) do
+    # 2 bytes for key/value length    
+    # read until 0x0, 0x0, 0x09
+    case payload do
+      <<_garbage::unit(8)-size(8), amf::binary>> ->
+	read_amf(amf, [])
+      _ -> {:error, "could not parse message payload"}
+    end
+  end
+
+  def read_amf(<<0x03, 0x0, msg::binary>>, msg_l) do
+    # temporary
+    # String.split(msg, <<0x0>>)
+    #read_amf(msg, <<>>, msg_l)
+  end
+
   def parse(message) do
     IO.inspect("[Chunk] | parsing #{byte_size(message)} bytes")
 
@@ -126,7 +235,7 @@ defmodule ExRTMP.Chunk do
       # Type 0 - 11 bytes
       <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-        Logger.debug("Type 0.1")
+	Logger.debug("Type 0.1")
 
         create_message_response(%Message{
           message_stream_id: msg_stream_id,

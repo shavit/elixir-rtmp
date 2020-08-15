@@ -4,6 +4,7 @@ defmodule ExRTMP.Connection do
   """
   use GenServer
   alias ExRTMP.Connection
+  alias ExRTMP.Chunk
   alias ExRTMP.Handshake
   require Logger
 
@@ -69,9 +70,8 @@ defmodule ExRTMP.Connection do
   end
 
   def handle_info({:tcp, from, msg}, %{handshake: nil} = state) do
-    IO.inspect("[Connection] AMF message")
-    IO.inspect(byte_size(msg))
-    IO.inspect(msg)
+    IO.inspect("[Connection] Message size: #{byte_size(msg)}")
+    IO.inspect Chunk.decode(msg)    
 
     {:noreply, state}
   end
