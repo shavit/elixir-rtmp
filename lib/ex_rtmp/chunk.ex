@@ -129,6 +129,10 @@ defmodule ExRTMP.Chunk do
 	  length: message_length,
 	  stream_id: message_stream_id
 	}
+	IO.inspect ">>> read chunk"
+	IO.inspect msg
+	IO.inspect rest
+	IO.inspect "<<<  read chunk"
 	read_chunk(rest, m)
 
       <<1::size(2), csid::size(6), _rest::binary>> ->	
@@ -153,6 +157,13 @@ defmodule ExRTMP.Chunk do
   def read_chunk(<<0, v::float-64, msg::binary>>, m) do
     m = Map.put(m, :value, v)
     read_chunk(msg, m)
+  end
+
+  def read_chunk(<<0x03, length::size(16), msg::binary>>, m) do
+    v = binary_part(msg, 0, length)
+    m = Map.put(m, :value, v)
+    # <<_value::binary-size(length), msg::binary>> = msg
+    m
   end
 
   def read_chunk(<<type::size(8), length::size(16), msg::binary>>, m) do
