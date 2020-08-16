@@ -123,7 +123,13 @@ defmodule ExRTMP.Chunk do
       <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
 	mtype = Message.get_control_message(message_type_id)
 	Logger.debug "Type 0 | cs id #{csid} | #{mtype}"
-	decode_message_header(rest)
+	m =  %{
+	  type: mtype,
+	  timestamp: timestamp,
+	  length: message_length,
+	  stream_id: message_stream_id
+	}
+	read_chunk(rest, m)
 
       <<1::size(2), csid::size(6), _rest::binary>> ->	
 	Logger.debug "Type 1"
@@ -142,216 +148,18 @@ defmodule ExRTMP.Chunk do
     end
   end
 
-  # TODO: This is the body
-  defp decode_message_header(header) do
-    IO.inspect ">>> header"
-    IO.inspect header
-    IO.inspect "<<< header"
-    # decode command <<0x14>> == <<20>>
-    read_object(header)
-
-    header
+  def read_chunk(<<0x05>>, m), do: m
+  
+  def read_chunk(<<0, v::float-64, msg::binary>>, m) do
+    m = Map.put(m, :value, v)
+    read_chunk(msg, m)
   end
 
-  # keys are strings, values can be anything
-  # <<110, 97, 109, 101, 2, 0, 4, 77, 105, 107, 101, 0, 3, 97, 103, 101, 0, 64, 62>>
-  defp read_object(<<2, size::unsigned-size(16), rest::binary>>) do
-    IO.inspect ">>> Reading string (usually key) of size #{size}"
-    IO.inspect rest
-    IO.inspect ">>> kv"
-    IO.inspect kv = binary_part(rest, 0, size)
-    IO.inspect "<<< kv"
-    <<kv::binary-size(size), rest::binary>> = rest
-    IO.inspect ">>> rest"
-    IO.inspect rest
-    IO.inspect "<<< rest"
-
-    read_object(rest)
-  end
-
-  defp read_object(<<0, size::unsigned-size(16), rest::binary>>) do
-    IO.inspect ">>> read number of size #{size}"
-    IO.inspect kv = binary_part(rest, 0, size)
-    IO.inspect "<<< read number"
-    <<kv::binary-size(size), rest::binary>> = rest
+  def read_chunk(<<type::size(8), length::size(16), msg::binary>>, m) do
+    cmd = binary_part(msg, 0, length)
+    m = Map.put(m, :command, cmd)
+    <<_value::binary-size(length), msg::binary>> = msg
+    read_chunk(msg, m)
   end
   
-  defp read_object(<<type::size(8), size::unsigned-size(16), rest::binary>> = raw) do
-    IO.inspect ">>> raw"
-    IO.inspect raw
-    IO.inspect "<<< raw"    
-    IO.inspect ">>> Reading type #{type} #{Message.get_control_message(type)}"
-    IO.inspect rest
-    IO.inspect ">>> kv size #{size}"
-    kv = binary_part(rest, 0, size)
-    IO.inspect kv
-    IO.inspect "<<< kv"
-
-    kv
-  end
-  
-  defp read_object(rest), do: rest
-  
-  defp decode_message_header_2(header) do
-    case header do	
-      <<message_type::size(8), payload_length::unsigned-size(24), timestamp::size(32), sid::little-size(24), payload::binary>> ->
-	IO.inspect "message type #{message_type}"
-	IO.inspect "payload length #{payload_length}"
-	IO.inspect "timestamp #{timestamp}"
-	IO.inspect "stream id #{sid}"
-	IO.inspect "actual payload size #{byte_size(payload)}"
-	IO.inspect payload
-	IO.inspect decode_message_payload(payload)
-
-      _ -> {:error, "could not parse message header"}
-    end
-  end
-
-  def decode_message_payload(payload) do
-    # 2 bytes for key/value length    
-    # read until 0x0, 0x0, 0x09
-    case payload do
-      <<_garbage::unit(8)-size(8), amf::binary>> ->
-	read_amf(amf, [])
-      _ -> {:error, "could not parse message payload"}
-    end
-  end
-
-  def read_amf(<<0x03, 0x0, msg::binary>>, msg_l) do
-    # temporary
-    # String.split(msg, <<0x0>>)
-    #read_amf(msg, <<>>, msg_l)
-  end
-
-  def parse(message) do
-    IO.inspect("[Chunk] | parsing #{byte_size(message)} bytes")
-
-    case message do
-      # This must be used at the start of a chunk stream
-      # Type 0 - 11 bytes
-      # If the timestamp is greater than or equal to 0xFFFFFF, the timestamp
-      #   field must be 16777215, indicating the presence of the extended
-      #    timestamp.
-      # Type 0 - 11 bytes
-      <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-	Logger.debug("Type 0.1")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 0,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<0::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
-        Logger.debug("Type 0.2")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 0,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 1 - 7 bytes
-      <<1::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-        Logger.debug("Type 1.1")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<1::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
-        Logger.debug("Type 1.2")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 1,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 2 - 3 bytes. Without stream ID or message length.
-      <<2::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-        Logger.debug("Type 2.1")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      <<2::size(2), 0::size(6), timestamp::size(24), message_length::size(24),
-        message_type_id::size(8), msg_stream_id::size(32), rest::binary>> ->
-        Logger.debug("Type 2.2")
-
-        create_message_response(%Message{
-          message_stream_id: msg_stream_id,
-          message_type_id: message_type_id,
-          message_control: Message.get_control_message(message_type_id),
-          chunk_type: 2,
-          length: message_length,
-          time: timestamp,
-          body: rest
-        })
-
-      # Type 3 - No message header
-      <<3::size(2), 0::size(6), csid::size(8), rest::binary>> ->
-        Logger.debug("Type 3.1")
-
-        create_message_response(%Message{
-          chunk_stream_id: csid,
-          chunk_type: 3,
-          body: rest
-        })
-
-      <<3::size(2), 0::size(6), csid::size(8), rest::binary>> ->
-        Logger.debug("Type 3.2")
-        rest
-
-      <<3::size(2), 1::size(6), csid::size(16), rest::binary>> ->
-        Logger.debug("Type 3.3")
-        rest
-
-      <<3::size(2), csid::size(6), rest::binary>> ->
-        Logger.debug("Type 3.3")
-        rest
-
-      msg ->
-        Logger.debug("Error: Type undefined")
-        IO.inspect(msg)
-        nil
-    end
-
-    message
-  end
-
-  defp create_message_response(%Message{} = message) do
-    # TODO: In development
-    message
-  end
 end
