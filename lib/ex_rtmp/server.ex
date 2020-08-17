@@ -37,9 +37,9 @@ defmodule ExRTMP.Server do
     end
   end
 
-  # def handle_cast({:register_client, client}, state) do
-  #   {:noreply, Map.put(state, :clients, [client | state.clients])}
-  # end
+  def handle_cast({:register_client, client}, state) do
+    {:noreply, Map.put(state, :clients, [client | state.clients])}
+  end
 
   def handle_cast({:unregister_client, socket}, state) do
     :ok = :gen_tcp.close(socket)
