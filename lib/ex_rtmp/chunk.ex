@@ -172,5 +172,12 @@ defmodule ExRTMP.Chunk do
     <<_value::binary-size(length), msg::binary>> = msg
     read_chunk(msg, m)
   end
+
+  def acknowledge(stream_id, message_length) do
+    message_type_id = 0x03 # acknowledge
+    timestamp = :erlang.timestamp() |> elem(0)
+    body = <<0::32>>
+    <<0::size(2), stream_id::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), stream_id::little-size(4)-unit(8), body::binary>>     
+  end
   
 end
