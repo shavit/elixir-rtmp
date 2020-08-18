@@ -73,7 +73,9 @@ defmodule ExRTMP.Connection do
     IO.inspect("[Connection] Message size: #{byte_size(msg)}")
     IO.inspect chunk = Chunk.decode(msg)
     case chunk do
-      %{command: "connect", stream_id: stream_id, length: length} ->
+      %{command: "connect", stream_id: stream_id, length: length, value: value} ->
+	IO.inspect "[connect] value:"
+	IO.inspect value
 	IO.inspect "send acknoledge"
 	IO.inspect Chunk.acknowledge(stream_id, length)
 	IO.inspect :gen_tcp.send(from, Chunk.acknowledge(stream_id, length))

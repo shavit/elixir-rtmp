@@ -133,7 +133,7 @@ defmodule ExRTMP.Chunk do
 	IO.inspect msg
 	IO.inspect rest
 	IO.inspect "<<<  read chunk"
-	read_chunk(rest, m)
+	IO.inspect read_chunk(rest, m)	
 
       <<1::size(2), csid::size(6), _rest::binary>> ->	
 	Logger.debug "Type 1"
@@ -159,11 +159,15 @@ defmodule ExRTMP.Chunk do
     read_chunk(msg, m)
   end
 
-  def read_chunk(<<0x03, length::size(16), msg::binary>>, m) do
-    v = binary_part(msg, 0, length)
-    m = Map.put(m, :value, v)
+  def read_chunk(<<0x03, _length::size(16), _rest::binary>> = msg, m) do
+    <<0x03, msg::binary>> = msg
+    msg = read_chunk_object(msg, %{})
+
+    # v = binary_part(msg, 0, length)
+    # m = Map.put(m, :value, v)
+
     # <<_value::binary-size(length), msg::binary>> = msg
-    m
+    Map.put(m, :message, msg)
   end
 
   def read_chunk(<<type::size(8), length::size(16), msg::binary>>, m) do
@@ -173,11 +177,49 @@ defmodule ExRTMP.Chunk do
     read_chunk(msg, m)
   end
 
+  defp read_chunk_object(<<>>, obj), do: Map.delete(obj, nil)
+
+  defp read_chunk_object(msg, obj) do
+    IO.inspect {k, msg} = read_chunk_object_key(msg)
+    IO.inspect {v, msg} = read_chunk_object_value(msg)
+
+    read_chunk_object(msg, Enum.into(obj, %{k => v}))
+  end
+
+  defp read_chunk_object_key(<<0x0, 0x0, 0x09>>), do: {nil, ""}
+
+  defp read_chunk_object_key(<<size::size(16), msg::binary>> = full_message) do
+    k = binary_part(msg, 0, size)
+    <<_key::binary-size(size), msg::binary>> = msg
+    {k, msg}
+  end
+
+  defp read_chunk_object_value(<<0x01, v::unsigned-integer-size(8), msg::binary>>) do
+    v = if v == 0, do: false, else: true
+    {v, msg}
+  end
+
+  defp read_chunk_object_value(<<0x02, size::unsigned-integer-size(16), msg::binary>>) do
+    v = binary_part(msg, 0, size)
+    <<_value::binary-size(size), msg::binary>> = msg
+    {v, msg}
+  end
+  
+  defp read_chunk_object_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
+
+  defp read_chunk_object_value(<<>>), do: {nil, <<>>}
+  
+  defp read_chunk_object_value(msg) do
+    IO.inspect ">>> undefined object value"
+    IO.inspect msg
+    IO.inspect "<<< undefined object value"
+    {"undefined", <<>>}
+  end
+
   def acknowledge(stream_id, message_length) do
     message_type_id = 0x03 # acknowledge
     timestamp = :erlang.timestamp() |> elem(0)
     body = <<0::32>>
     <<0::size(2), stream_id::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), stream_id::little-size(4)-unit(8), body::binary>>     
   end
-  
 end
