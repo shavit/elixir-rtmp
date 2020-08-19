@@ -1,6 +1,6 @@
-defmodule ExRTMP.AMF0 do
+defmodule ExRTMP.AMF.AMF0 do
   @moduledoc """
-  AMF0 reader and writer
+  `ExRTMP.AMF.AMF0` AMF0 reader and writer
 
   Command messages have message type value of 20 for AMF0, and 17 for AMF3.
     Each command consists of a name, transaction ID and object

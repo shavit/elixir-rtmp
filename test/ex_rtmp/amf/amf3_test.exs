@@ -1,6 +1,6 @@
-defmodule ExRTMP.AMF3Test do
+defmodule ExRTMP.AMF.AMF3Test do
   use ExUnit.Case
-  alias ExRTMP.AMF3
+  alias ExRTMP.AMF.AMF3
 
   describe "amf3" do
     test "new/2 creates string message" do
