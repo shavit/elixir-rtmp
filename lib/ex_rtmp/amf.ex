@@ -9,7 +9,7 @@ defmodule ExRTMP.AMF do
     msg
   end
 
-  def encode_key(key) do
-    
+  def encode_key(key) when is_binary(key) do
+    <<byte_size(key)::unsigned-integer>> <> key
   end
 end
