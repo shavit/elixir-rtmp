@@ -8,4 +8,8 @@ defmodule ExRTMP.AMF do
   def decode(msg) do
     msg
   end
+
+  def encode_key(key) do
+    
+  end
 end
