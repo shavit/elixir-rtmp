@@ -44,12 +44,15 @@ defmodule ExRTMP.AMF do
 
   @doc """
   encode_string/1 encodes AMF string value
+
+  It encodes 16-bit and 32-bit length strings
   """
   def encode_string(value) do
-    if is_binary(value) do
-      <<0x02, byte_size(value)::size(16), value::binary>>
-    else
-      {:error, "invalid input"}
+    vsize = byte_size(value)
+    cond do
+      vsize <= 0x10000 -> <<0x02, vsize::size(16), value::binary>>
+      vsize <= 0x7fffffff -> <<0x02, vsize::size(32), value::binary>>
+      true -> <<>>
     end
   end
 

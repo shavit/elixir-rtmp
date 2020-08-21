@@ -36,19 +36,23 @@ defmodule ExRTMP.AMFTest do
     end
 
     test "encode_string/1 encodes string value" do
+      string_32bit = Enum.join(-10..0x10000)
       [
         {&AMF.encode_string/1, "some value",
          <<0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
-        {&AMF.encode_string/1, 1234, {:error, "invalid input"}}
+        {&AMF.encode_string/1, "some other value",
+         <<0x02, 0, 16, 115, 111, 109, 101, 32, 111, 116, 104, 101, 114, 32, 118, 97, 108, 117,
+         101>>},
+	{&AMF.encode_string/1, string_32bit, <<0x02, 0, 4, 212, 180>> <> string_32bit}
       ]
       |> Enum.each(&assert_test_case/1)
     end
 
     test "encode_object/1 encodes object value" do
       [
-        {&AMF.encode_string/1, 1234, {:error, "invalid input"}},
-        {&AMF.encode_string/1, [1, 2, 3, 4], {:error, "invalid input"}},
-        {&AMF.encode_string/1, {1, 2, 3, 4}, {:error, "invalid input"}}
+        {&AMF.encode_object/1, 1234, {:error, "invalid input"}},
+        {&AMF.encode_object/1, [1, 2, 3, 4], {:error, "invalid input"}},
+        {&AMF.encode_object/1, {1, 2, 3, 4}, {:error, "invalid input"}}
       ]
       |> Enum.each(&assert_test_case/1)
     end
