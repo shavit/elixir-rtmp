@@ -47,7 +47,7 @@ defmodule ExRTMP.AMF do
   """
   def encode_string(value) do
     if is_binary(value) do
-      <<0x02, value::binary>>
+      <<0x02, byte_size(value)::size(16), value::binary>>
     else
       {:error, "invalid input"}
     end
@@ -72,5 +72,15 @@ defmodule ExRTMP.AMF do
     else
       {:error, "invalid input"}
     end
+  end
+
+  @doc """
+  encode_array/1 encodes AMF array value
+  """
+  def encode_array([]), do: []  
+
+  def encode_array([value | _rest] = arr) do
+    arr_size = Enum.count(arr)
+    <<0x08, arr_size::size(4)-unit(8)>> <> encode_string(value)
   end
 end

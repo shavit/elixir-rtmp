@@ -36,28 +36,35 @@ defmodule ExRTMP.AMFTest do
     end
 
     test "encode_string/1 encodes string value" do
+      IO.inspect AMF.encode_string "some value"
       [
-        {&AMF.encode_string/1, "some value", <<0x02, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
+        {&AMF.encode_string/1, "some value", <<0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
         {&AMF.encode_string/1, 1234, {:error, "invalid input"}}
       ]
       |> Enum.each(&assert_test_case/1)
     end
 
-      test "encode_objecet/1 encodes object value" do
+    test "encode_object/1 encodes object value" do
       [
-
         {&AMF.encode_string/1, 1234, {:error, "invalid input"}},
-	{&AMF.encode_string/1, [1,2,3,4], {:error, "invalid input"}},
-	{&AMF.encode_string/1, {1,2,3,4}, {:error, "invalid input"}},
+        {&AMF.encode_string/1, [1, 2, 3, 4], {:error, "invalid input"}},
+        {&AMF.encode_string/1, {1, 2, 3, 4}, {:error, "invalid input"}}
       ]
       |> Enum.each(&assert_test_case/1)
     end
 
-      test "encode_null/1 encodes null value" do
+    test "encode_null/1 encodes null value" do
       [
         {&AMF.encode_null/1, nil, <<0x05>>},
         {&AMF.encode_null/1, 1234, {:error, "invalid input"}},
-	        {&AMF.encode_null/1, "null", {:error, "invalid input"}}
+        {&AMF.encode_null/1, "null", {:error, "invalid input"}}
+      ]
+      |> Enum.each(&assert_test_case/1)
+    end
+
+    test "encode_array/1 encodes array value" do
+      [
+        {&AMF.encode_array/1, ["some value"], <<0x08, 0, 0, 0, 1, 0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
       ]
       |> Enum.each(&assert_test_case/1)
     end
