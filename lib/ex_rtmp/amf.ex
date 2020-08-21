@@ -77,10 +77,17 @@ defmodule ExRTMP.AMF do
   @doc """
   encode_array/1 encodes AMF array value
   """
-  def encode_array([]), do: []  
+  def encode_array([]), do: []
 
   def encode_array([value | _rest] = arr) do
     arr_size = Enum.count(arr)
     <<0x08, arr_size::size(4)-unit(8)>> <> encode_string(value)
+  end
+
+  @doc """
+  encode_date/1 encodes date value
+  """
+  def encode_date(value) do
+    <<0x0B, value::float-64>>
   end
 end

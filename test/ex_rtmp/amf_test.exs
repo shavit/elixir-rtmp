@@ -36,9 +36,9 @@ defmodule ExRTMP.AMFTest do
     end
 
     test "encode_string/1 encodes string value" do
-      IO.inspect AMF.encode_string "some value"
       [
-        {&AMF.encode_string/1, "some value", <<0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
+        {&AMF.encode_string/1, "some value",
+         <<0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
         {&AMF.encode_string/1, 1234, {:error, "invalid input"}}
       ]
       |> Enum.each(&assert_test_case/1)
@@ -64,7 +64,16 @@ defmodule ExRTMP.AMFTest do
 
     test "encode_array/1 encodes array value" do
       [
-        {&AMF.encode_array/1, ["some value"], <<0x08, 0, 0, 0, 1, 0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
+        {&AMF.encode_array/1, ["some value"],
+         <<0x08, 0, 0, 0, 1, 0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>}
+      ]
+      |> Enum.each(&assert_test_case/1)
+    end
+
+    test "encode_date/1 encodes date" do
+      [
+        {&AMF.encode_date/1, 12345, <<0x0B, 64, 200, 28, 128, 0, 0, 0, 0>>},
+        {&AMF.encode_date/1, 1, <<0x0B, 63, 240, 0, 0, 0, 0, 0, 0>>}
       ]
       |> Enum.each(&assert_test_case/1)
     end
