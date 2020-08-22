@@ -95,6 +95,14 @@ defmodule ExRTMP.AMF.AMF3 do
   @doc """
   new/2 create a new AMF3 message
   """
+  def new(m, opts) when is_list(opts) do
+    %__MODULE__{
+      amf: 0,
+      csid: Keyword.get(opts, :csid),
+      body: <<>>
+    }
+  end
+
   def new(body, data_type \\ :byte_array) do
     type_ = @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
     l = 1 + byte_size(body) * 2
