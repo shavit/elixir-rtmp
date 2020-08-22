@@ -10,10 +10,38 @@ defmodule ExRTMP.AMF do
   end
 
   @doc """
+  encode/1 encodes a message
+  """
+  def encode(struct, opts \\ []) when is_map(struct) do
+    struct
+    |> Enum.map(fn {k, v} ->
+      encode_key(k) <> encode_string(v)
+    end)
+    |> Enum.join()
+    |> encode_header(opts)
+  end
+
+  defp encode_header(body, _opts) do
+    # It need ot read it from the struct
+    csid = 1
+    fmt = <<0::2, csid::6>>
+    mtype = 0x04
+    timestamp = :erlang.timestamp() |> elem(0)
+    message_length = byte_size(body)
+
+    header = fmt <> <<timestamp::unit(8)-size(3), message_length::unit(8)-size(3)>>
+    header <> body
+  end
+
+  @doc """
   encode_key/1 encodes AMF object key
   """
   def encode_key(key) when is_binary(key) do
     <<byte_size(key)::unsigned-integer>> <> key
+  end
+
+  def encode_key(key) when is_atom(key) do
+    key |> Atom.to_string() |> encode_key()
   end
 
   @doc """
@@ -49,9 +77,10 @@ defmodule ExRTMP.AMF do
   """
   def encode_string(value) do
     vsize = byte_size(value)
+
     cond do
       vsize <= 0x10000 -> <<0x02, vsize::size(16), value::binary>>
-      vsize <= 0x7fffffff -> <<0x02, vsize::size(32), value::binary>>
+      vsize <= 0x7FFFFFFF -> <<0x02, vsize::size(32), value::binary>>
       true -> <<>>
     end
   end

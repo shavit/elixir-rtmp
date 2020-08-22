@@ -7,6 +7,14 @@ defmodule ExRTMP.AMFTest do
   end
 
   describe "amf" do
+    test "encode/1 encodes a message" do
+      [
+	{&AMF.encode/1, %{id: "0", message: "some message"}, <<1, 0, 6, 62, 0, 0, 30, 2, 105, 100, 2, 0, 1, 48, 7, 109, 101, 115, 115, 97,
+  103, 101, 2, 0, 12, 115, 111, 109, 101, 32, 109, 101, 115, 115, 97, 103, 101>>}
+      ]
+      |> Enum.each(&assert_test_case/1)
+    end
+    
     test "encode_key/1 encodes object key" do
       [
         {&AMF.encode_key/1, "some key", <<0x8, 115, 111, 109, 101, 32, 107, 101, 121>>}
