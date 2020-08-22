@@ -7,13 +7,15 @@ defmodule ExRTMP.AMF do
   alias ExRTMP.AMF.AMF0
   alias ExRTMP.AMF.AMF3
 
-  @doc"""
-new/2 creates a new AMF message
+  defstruct [:amf, :body, :command, :length, :marker, :tail, :version]
 
-  ## Options
-    - :amf - The AMF version. Integer: 0, 3.
+  @doc """
+  new/2 creates a new AMF message
 
-"""
+    ## Options
+      - :amf - The AMF version. Integer: 0, 3.
+
+  """
   def new(m, opts \\ []) do
     case Keyword.get(opts, :amf) do
       nil -> AMF0.new(m, opts)

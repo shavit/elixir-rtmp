@@ -142,13 +142,13 @@ defmodule ExRTMP.AMF.AMF0 do
     <<_key::binary-size(size), msg::binary>> = msg
     {k, msg}
   end
-  
+
   defp decode_message_value(<<0x02, size::size(16), msg::binary>>) do
     v = binary_part(msg, 0, size)
     <<_value::binary-size(size), msg::binary>> = msg
     {v, msg}
   end
-  
+
   defp decode_message_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
 
   defp decode_message_value(<<>>), do: {nil, <<>>}

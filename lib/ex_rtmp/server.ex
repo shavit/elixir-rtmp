@@ -29,11 +29,13 @@ defmodule ExRTMP.Server do
     :ok = :gen_tcp.controlling_process(state.conn, pid)
 
     case :gen_tcp.accept(state.conn) do
-      {:error, reason} -> {:stop, reason, state}
+      {:error, reason} ->
+        {:stop, reason, state}
+
       {:ok, _erl_port} ->
-	Logger.info("[RTMP] Accepting connections on port #{state.port}")
-	:gen_tcp.accept(state.conn)
-	{:noreply, state}
+        Logger.info("[RTMP] Accepting connections on port #{state.port}")
+        :gen_tcp.accept(state.conn)
+        {:noreply, state}
     end
   end
 
@@ -62,16 +64,15 @@ defmodule ExRTMP.Server do
   # end
 
   def handle_info({_port, {:exit_status, _code}}, state) do
-    Logger.info "Exit"
+    Logger.info("Exit")
     {:stop, :normal, state}
   end
-   
+
   def terminate(reason, %{clients: clients, conn: conn}) do
-    Logger.info "Closing server and #{Enum.count(clients)} connections"
+    Logger.info("Closing server and #{Enum.count(clients)} connections")
     Enum.each(clients, fn x -> :gen_tcp.close(x) end)
     :ok = :gen_tcp.close(conn)
 
     reason
   end
-
 end

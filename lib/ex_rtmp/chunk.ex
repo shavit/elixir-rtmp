@@ -116,44 +116,53 @@ defmodule ExRTMP.Chunk do
 
   def decode(msg) do
     case msg do
-      <<0::2, 1::6, csid::16, timestamp::3 * 8, size::3 * 8, message_type_id::8, sid::little-size(4)-unit(8), rest::binary>> ->
-	Logger.debug "Type 0.1 cs id #{csid} | Chunk message header 0"
-      <<0::2, csid::6, 16777215::3 * 8, size::3 * 8, message_type_id::8, sid::little-size(4)-unit(8), timestamp::4 * 8, rest::binary>> ->
-	Logger.debug "Type 0.2 cs id #{csid} | Chunk message header 0"
-      <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
-	mtype = Message.get_control_message(message_type_id)
-	Logger.debug "Type 0 | cs id #{csid} | #{mtype}"
-	m =  %{
-	  type: mtype,
-	  timestamp: timestamp,
-	  length: message_length,
-	  stream_id: message_stream_id
-	}
-	IO.inspect ">>> read chunk"
-	IO.inspect msg
-	IO.inspect rest
-	IO.inspect "<<<  read chunk"
-	IO.inspect read_chunk(rest, m)	
+      <<0::2, 1::6, csid::16, timestamp::3*8, size::3*8, message_type_id::8,
+        sid::little-size(4)-unit(8), rest::binary>> ->
+        Logger.debug("Type 0.1 cs id #{csid} | Chunk message header 0")
 
-      <<1::size(2), csid::size(6), _rest::binary>> ->	
-	Logger.debug "Type 1"
+      <<0::2, csid::6, 16_777_215::3*8, size::3*8, message_type_id::8,
+        sid::little-size(4)-unit(8), timestamp::4*8, rest::binary>> ->
+        Logger.debug("Type 0.2 cs id #{csid} | Chunk message header 0")
+
+      <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
+        mtype = Message.get_control_message(message_type_id)
+        Logger.debug("Type 0 | cs id #{csid} | #{mtype}")
+
+        m = %{
+          type: mtype,
+          timestamp: timestamp,
+          length: message_length,
+          stream_id: message_stream_id
+        }
+
+        IO.inspect(">>> read chunk")
+        IO.inspect(msg)
+        IO.inspect(rest)
+        IO.inspect("<<<  read chunk")
+        IO.inspect(read_chunk(rest, m))
+
+      <<1::size(2), csid::size(6), _rest::binary>> ->
+        Logger.debug("Type 1")
+
       <<2::size(2), csid::size(6), _rest::binary>> ->
-	Logger.debug "Type 2"
+        Logger.debug("Type 2")
+
       <<3::size(2), csid::size(6), _rest::binary>> ->
-	Logger.debug "Type 3"
-	
+        Logger.debug("Type 3")
+
       <<0::size(2), 0::size(6), 0xFFFFFF::size(24), message_length::size(24),
         message_type_id::size(8), msg_stream_id::size(32), timestamp::size(32), rest::binary>> ->
-	Logger.debug("Type 0.1")
+        Logger.debug("Type 0.1")
 
       _ ->
-	Logger.error("Could not parse chunk")
-	{:error, "could not parse meessage"}
+        Logger.error("Could not parse chunk")
+        {:error, "could not parse meessage"}
     end
   end
 
   def read_chunk(<<0x05>>, m), do: m
-  
+
   def read_chunk(<<0, v::float-64, msg::binary>>, m) do
     m = Map.put(m, :value, v)
     read_chunk(msg, m)
@@ -180,8 +189,8 @@ defmodule ExRTMP.Chunk do
   defp read_chunk_object(<<>>, obj), do: Map.delete(obj, nil)
 
   defp read_chunk_object(msg, obj) do
-    IO.inspect {k, msg} = read_chunk_object_key(msg)
-    IO.inspect {v, msg} = read_chunk_object_value(msg)
+    IO.inspect({k, msg} = read_chunk_object_key(msg))
+    IO.inspect({v, msg} = read_chunk_object_value(msg))
 
     read_chunk_object(msg, Enum.into(obj, %{k => v}))
   end
@@ -204,22 +213,25 @@ defmodule ExRTMP.Chunk do
     <<_value::binary-size(size), msg::binary>> = msg
     {v, msg}
   end
-  
+
   defp read_chunk_object_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
 
   defp read_chunk_object_value(<<>>), do: {nil, <<>>}
-  
+
   defp read_chunk_object_value(msg) do
-    IO.inspect ">>> undefined object value"
-    IO.inspect msg
-    IO.inspect "<<< undefined object value"
+    IO.inspect(">>> undefined object value")
+    IO.inspect(msg)
+    IO.inspect("<<< undefined object value")
     {"undefined", <<>>}
   end
 
   def acknowledge(stream_id, message_length) do
-    message_type_id = 0x03 # acknowledge
+    # acknowledge
+    message_type_id = 0x03
     timestamp = :erlang.timestamp() |> elem(0)
     body = <<0::32>>
-    <<0::size(2), stream_id::size(6), timestamp::size(24), message_length::size(24), message_type_id::size(8), stream_id::little-size(4)-unit(8), body::binary>>     
+
+    <<0::size(2), stream_id::size(6), timestamp::size(24), message_length::size(24),
+      message_type_id::size(8), stream_id::little-size(4)-unit(8), body::binary>>
   end
 end

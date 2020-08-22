@@ -36,14 +36,16 @@ defmodule ExRTMP.Connection do
   def handle_cast({:accept, socket}, state) do
     case :gen_tcp.accept(socket, 120_000) do
       {:ok, client} ->
-	register_client(client, state)
+        register_client(client, state)
         {:noreply, state}
+
       {:error, :timeout} ->
-	start_another(state)
-	{:stop, :closed, state}
+        start_another(state)
+        {:stop, :closed, state}
+
       {:error, :closed} ->
-	Process.exit(self(), :normal)
-	{:stop, :closed, state}
+        Process.exit(self(), :normal)
+        {:stop, :closed, state}
     end
   end
 
@@ -71,14 +73,15 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: nil} = state) do
     IO.inspect("[Connection] Message size: #{byte_size(msg)}")
-    IO.inspect chunk = Chunk.decode(msg)
+    IO.inspect(chunk = Chunk.decode(msg))
+
     case chunk do
       %{command: "connect", stream_id: stream_id, length: length, value: value} ->
-	IO.inspect "[connect] value:"
-	IO.inspect value
-	IO.inspect "send acknoledge"
-	IO.inspect Chunk.acknowledge(stream_id, length)
-	IO.inspect :gen_tcp.send(from, Chunk.acknowledge(stream_id, length))
+        IO.inspect("[connect] value:")
+        IO.inspect(value)
+        IO.inspect("send acknoledge")
+        IO.inspect(Chunk.acknowledge(stream_id, length))
+        IO.inspect(:gen_tcp.send(from, Chunk.acknowledge(stream_id, length)))
     end
 
     {:noreply, state}

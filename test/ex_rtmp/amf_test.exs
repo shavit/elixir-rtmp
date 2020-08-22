@@ -9,12 +9,13 @@ defmodule ExRTMP.AMFTest do
   describe "amf" do
     test "encode/1 encodes a message" do
       [
-	{&AMF.encode/1, %{id: "0", message: "some message"}, <<1, 0, 6, 62, 0, 0, 30, 2, 105, 100, 2, 0, 1, 48, 7, 109, 101, 115, 115, 97,
-  103, 101, 2, 0, 12, 115, 111, 109, 101, 32, 109, 101, 115, 115, 97, 103, 101>>}
+        {&AMF.encode/1, %{id: "0", message: "some message"},
+         <<1, 0, 6, 62, 0, 0, 30, 2, 105, 100, 2, 0, 1, 48, 7, 109, 101, 115, 115, 97, 103, 101,
+           2, 0, 12, 115, 111, 109, 101, 32, 109, 101, 115, 115, 97, 103, 101>>}
       ]
       |> Enum.each(&assert_test_case/1)
     end
-    
+
     test "encode_key/1 encodes object key" do
       [
         {&AMF.encode_key/1, "some key", <<0x8, 115, 111, 109, 101, 32, 107, 101, 121>>}
@@ -45,13 +46,14 @@ defmodule ExRTMP.AMFTest do
 
     test "encode_string/1 encodes string value" do
       string_32bit = Enum.join(-10..0x10000)
+
       [
         {&AMF.encode_string/1, "some value",
          <<0x02, 0, 10, 115, 111, 109, 101, 32, 118, 97, 108, 117, 101>>},
         {&AMF.encode_string/1, "some other value",
          <<0x02, 0, 16, 115, 111, 109, 101, 32, 111, 116, 104, 101, 114, 32, 118, 97, 108, 117,
-         101>>},
-	{&AMF.encode_string/1, string_32bit, <<0x02, 0, 4, 212, 180>> <> string_32bit}
+           101>>},
+        {&AMF.encode_string/1, string_32bit, <<0x02, 0, 4, 212, 180>> <> string_32bit}
       ]
       |> Enum.each(&assert_test_case/1)
     end
