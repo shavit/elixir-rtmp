@@ -4,6 +4,23 @@ defmodule ExRTMP.AMF do
 
 
   """
+  alias ExRTMP.AMF.AMF0
+  alias ExRTMP.AMF.AMF3
+
+  @doc"""
+new/2 creates a new AMF message
+
+  ## Options
+    - :amf - The AMF version. Integer: 0, 3.
+
+"""
+  def new(m, opts \\ []) do
+    case Keyword.get(opts, :amf) do
+      nil -> AMF0.new(m, opts)
+      0 -> AMF0.new(m, opts)
+      3 -> AMF3.new(m, opts)
+    end
+  end
 
   def decode(msg) do
     msg
@@ -25,7 +42,6 @@ defmodule ExRTMP.AMF do
     # It need ot read it from the struct
     csid = 1
     fmt = <<0::2, csid::6>>
-    mtype = 0x04
     timestamp = :erlang.timestamp() |> elem(0)
     message_length = byte_size(body)
 

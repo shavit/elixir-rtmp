@@ -39,6 +39,19 @@ defmodule ExRTMP.AMF.AMF0 do
   32 bits                       - message length
   message-length * 8 bits       - amf0 or amf3
   """
+
+  defstruct [:amf, :csid, :body, :command, :length, :marker, :tail, :version]
+
+  @type t :: %__MODULE__{
+          amf: nil,
+          body: nil,
+          command: nil,
+          length: nil,
+          marker: nil,
+          tail: nil,
+          version: nil
+        }
+
   @type data_type ::
           :number
           | :boolean
@@ -73,6 +86,14 @@ defmodule ExRTMP.AMF.AMF0 do
   @doc """
   new/2 create a new AMF0 message
   """
+  def new(m, opts) when is_list(opts) do
+    %__MODULE__{
+      amf: 0,
+      csid: Keyword.get(opts, :csid),
+      body: <<>>
+    }
+  end
+
   def new(body) when is_integer(body) do
     type_ = get_data_type_code(:number)
     <<type_, body::float-64>>
@@ -100,20 +121,6 @@ defmodule ExRTMP.AMF.AMF0 do
   defp get_data_type_code(data_type) do
     @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
   end
-
-  # TOOD: Remove and rename
-
-  defstruct [:amf, :body, :command, :length, :marker, :tail, :version]
-
-  @type t :: %__MODULE__{
-          amf: nil,
-          body: nil,
-          command: nil,
-          length: nil,
-          marker: nil,
-          tail: nil,
-          version: nil
-        }
 
   def decode(<<0x03, msg::binary>>) do
     decode_message(msg, %{})
