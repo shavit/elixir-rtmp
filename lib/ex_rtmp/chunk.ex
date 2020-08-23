@@ -210,7 +210,7 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_value(<<0x02, size::unsigned-integer-size(16), msg::binary>>) do
     v = binary_part(msg, 0, size)
-    <<_value::binary-size(size), msg::binary>> = msg
+    <<_value::binary-size(size), msg::utf8>> = msg
     {v, msg}
   end
 
