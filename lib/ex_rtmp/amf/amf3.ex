@@ -39,7 +39,7 @@ defmodule ExRTMP.AMF.AMF3 do
   32 bits                       - message length
   message-length * 8 bits       - amf0 or amf3
   """
-  defstruct [:amf, :body, :command, :length, :marker, :tail, :version]
+  defstruct [:amf, :csid, :body, :command, :length, :marker, :tail, :version]
 
   @type t :: %__MODULE__{
           amf: nil,
