@@ -136,11 +136,7 @@ defmodule ExRTMP.Chunk do
           stream_id: message_stream_id
         }
 
-        IO.inspect(">>> read chunk")
-        IO.inspect(msg)
-        IO.inspect(rest)
-        IO.inspect("<<<  read chunk")
-        IO.inspect(read_chunk(rest, m))
+        read_chunk(rest, m)
 
       <<1::size(2), csid::size(6), _rest::binary>> ->
         Logger.debug("Type 1")
@@ -172,11 +168,7 @@ defmodule ExRTMP.Chunk do
     <<0x03, msg::binary>> = msg
     msg = read_chunk_object(msg, %{})
 
-    # v = binary_part(msg, 0, length)
-    # m = Map.put(m, :value, v)
-
-    # <<_value::binary-size(length), msg::binary>> = msg
-    Map.put(m, :message, msg)
+    Map.put(m, :body, msg)
   end
 
   def read_chunk(<<type::size(8), length::size(16), msg::binary>>, m) do
@@ -189,8 +181,8 @@ defmodule ExRTMP.Chunk do
   defp read_chunk_object(<<>>, obj), do: Map.delete(obj, nil)
 
   defp read_chunk_object(msg, obj) do
-    IO.inspect({k, msg} = read_chunk_object_key(msg))
-    IO.inspect({v, msg} = read_chunk_object_value(msg))
+    {k, msg} = read_chunk_object_key(msg)
+    {v, msg} = read_chunk_object_value(msg)
 
     read_chunk_object(msg, Enum.into(obj, %{k => v}))
   end
@@ -199,6 +191,7 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_key(<<size::size(16), msg::binary>> = full_message) do
     k = binary_part(msg, 0, size)
+
     if String.valid?(k) do
       <<_key::binary-size(size), msg::binary>> = msg
       {k, msg}
@@ -221,9 +214,9 @@ defmodule ExRTMP.Chunk do
   end
 
   defp read_chunk_object_value_utf8({<<0x0, _rest::binary>>, acc, _size, n}), do: {acc, n}
-  
+
   defp read_chunk_object_value_utf8({<<h::utf8, rest::binary>>, acc, size, n}) do
-    if bit_size(acc) > size*8 do
+    if bit_size(acc) > size * 8 do
       {acc, n}
     else
       read_chunk_object_value_utf8({rest, acc <> <<h>>, size, n + 1})
@@ -231,7 +224,7 @@ defmodule ExRTMP.Chunk do
   end
 
   defp read_chunk_object_value_utf8({<<h::size(8), rest::binary>>, acc, size, n}) do
-    if bit_size(acc) > size*8 do
+    if bit_size(acc) > size * 8 do
       {acc, n}
     else
       read_chunk_object_value_utf8({rest, acc, size, n + 1})
