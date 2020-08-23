@@ -199,8 +199,14 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_key(<<size::size(16), msg::binary>> = full_message) do
     k = binary_part(msg, 0, size)
-    <<_key::binary-size(size), msg::binary>> = msg
-    {k, msg}
+    if String.valid?(k) do
+      <<_key::binary-size(size), msg::binary>> = msg
+      {k, msg}
+    else
+      {k, n} = read_chunk_object_value_utf8({msg, <<>>, size, 0})
+      <<_key::binary-size(n), msg::binary>> = msg
+      {k, msg}
+    end
   end
 
   defp read_chunk_object_value(<<0x01, v::unsigned-integer-size(8), msg::binary>>) do
@@ -210,8 +216,26 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_value(<<0x02, size::unsigned-integer-size(16), msg::binary>>) do
     v = binary_part(msg, 0, size)
-    <<_value::binary-size(size), msg::utf8>> = msg
+    <<_value::binary-size(size), msg::binary>> = msg
     {v, msg}
+  end
+
+  defp read_chunk_object_value_utf8({<<0x0, _rest::binary>>, acc, _size, n}), do: {acc, n}
+  
+  defp read_chunk_object_value_utf8({<<h::utf8, rest::binary>>, acc, size, n}) do
+    if bit_size(acc) > size*8 do
+      {acc, n}
+    else
+      read_chunk_object_value_utf8({rest, acc <> <<h>>, size, n + 1})
+    end
+  end
+
+  defp read_chunk_object_value_utf8({<<h::size(8), rest::binary>>, acc, size, n}) do
+    if bit_size(acc) > size*8 do
+      {acc, n}
+    else
+      read_chunk_object_value_utf8({rest, acc, size, n + 1})
+    end
   end
 
   defp read_chunk_object_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
