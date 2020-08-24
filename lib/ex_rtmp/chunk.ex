@@ -251,4 +251,9 @@ defmodule ExRTMP.Chunk do
     <<0::size(2), stream_id::size(6), timestamp::size(24), message_length::size(24),
       message_type_id::size(8), stream_id::little-size(4)-unit(8), body::binary>>
   end
+
+  def result(stream_id) do
+    timestamp = :erlang.timestamp() |> elem(0)    
+    <<0::size(2), stream_id::size(6), timestamp::size(24)>>
+  end
 end
