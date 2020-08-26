@@ -61,6 +61,7 @@ defmodule ExRTMP.Client do
 
   def handle_info({:tcp, _from, msg}, %{handshake: false} = state) do
     Logger.info("TCP message")
+    IO.inspect msg
 
     {:noreply, state}
   end
