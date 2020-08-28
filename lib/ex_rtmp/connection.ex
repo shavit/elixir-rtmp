@@ -20,11 +20,11 @@ defmodule ExRTMP.Connection do
       handshake: Handshake.new()
     }
 
-    {:ok, state, {:continue, :accept}}
+    {:ok, state}
   end
 
   def handle_continue(:accept, state) do
-    :ok = GenServer.cast(self(), {:accept, state.socket})
+    # :ok = GenServer.cast(self(), {:accept, state.socket})
 
     {:noreply, state}
   end
