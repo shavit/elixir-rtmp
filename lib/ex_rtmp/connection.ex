@@ -77,11 +77,14 @@ defmodule ExRTMP.Connection do
 
     case chunk do
       %{command: "connect", stream_id: stream_id, length: length, value: value} ->
+        # reply with ServerBW, ClientBW and SetPackageSize
         IO.inspect("[connect] value:")
         IO.inspect(value)
         IO.inspect("send acknoledge")
         IO.inspect(Chunk.acknowledge(stream_id, length))
         IO.inspect(:gen_tcp.send(from, Chunk.acknowledge(stream_id, length)))
+        IO.inspect(Chunk.result(stream_id))
+        IO.inspect(:gen_tcp.send(from, Chunk.result(stream_id)))
     end
 
     {:noreply, state}
@@ -100,9 +103,6 @@ defmodule ExRTMP.Connection do
   Register the client with the server
   """
   def register_client(client, state) do
-    IO.inspect("[Connection] Registered")
-    IO.inspect(client)
-
     {:ok, _pid} = Connection.start_link(server: state.server, socket: state.socket)
     :ok = GenServer.cast(state.server, {:register_client, client})
   end

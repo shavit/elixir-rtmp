@@ -40,6 +40,7 @@ defmodule ExRTMP.Server do
   end
 
   def handle_cast({:register_client, client}, state) do
+    Logger.info("[Server] Register client")
     {:noreply, Map.put(state, :clients, [client | state.clients])}
   end
 
