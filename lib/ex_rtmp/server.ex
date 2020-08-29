@@ -12,6 +12,7 @@ defmodule ExRTMP.Server do
 
   def init(opts) do
     port = Keyword.get(opts, :port, 1935)
+    Logger.info "[Server] listen on port #{port}"
     {:ok, socket} = :gen_tcp.listen(port, [:binary, {:active, true}, {:buffer, 65536}])
 
     state = %{
@@ -33,7 +34,7 @@ defmodule ExRTMP.Server do
         {:stop, reason, state}
 
       {:ok, _erl_port} ->
-        Logger.info("[RTMP] Accepting connections on port #{state.port}")
+        Logger.info("[Server] Accepting connections on port #{state.port}")
         :gen_tcp.accept(state.conn)
         {:noreply, state}
     end
