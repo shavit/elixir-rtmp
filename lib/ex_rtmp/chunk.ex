@@ -62,6 +62,11 @@ defmodule ExRTMP.Chunk do
 
       + other variations without a header
 
+  Message header fields:
+
+    * message_length - 3 bytes. For type 0 or type 1 chunk
+    * message_type_id - 1 byte. For type 0 or type 1
+    * message_stream_id - 4 bytes. Message stream ID is stored in little-endian format.
 
   Protocol Control Messages
 
@@ -116,11 +121,15 @@ defmodule ExRTMP.Chunk do
 
   def decode(msg) do
     case msg do
-      <<0::2, 1::6, csid::16, timestamp::3*8, size::3*8, message_type_id::8,
+      <<0::size(2), 0::size(6), csid::size(8), rest::binary>> ->
+	Logger.debug("Type 0.0")
+	rest
+
+      <<0::size(2), 1::6, csid::16, timestamp::3*8, size::3*8, message_type_id::8,
         sid::little-size(4)-unit(8), rest::binary>> ->
         Logger.debug("Type 0.1 cs id #{csid} | Chunk message header 0")
 
-      <<0::2, csid::6, 16_777_215::3*8, size::3*8, message_type_id::8,
+      <<0::size(2), csid::6, 16_777_215::size(24), size::size(24), message_type_id::8,
         sid::little-size(4)-unit(8), timestamp::4*8, rest::binary>> ->
         Logger.debug("Type 0.2 cs id #{csid} | Chunk message header 0")
 
@@ -128,18 +137,60 @@ defmodule ExRTMP.Chunk do
         message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
         mtype = Message.get_control_message(message_type_id)
         Logger.debug("Type 0 | cs id #{csid} | #{mtype}")
-
+	
         m = %{
+	  basic_header: <<0::size(2), csid::size(6)>>,
+	  chunk_header: <<timestamp::size(24), message_length::size(24), message_type_id::size(8), message_stream_id::little-size(4)-unit(8)>>,
           type: mtype,
+	  message_type_id: message_type_id,
           timestamp: timestamp,
           length: message_length,
-          stream_id: message_stream_id
+          message_stream_id: message_stream_id,
+	  size: message_length,
+	  rest: rest
         }
 
-        read_chunk(rest, m)
+        IO.inspect(msg)
+	IO.inspect rest
 
-      <<1::size(2), csid::size(6), _rest::binary>> ->
-        Logger.debug("Type 1")
+
+	IO.inspect m
+
+      # TODO: Return this
+      # read_chunk(rest, m)
+
+      <<1::size(2), 0::size(6), _rest>> ->
+        Logger.debug("Type 1.0")
+      <<1::size(2), 1::size(6), _rest>> ->
+        Logger.debug("Type 1.1")
+
+      <<1::size(2), csid::size(6), 16_777_215::size(24), _rest::binary>> ->
+	Logger.debug("Type 1.3")
+
+      <<1::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
+        message_type_id::size(8), message_stream_id::little-size(4)-unit(8), rest::binary>> ->
+        Logger.debug("Type 1 <<1::2, csid::6, ...")
+
+	mtype = Message.get_control_message(message_type_id)
+        m = %{
+	  basic_header: <<1::size(2), csid::size(6)>>,
+	  chunk_header: <<timestamp::size(24), message_length::size(24), message_type_id::size(8), message_stream_id::little-size(4)-unit(8)>>,
+          type: mtype,
+          timestamp: timestamp,
+          message_length: message_length,
+	  message_type_id: message_type_id,
+          message_stream_id: message_stream_id,
+	  rest: rest
+        }
+	IO.inspect m
+	IO.inspect msg
+
+	m
+
+      <<2::size(2), 0::size(6), timestamp::size(24), rest::binary>> ->
+	Logger.debug("Type 2 <<2, 0, 0, 0, ...")
+	
+	rest
 
       <<2::size(2), csid::size(6), _rest::binary>> ->
         Logger.debug("Type 2")
@@ -253,7 +304,7 @@ defmodule ExRTMP.Chunk do
   end
 
   def result(stream_id) do
-    timestamp = :erlang.timestamp() |> elem(0)    
+    timestamp = :erlang.timestamp() |> elem(0)
     <<0::size(2), stream_id::size(6), timestamp::size(24)>>
   end
 end
