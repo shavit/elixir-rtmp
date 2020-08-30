@@ -62,4 +62,13 @@ defmodule ExRTMP.ControlMessage do
   def new(msg) do
      {:error, :invalid_format}
   end
+
+  def ping_response(csid, message_stream_id) do
+    # fmt = <<0::2, csid::6>>
+    # timestamp = :erlang.timestamp() |> elem(0)
+    # <<fmt::8, timestamp::24, 6::24, 0x04::8, message_stream_id::little-size(4)-unit(8), 0x07::16, timestamp::32>>
+
+  timestamp = :erlang.timestamp() |> elem(0)
+  <<0x07::16, timestamp::32>>
+  end
 end
