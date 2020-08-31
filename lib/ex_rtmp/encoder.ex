@@ -21,6 +21,6 @@ defmodule ExRTMP.Encoder do
   def handle_call({:encode, msg}, _ref, state) do
     Logger.info("[Encoder] encoder message: #{inspect(msg)}")
 
-    {:ok, state, state}
+    {:reply, state, state}
   end
 end

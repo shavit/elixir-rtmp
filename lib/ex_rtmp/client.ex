@@ -1,9 +1,13 @@
 defmodule ExRTMP.Client do
   @moduledoc """
   `ExRTMP.Client` RTMP client
+
+  Responsible for establishing a connection with the server, creating a handshake,
+    sending messages to the encoder, and replying to the server.
   """
   use GenServer, restart: :transient
   alias ExRTMP.Chunk
+  alias ExRTMP.Encoder
   alias ExRTMP.Handshake
   require Logger
 
@@ -21,8 +25,16 @@ defmodule ExRTMP.Client do
     port = opts |> Keyword.get(:port, "1939") |> String.to_integer()
     opts = [:binary, {:active, true}, {:packet, 0}]
     {:ok, sock} = :gen_tcp.connect(ip, port, opts)
+    {:ok, encoder} = GenServer.start_link(Encoder, opts)
 
-    {:ok, %{conn: sock, handshake: true, buf: ""}, {:continue, :handshake}}
+    state = %{
+      conn: sock,
+      encoder: encoder,
+      handshake: true,
+      buf: ""
+    }
+
+    {:ok, state, {:continue, :handshake}}
   end
 
   @doc """
@@ -39,7 +51,6 @@ defmodule ExRTMP.Client do
   end
 
   def handle_call({:control_message, msg, _opts}, _from, state) do
-    
     {:reply, state, state}
   end
 
@@ -67,11 +78,15 @@ defmodule ExRTMP.Client do
   def handle_info({:tcp, _from, msg}, %{handshake: false} = state) do
     Logger.info("TCP message")
     IO.inspect(msg)
+    GenServer.call(state.encoder, {:encode, msg})
+
     case Chunk.decode(msg) do
-      msg -> IO.inspect msg
+      msg ->
+        IO.inspect(msg)
+
       {:ok, {:continue, callback}} ->
-	IO.inspect msg
-	IO.inspect callback
+        IO.inspect(msg)
+        IO.inspect(callback)
     end
 
     {:noreply, state}
