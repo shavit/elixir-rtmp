@@ -1,4 +1,4 @@
-defmodule ExRTMP.AMFTest do
+defmodule ExRTMP.ControlMessageTest do
   use ExUnit.Case
   alias ExRTMP.ControlMessage
 
