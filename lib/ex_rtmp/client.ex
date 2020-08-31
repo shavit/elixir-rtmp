@@ -38,6 +38,11 @@ defmodule ExRTMP.Client do
     {:noreply, state}
   end
 
+  def handle_call({:control_message, msg, _opts}, _from, state) do
+    
+    {:reply, state, state}
+  end
+
   def handle_info({:tcp, _from, msg}, %{handshake: true} = state) do
     state = Map.update(state, :buf, msg, fn x -> x <> msg end)
 
@@ -62,7 +67,12 @@ defmodule ExRTMP.Client do
   def handle_info({:tcp, _from, msg}, %{handshake: false} = state) do
     Logger.info("TCP message")
     IO.inspect(msg)
-    IO.inspect Chunk.decode(msg)
+    case Chunk.decode(msg) do
+      msg -> IO.inspect msg
+      {:ok, {:continue, callback}} ->
+	IO.inspect msg
+	IO.inspect callback
+    end
 
     {:noreply, state}
   end
