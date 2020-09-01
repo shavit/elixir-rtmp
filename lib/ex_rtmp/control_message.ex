@@ -7,6 +7,8 @@ defmodule ExRTMP.ControlMessage do
     followed by 6 bytes.
   """
 
+  @typep ping_type() :: atom()
+
   @control_type %{
     0x0 => :clear_stream,
     0x01 => :clear_buffer,
@@ -53,13 +55,33 @@ defmodule ExRTMP.ControlMessage do
   }
 
   @doc"""
-  new/1 interpreted a control message
+  new/1 creates a new control message
   """
-  def new(<<0x06::size(16), timestamp::size(32)>>) do
+  def new(_ping_type) do
+    # timestamp = :erlang.timestamp() |> elem(0)
+    # header = <<0x02, timestamp::32>>
+    ping_type = {0x07, :client_ponged} |> elem(0)
+    #ping_type = {0x06, :client_pinged} |> elem(0)
+    # header = <<0x02, timestamp::32, ping_type::16>>
+    
+    timestamp = :erlang.timestamp() |> elem(0)
+    length = 6
+    message_stream_id = 0
+    header = <<0x02, length::24, timestamp::24, ping_type, message_stream_id::32>>
+    body = <<0, 6, 8, 54, 223, 10>>
+
+    header <> body
+  end
+
+  @doc"""
+  decode/1 interpreted a control message
+  """
+  def decode(<<0x06::size(16), timestamp::size(32)>>) do
     %{type: :ping_client, timestamp: timestamp}
   end
 
-  def new(msg) do
+  def decode(msg) do
+    IO.inspect msg
      {:error, :invalid_format}
   end
 
