@@ -56,15 +56,14 @@ defmodule ExRTMP.ChunkTest do
 
   describe "chunk" do
     test "decode/1 decodes a valid chunk" do
-      # IO.inspect Chunk.decode @valid_chunk
-
       %{
-        command: "createStream",
-        length: 25,
-        stream_id: 0,
-        timestamp: 2920,
-        type: :command,
-        value: 2.0
+	basic_header: <<3>>,
+	chunk_header: <<0, 11, 104, 0, 0, 25, 20, 0, 0, 0, 0>>,
+	length: 25,
+	message_stream_id: 0,
+	size: 25,
+	timestamp: 2920,
+	type: :command
       } = Chunk.decode(@valid_chunk)
     end
   end
