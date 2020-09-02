@@ -19,12 +19,12 @@ defmodule ExRTMP.ControlMessage do
     0x07 => :client_ponged,
     0x08 => :udp_request,
     0x09 => :udp_response,
-    0x0a => :bandwidth_limit,
-    0x0b => :bandwidth,
-    0x0c => :throttle_bandwidth,
-    0x0d => :stream_created,
-    0x0e => :stream_deleted,
-    0x0f => :set_read_access,
+    0x0A => :bandwidth_limit,
+    0x0B => :bandwidth,
+    0x0C => :throttle_bandwidth,
+    0x0D => :stream_created,
+    0x0E => :stream_deleted,
+    0x0F => :set_read_access,
     0x10 => :set_write_access,
     0x11 => :stream_meta_request,
     0x12 => :stream_meta_response,
@@ -35,12 +35,12 @@ defmodule ExRTMP.ControlMessage do
     0x17 => :disconnect,
     0x18 => :hash_update,
     0x19 => :hash_timeout,
-    0x1a => :hash_request,
-    0x1b => :hash_response,
-    0x1c => :check_bandwidth,
-    0x1d => :set_audio_sample_acceses,
-    0x1e => :set_video_sample_acceses,
-    0x1f => :throttle_begin,
+    0x1A => :hash_request,
+    0x1B => :hash_response,
+    0x1C => :check_bandwidth,
+    0x1D => :set_audio_sample_acceses,
+    0x1E => :set_video_sample_acceses,
+    0x1F => :throttle_begin,
     0x20 => :throttle_end,
     0x21 => :drm_notify,
     0x22 => :rtmfp_sync,
@@ -51,19 +51,26 @@ defmodule ExRTMP.ControlMessage do
     0x27 => :proxy_continue,
     0x28 => :proxy_remove_upstream,
     0x29 => :rtmfp_set_keepalive,
-    0x2e => :segment_not_found
+    0x2E => :segment_not_found
   }
 
-  @doc"""
+  for {type, control_name} <- @control_type do
+    def unquote(control_name)(csid, stream_id) do
+      timestamp = :erlang.timestamp() |> elem(0)
+      <<csid::16, timestamp::32>>
+    end
+  end
+
+  @doc """
   new/1 creates a new control message
   """
   def new(_ping_type) do
     # timestamp = :erlang.timestamp() |> elem(0)
     # header = <<0x02, timestamp::32>>
     ping_type = {0x07, :client_ponged} |> elem(0)
-    #ping_type = {0x06, :client_pinged} |> elem(0)
+    # ping_type = {0x06, :client_pinged} |> elem(0)
     # header = <<0x02, timestamp::32, ping_type::16>>
-    
+
     timestamp = :erlang.timestamp() |> elem(0)
     length = 6
     message_stream_id = 0
@@ -73,7 +80,7 @@ defmodule ExRTMP.ControlMessage do
     header <> body
   end
 
-  @doc"""
+  @doc """
   decode/1 interpreted a control message
   """
   def decode(<<0x06::size(16), timestamp::size(32)>>) do
@@ -81,21 +88,21 @@ defmodule ExRTMP.ControlMessage do
   end
 
   def decode(msg) do
-    IO.inspect msg
-     {:error, :invalid_format}
+    IO.inspect(msg)
+    {:error, :invalid_format}
   end
 
-  def ping(csid, message_stream_id) do
-  timestamp = :erlang.timestamp() |> elem(0)
-  <<0x06::16, timestamp::32>>
-  end
+  # def ping(csid, message_stream_id) do
+  #   timestamp = :erlang.timestamp() |> elem(0)
+  #   <<0x06::16, timestamp::32>>
+  # end
 
-  def pong(csid, message_stream_id) do
+#  def pong(csid, message_stream_id) do
     # fmt = <<0::2, csid::6>>
     # timestamp = :erlang.timestamp() |> elem(0)
     # <<fmt::8, timestamp::24, 6::24, 0x04::8, message_stream_id::little-size(4)-unit(8), 0x07::16, timestamp::32>>
 
-  timestamp = :erlang.timestamp() |> elem(0)
-  <<0x07::16, timestamp::32>>
-  end
+#    timestamp = :erlang.timestamp() |> elem(0)
+#    <<0x07::16, timestamp::32>>
+#  end
 end
