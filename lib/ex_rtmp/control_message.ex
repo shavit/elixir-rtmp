@@ -55,9 +55,9 @@ defmodule ExRTMP.ControlMessage do
   }
 
   for {type, control_name} <- @control_type do
-    def unquote(control_name)(csid, stream_id) do
+    def unquote(control_name)(_arg_1, _arg_2) do
       timestamp = :erlang.timestamp() |> elem(0)
-      <<csid::16, timestamp::32>>
+      <<unquote(type)::16, timestamp::32>>
     end
   end
 
@@ -88,21 +88,6 @@ defmodule ExRTMP.ControlMessage do
   end
 
   def decode(msg) do
-    IO.inspect(msg)
     {:error, :invalid_format}
   end
-
-  # def ping(csid, message_stream_id) do
-  #   timestamp = :erlang.timestamp() |> elem(0)
-  #   <<0x06::16, timestamp::32>>
-  # end
-
-#  def pong(csid, message_stream_id) do
-    # fmt = <<0::2, csid::6>>
-    # timestamp = :erlang.timestamp() |> elem(0)
-    # <<fmt::8, timestamp::24, 6::24, 0x04::8, message_stream_id::little-size(4)-unit(8), 0x07::16, timestamp::32>>
-
-#    timestamp = :erlang.timestamp() |> elem(0)
-#    <<0x07::16, timestamp::32>>
-#  end
 end
