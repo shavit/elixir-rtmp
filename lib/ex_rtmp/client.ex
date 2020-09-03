@@ -77,8 +77,7 @@ defmodule ExRTMP.Client do
   end
 
   def handle_info({:tcp, _from, msg}, %{handshake: false} = state) do
-    Logger.info("TCP message")
-    IO.inspect(msg)
+    Logger.info("TCP message: #{inspect(msg)}")
     GenServer.call(state.encoder, {:encode, msg})
 
     case Chunk.decode(msg) do

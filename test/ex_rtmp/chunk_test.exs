@@ -70,7 +70,7 @@ defmodule ExRTMP.ChunkTest do
     test "decode/1 creates stream" do
       msg = <<2, 0, 0, 0, 0, 0, 6, 4, 0, 0, 0, 0, 0, 6, 17, 249, 187, 163>>
       res = Chunk.decode(msg)
-      assert res.rest == <<0, 6, 17, 249, 187, 163>>
+      assert res.body == <<0, 6, 17, 249, 187, 163>>
     end
   end
 end
