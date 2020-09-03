@@ -122,12 +122,12 @@ defmodule ExRTMP.Chunk do
   def decode(msg) do
     case msg do
       <<0::size(2), 0::size(6), csid::size(8), rest::binary>> ->
-	Logger.debug("Type 0.0")
+	Logger.debug("Type 0 Basic header 1")
 	rest
 
       <<0::size(2), 1::6, csid::16, timestamp::3*8, size::3*8, message_type_id::8,
         sid::little-size(4)-unit(8), rest::binary>> ->
-        Logger.debug("Type 0.1 cs id #{csid} | Chunk message header 0")
+        Logger.debug("Type 0.1 cs id #{csid} | Basic header 2")
 
       <<0::size(2), csid::6, 16_777_215::size(24), size::size(24), message_type_id::8,
         sid::little-size(4)-unit(8), timestamp::4*8, rest::binary>> ->
@@ -152,7 +152,12 @@ defmodule ExRTMP.Chunk do
 
         IO.inspect(msg)
 	IO.inspect rest
-
+	case  ExRTMP.ControlMessage.decode(rest) do
+	  %{timestamp: timestamp, type: :ping_client} ->
+	    IO.inspect ">>> reply to ping"
+	    IO.inspect ExRTMP.ControlMessage.client_ponged(1, timestamp)
+	  _ -> nil
+	end
 
 	IO.inspect m
 
