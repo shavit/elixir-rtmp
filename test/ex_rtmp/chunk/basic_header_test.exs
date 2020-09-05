@@ -27,8 +27,8 @@ defmodule ExRTMP.Chunk.BasicHeaderTest do
 
     test "new/2 creates basic header type 2" do
       [
-        # {BasicHeader, :new, [1, :two], {:error, "id out of range"}},
-        # {BasicHeader, :new, [2, :two], {:error, "id out of range"}},
+        {BasicHeader, :new, [1, :two], {:error, "id out of range"}},
+        {BasicHeader, :new, [2, :two], {:error, "id out of range"}},
         # {BasicHeader, :new, [64, :two], <<0::2, 0::6, 0::8>>},
         # {BasicHeader, :new, [65, :two], <<0::2, 0::6, 1::8>>},
 #        {BasicHeader, :new, [319, :two], <<0::2, 0::6, 319::8>>},
@@ -50,5 +50,21 @@ defmodule ExRTMP.Chunk.BasicHeaderTest do
       ]
       |> Enum.each(&assert_expected/1)
     end
+
+    test "new/2 returns error for out of range stream id" do
+      [
+        {BasicHeader, :new, [0, :one], {:error, "id out of range"}},
+        {BasicHeader, :new, [1, :one], {:error, "id out of range"}},
+	{BasicHeader, :new, [2, :one], {:error, "id out of range"}},
+        {BasicHeader, :new, [0, :two], {:error, "id out of range"}},
+        {BasicHeader, :new, [1, :two], {:error, "id out of range"}},
+	{BasicHeader, :new, [2, :two], {:error, "id out of range"}},
+        {BasicHeader, :new, [0, :three], {:error, "id out of range"}},
+        {BasicHeader, :new, [1, :three], {:error, "id out of range"}},
+	{BasicHeader, :new, [2, :three], {:error, "id out of range"}},
+      ]
+      |> Enum.each(&assert_expected/1)
+    end
+
   end
 end

@@ -28,6 +28,9 @@ defmodule ExRTMP.Chunk.BasicHeader do
 
   def new(_csid, :one), do: {:error, "id out of range"}
 
+  def new(csid, :one) when csid >= 64 and csid <= 319 do
+    <<0::2, 0::6, csid - 64::8>>
+  end
   def new(csid, :two) when csid >= 64 and csid <= 319 do
     <<1::2, 0::6, csid - 64::8>>
   end
