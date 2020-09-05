@@ -14,7 +14,13 @@ defmodule ExRTMP.Chunk.BasicHeaderTest do
         {BasicHeader, :new, [3, :one], <<0::2, 3::6>>},
         {BasicHeader, :new, [4, :one], <<0::2, 4::6>>},
         {BasicHeader, :new, [63, :one], <<0::2, 63::6>>},
-        {BasicHeader, :new, [64, :one], {:error, "id out of range"}}
+        {BasicHeader, :new, [64, :one], {:error, "id out of range"}},
+	{BasicHeader, :new, [3, :two], <<1::2, 3::6>>},
+	{BasicHeader, :new, [10, :two], <<1::2, 10::6>>},
+	{BasicHeader, :new, [63, :two], <<1::2, 63::6>>},
+	{BasicHeader, :new, [3, :three], <<2::2, 3::6>>},
+	{BasicHeader, :new, [10, :three], <<2::2, 10::6>>},
+	{BasicHeader, :new, [63, :three], <<2::2, 63::6>>},
       ]
       |> Enum.each(&assert_expected/1)
     end
@@ -24,8 +30,6 @@ defmodule ExRTMP.Chunk.BasicHeaderTest do
         # {BasicHeader, :new, [1, :two], {:error, "id out of range"}},
         # {BasicHeader, :new, [2, :two], {:error, "id out of range"}},
         # {BasicHeader, :new, [64, :two], <<0::2, 0::6, 0::8>>},
-	{BasicHeader, :new, [64, :two], <<64, 0>>},
-	{BasicHeader, :new, [65, :two], <<64, 1>>},
         # {BasicHeader, :new, [65, :two], <<0::2, 0::6, 1::8>>},
 #        {BasicHeader, :new, [319, :two], <<0::2, 0::6, 319::8>>},
 #        {BasicHeader, :new, [320, :two], {:error, "id out of range"}}
