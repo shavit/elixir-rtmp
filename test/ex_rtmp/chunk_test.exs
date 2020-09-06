@@ -57,20 +57,21 @@ defmodule ExRTMP.ChunkTest do
   describe "chunk" do
     test "decode/1 decodes a valid chunk" do
       %{
-	basic_header: <<3>>,
-	chunk_header: <<0, 11, 104, 0, 0, 25, 20, 0, 0, 0, 0>>,
-	length: 25,
-	message_stream_id: 0,
-	size: 25,
-	timestamp: 2920,
-	type: :command
+        basic_header: <<3>>,
+        chunk_header: <<0, 11, 104, 0, 0, 25, 20, 0, 0, 0, 0>>,
+        length: 25,
+        message_stream_id: 0,
+        size: 25,
+        timestamp: 2920,
+        type: :command
       } = Chunk.decode(@valid_chunk)
     end
 
     test "decode/1 creates stream" do
       msg = <<2, 0, 0, 0, 0, 0, 6, 4, 0, 0, 0, 0, 0, 6, 17, 249, 187, 163>>
       res = Chunk.decode(msg)
-      assert res.body == <<0, 6, 17, 249, 187, 163>>
+      # assert res.body == <<0, 6, 17, 249, 187, 163>>
+      assert res.body == %{timestamp: 301_579_171, type: :client_pinged}
     end
   end
 end

@@ -17,7 +17,7 @@ defmodule ExRTMP.ControlMessageTest do
 
     test "decode/1 decodes a message ping client" do
       msg = <<0, 6, 17, 249, 187, 163>>
-      assert %{timestamp: _timestamp, type: :ping_client} =  ControlMessage.decode(msg)
+      assert %{timestamp: _timestamp, type: :client_pinged} =  ControlMessage.decode(msg)
     end
   end
 end
