@@ -125,7 +125,6 @@ defmodule ExRTMP.Chunk do
       ) do
     mtype = Message.get_control_message(message_type_id)
     Logger.debug("Type 0 | cs id #{csid} | #{mtype}")
-    # ExRTMP.ControlMessage.decode(body)
 
     %{
       basic_header: <<0::size(2), csid::size(6)>>,
@@ -138,7 +137,7 @@ defmodule ExRTMP.Chunk do
       length: message_length,
       message_stream_id: message_stream_id,
       size: message_length,
-      body: body
+      body: ExRTMP.ControlMessage.decode(body)
     }
   end
 

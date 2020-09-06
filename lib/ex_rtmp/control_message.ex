@@ -59,6 +59,13 @@ defmodule ExRTMP.ControlMessage do
       timestamp = :erlang.timestamp() |> elem(0)
       <<unquote(type)::16, timestamp::32>>
     end
+
+    @doc """
+    decode/1 interpreted a unquote(control_name) control message
+    """
+    def decode(<<unquote(type)::16, timestamp::32>>) do
+      %{type: unquote(control_name), timestamp: timestamp}
+    end
   end
 
   @doc """
@@ -78,13 +85,6 @@ defmodule ExRTMP.ControlMessage do
     body = <<0, 6, 8, 54, 223, 10>>
 
     header <> body
-  end
-
-  @doc """
-  decode/1 interpreted a control message
-  """
-  def decode(<<0x06::size(16), timestamp::size(32)>>) do
-    %{type: :ping_client, timestamp: timestamp}
   end
 
   def decode(msg) do
