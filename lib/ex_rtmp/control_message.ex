@@ -66,6 +66,8 @@ defmodule ExRTMP.ControlMessage do
     def decode(<<unquote(type)::16, timestamp::32>>) do
       %{type: unquote(control_name), timestamp: timestamp}
     end
+
+    def get_type(unquote(type)), do: unquote(control_name)
   end
 
   @doc """
