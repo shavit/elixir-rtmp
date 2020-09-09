@@ -51,8 +51,8 @@ defmodule ExRTMP.Client do
   end
 
   def handle_call({:control_message, msg, _opts}, _from, state) do
-      res = :gen_tcp.send(state.conn, msg)
-      {:reply, res, state}
+    res = :gen_tcp.send(state.conn, msg)
+    {:reply, res, state}
   end
 
   def handle_info({:tcp, _from, msg}, %{handshake: true} = state) do

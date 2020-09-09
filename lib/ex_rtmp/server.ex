@@ -12,7 +12,7 @@ defmodule ExRTMP.Server do
 
   def init(opts) do
     port = Keyword.get(opts, :port, 1935)
-    Logger.info "[Server] listen on port #{port}"
+    Logger.info("[Server] listen on port #{port}")
     {:ok, socket} = :gen_tcp.listen(port, [:binary, {:active, true}, {:buffer, 65536}])
 
     state = %{
