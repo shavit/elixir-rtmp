@@ -70,6 +70,13 @@ defmodule ExRTMP.Server do
     {:stop, :normal, state}
   end
 
+  def handle_info({:tcp_closed, _port}, state) do
+    Logger.info("[Server] TCP closed")
+    Process.exit(self(), :normal)
+
+    {:noreply, Map.delete(state, :conn)}
+  end
+
   def terminate(reason, %{clients: clients, conn: conn}) do
     Logger.info("Closing server and #{Enum.count(clients)} connections")
     Enum.each(clients, fn x -> :gen_tcp.close(x) end)
