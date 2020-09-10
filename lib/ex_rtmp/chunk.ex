@@ -133,6 +133,7 @@ defmodule ExRTMP.Chunk do
           message_stream_id::little-size(4)-unit(8)>>,
       type: mtype,
       message_type_id: message_type_id,
+      message_type: mtype,
       timestamp: timestamp,
       length: message_length,
       message_stream_id: message_stream_id,
