@@ -1,8 +1,21 @@
 defmodule ExRTMP.Chunk.MessageHeader do
   @moduledoc """
   `ExRTMP.Chunk.MessageHeader` encodes the message header
+
+  Type 0 - 11 bytes
+  Type 1 - 7 bytes
+  Type 2 - 3 bytes
+  Type 3 - No message header
   """
   alias ExRTMP.ControlMessage
+  defstruct [:timestamp, :message_length, :message_type_id, :message_stream_id]
+
+  @doc"""
+  new/1 creates a new message header
+  """
+  def new(opts) do
+    %__MODULE__{}
+  end
 
   @doc """
   decode/1 decodes message header
