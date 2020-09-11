@@ -82,6 +82,7 @@ defmodule ExRTMP.Client do
 
     case Chunk.decode(msg) do
       msg ->
+	handle_sender_message(msg, state)
         IO.inspect(msg)
 
       {:ok, {:continue, callback}} ->
@@ -104,4 +105,12 @@ defmodule ExRTMP.Client do
 
     {:noreply, state}
   end
+
+  defp handle_sender_message(%{body: %{type: :client_pinged}} = msg, state) do
+    Logger.info("[Client] Client pinged")
+
+    
+  end
+
+  defp handle_sender_message(_msg, _state), do: nil
 end
