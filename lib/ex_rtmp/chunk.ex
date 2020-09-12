@@ -117,6 +117,8 @@ defmodule ExRTMP.Chunk do
     def get_control_message(message_type_id), do: Map.get(@control_messages, message_type_id)
   end
 
+  defstruct [:version, :basic_header, :message_header, :body]
+  
   require Logger
 
   def decode(
