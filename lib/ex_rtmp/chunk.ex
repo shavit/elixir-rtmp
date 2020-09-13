@@ -118,7 +118,7 @@ defmodule ExRTMP.Chunk do
   end
 
   defstruct [:version, :basic_header, :message_header, :body]
-  
+  alias ExRTMP.ControlMessage
   require Logger
 
   def decode(
@@ -139,7 +139,7 @@ defmodule ExRTMP.Chunk do
       length: message_length,
       message_stream_id: message_stream_id,
       size: message_length,
-      body: ExRTMP.ControlMessage.decode(body)
+      body: ControlMessage.decode(body)
     }
   end
 
