@@ -7,6 +7,7 @@ defmodule ExRTMP.Client do
   """
   use GenServer, restart: :transient
   alias ExRTMP.Chunk
+  alias ExRTMP.ControlMessage
   alias ExRTMP.Encoder
   alias ExRTMP.Handshake
   require Logger
@@ -82,7 +83,7 @@ defmodule ExRTMP.Client do
 
     case Chunk.decode(msg) do
       msg ->
-	handle_sender_message(msg, state)
+        handle_sender_message(msg, state)
         IO.inspect(msg)
 
       {:ok, {:continue, callback}} ->
@@ -108,8 +109,9 @@ defmodule ExRTMP.Client do
 
   defp handle_sender_message(%{body: %{type: :client_pinged}} = msg, state) do
     Logger.info("[Client] Client pinged")
+    reply_msg = ControlMessage.client_pinged(1, 2)
 
-    
+    IO.inspect(:gen_tcp.send(state.conn, reply_msg))
   end
 
   defp handle_sender_message(_msg, _state), do: nil
