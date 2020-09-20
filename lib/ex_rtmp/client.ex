@@ -67,7 +67,7 @@ defmodule ExRTMP.Client do
         :ok = Handshake.send_c2(state.conn, time)
         {:noreply, %{state | buf: msg}}
 
-      {:s2, msg} ->
+      {:s2, _msg} ->
         Logger.debug("Handshake completed")
         {:noreply, %{state | buf: <<>>, handshake: false}}
 
