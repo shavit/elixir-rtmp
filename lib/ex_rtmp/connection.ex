@@ -51,16 +51,23 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
     handshake = Handshake.buffer(state.handshake, msg)
+    # state = Map.update(state, :buf, msg, fn x -> x <> msg end)    
 
     case Handshake.parse(handshake) do
-      %{stage: :c1} = handshake ->
+      %Handshake{stage: :c0} = handshake ->
         :ok = Handshake.send_s0(from)
-        :ok = Handshake.send_s1(from, handshake.time)
+        :ok = Handshake.send_s1(handshake, from)
+
+        {:noreply, state}
+
+      %Handshake{stage: :c1} = handshake ->
+        :ok = Handshake.send_s0(from)
+        :ok = Handshake.send_s1(handshake, from)
 
         {:noreply, %{state | handshake: handshake}}
 
-      %{stage: :c2, complete: true} = handshake ->
-        :ok = Handshake.send_s2(from, handshake.time, handshake.client_time)
+      %Handshake{stage: :c2, complete: true} = handshake ->
+        :ok = Handshake.send_s2(handshake, from)
         Logger.info("Handshake completed")
 
         {:noreply, %{state | handshake: nil}}
@@ -85,6 +92,7 @@ defmodule ExRTMP.Connection do
         IO.inspect(:gen_tcp.send(from, Chunk.acknowledge(stream_id, length)))
         IO.inspect(Chunk.result(stream_id))
         IO.inspect(:gen_tcp.send(from, Chunk.result(stream_id)))
+	_ -> nil
     end
 
     {:noreply, state}

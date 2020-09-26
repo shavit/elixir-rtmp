@@ -13,10 +13,16 @@ defmodule ExRTMP.Handshake do
         <-----  S2
     C2  ----->
   """
-  defstruct [:stage, :buf, :complete, :time, :client_time]
+  defstruct [:stage, :buf, :complete, :time, :client_time, :rand]
 
   def new do
-    %__MODULE__{stage: :c0, buf: <<>>, complete: false, time: elem(:erlang.timestamp(), 0)}
+    %__MODULE__{
+      stage: :c0,
+      buf: <<>>,
+      complete: false,
+      time: elem(:erlang.timestamp(), 0),
+      rand: rand_bytes()
+    }
   end
 
   def buffer(%__MODULE__{buf: buf} = handshake, new_buf) do
@@ -44,7 +50,7 @@ defmodule ExRTMP.Handshake do
     # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
     time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
     zeros = <<0::8*4>>
-    msg = time <> zeros <> rand()
+    msg = time <> zeros <> rand_bytes()
 
     :gen_tcp.send(socket, msg)
   end
@@ -57,7 +63,7 @@ defmodule ExRTMP.Handshake do
   """
   def send_c2(socket, time) do
     time2 = :erlang.timestamp() |> elem(0)
-    msg = <<time::size(32), time2::size(32)>> <> rand()
+    msg = <<time::size(32), time2::size(32)>> <> rand_bytes()
     :gen_tcp.send(socket, msg)
   end
 
@@ -79,9 +85,8 @@ defmodule ExRTMP.Handshake do
     * 4 bytes zero
     * 1528 bytes random
   """
-  def send_s1(socket, time) do
-    zeros = <<0::8*4>>
-    msg = <<time::size(32)>> <> zeros <> rand()
+  def send_s1(%__MODULE__{time: t, rand: rand}, socket) do
+    msg = <<t::32, 0::32, rand::binary>>
 
     :gen_tcp.send(socket, msg)
   end
@@ -89,12 +94,12 @@ defmodule ExRTMP.Handshake do
   @doc """
   send_s2/2 Send the s2 message
   """
-  def send_s2(socket, time, client_time) do
-    msg = <<time::size(32), client_time::size(32)>> <> rand()
+  def send_s2(%__MODULE__{time: t, rand: rand, client_time: ct}, socket) do
+    msg = <<t::size(32), ct::size(32), rand::binary>>
     :gen_tcp.send(socket, msg)
   end
 
-  def rand do
+  def rand_bytes do
     fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
     |> Stream.repeatedly()
     |> Enum.take(1528)
