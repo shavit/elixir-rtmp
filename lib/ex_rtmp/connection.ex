@@ -1,6 +1,6 @@
 defmodule ExRTMP.Connection do
   @moduledoc """
-  `ExRTMP.Connection` RTMP client connection
+  `ExRTMP.Connection` RTMP server connection for each client
   """
   use GenServer
   alias ExRTMP.Connection
@@ -20,11 +20,11 @@ defmodule ExRTMP.Connection do
       handshake: Handshake.new()
     }
 
-    {:ok, state}
+    {:ok, state, {:continue, :accept}}
   end
 
   def handle_continue(:accept, state) do
-    # :ok = GenServer.cast(self(), {:accept, state.socket})
+    :ok = GenServer.cast(self(), {:accept, state.socket})
 
     {:noreply, state}
   end
@@ -51,7 +51,6 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
     handshake = Handshake.buffer(state.handshake, msg)
-
     case Handshake.parse(handshake) do
       %{stage: :c1} = handshake ->
         :ok = Handshake.send_s0(from)
