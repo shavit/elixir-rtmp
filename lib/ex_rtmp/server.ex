@@ -74,7 +74,7 @@ defmodule ExRTMP.Server do
 
   def handle_info({:tcp_closed, _port}, state) do
     Logger.info("[Server] TCP closed")
-    # Process.exit(self(), :normal)
+    Process.exit(self(), :normal)
 
     {:noreply, Map.delete(state, :conn)}
   end

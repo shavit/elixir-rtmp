@@ -51,6 +51,7 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
     handshake = Handshake.buffer(state.handshake, msg)
+
     case Handshake.parse(handshake) do
       %{stage: :c1} = handshake ->
         :ok = Handshake.send_s0(from)
