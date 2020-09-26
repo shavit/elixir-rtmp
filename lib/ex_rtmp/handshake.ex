@@ -21,6 +21,7 @@ defmodule ExRTMP.Handshake do
       buf: <<>>,
       complete: false,
       time: elem(:erlang.timestamp(), 0),
+      client_time: 0,
       rand: rand_bytes()
     }
   end
