@@ -11,6 +11,13 @@ defmodule VideoChat do
       {ExRTMPServer, [port: "RTMP_PORT" |> System.get_env("1935") |> String.to_integer()]}
     ]
 
-    Supervisor.start_link(children, strategy: :one_for_one)
+    opts = [
+      strategy: :one_for_one,
+      name: VideoChat,
+      max_restarts: 10,
+      max_seconds: 10
+    ]
+
+    Supervisor.start_link(children, opts)
   end
 end
