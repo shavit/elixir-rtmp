@@ -108,8 +108,11 @@ defmodule ExRTMP.AMF.AMF0 do
   def encode(false), do: <<t_boolean(), 0>>
 
   def encode(body) when is_binary(body) do
-    l = byte_size(body)
-    <<t_string(), 0x0, l>> <> body
+    if (l = byte_size(body)) > 0xFFFF do
+      <<t_long_string(), l::32, body::binary>>
+    else
+      <<t_string(), l::16, body::binary>>
+    end
   end
 
   def encode(body) when is_map(body) do
