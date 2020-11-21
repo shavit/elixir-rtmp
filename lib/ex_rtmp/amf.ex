@@ -24,9 +24,10 @@ defmodule ExRTMP.AMF do
     end
   end
 
-  def decode(msg) do
-    msg
-  end
+  @doc """
+  decode/1 decodes a message
+  """
+  def decode(msg), do: msg
 
   @doc """
   encode/1 encodes a message

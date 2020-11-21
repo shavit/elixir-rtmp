@@ -34,5 +34,4 @@ defmodule ExRTMP.Chunk.BasicHeader do
 
   def decode(<<0::2, csid::6, rest::binary>>), do: new(csid, :one)
   def decode(_msg), do: nil
-
 end

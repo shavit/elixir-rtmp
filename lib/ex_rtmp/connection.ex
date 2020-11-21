@@ -80,7 +80,10 @@ defmodule ExRTMP.Connection do
 
   def handle_info({:tcp, from, msg}, %{handshake: nil} = state) do
     IO.inspect("[Connection] Message size: #{byte_size(msg)}")
-    IO.inspect(chunk = Chunk.decode(msg))
+    IO.inspect("[Connection] got chunk")
+    chunk = Chunk.decode(msg)
+    IO.inspect(msg)
+    IO.inspect(chunk)
 
     case chunk do
       %{command: "connect", stream_id: stream_id, length: length, value: value} ->
@@ -92,7 +95,9 @@ defmodule ExRTMP.Connection do
         IO.inspect(:gen_tcp.send(from, Chunk.acknowledge(stream_id, length)))
         IO.inspect(Chunk.result(stream_id))
         IO.inspect(:gen_tcp.send(from, Chunk.result(stream_id)))
-	_ -> nil
+
+      _ ->
+        nil
     end
 
     {:noreply, state}

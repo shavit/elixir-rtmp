@@ -100,7 +100,7 @@ defmodule ExRTMP.Handshake do
   end
 
   def rand_bytes do
-    fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
+    fn -> Enum.random(~c"abcdefghijklmnopqrstuvwxyz0123456789") end
     |> Stream.repeatedly()
     |> Enum.take(1528)
     |> to_string

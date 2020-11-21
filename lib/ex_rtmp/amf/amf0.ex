@@ -83,48 +83,86 @@ defmodule ExRTMP.AMF.AMF0 do
     0x11 => :switch
   }
 
+  for {k, v} <- @data_types do
+    defp unquote(:"t_#{v}")(), do: unquote(k)
+  end
+
   @doc """
   new/2 create a new AMF0 message
   """
   def new(m, opts) when is_list(opts) do
     %__MODULE__{
       amf: 0,
-      csid: Keyword.get(opts, :csid),
-      body: <<>>
+      csid: opts[:csid],
+      body: encode(m)
     }
   end
 
-  def new(body) when is_integer(body) do
-    type_ = get_data_type_code(:number)
-    <<type_, body::float-64>>
+  @doc """
+  encode/1 encodes a new AMF0 message
+  """
+  def encode(body) when is_number(body),
+    do: <<t_number(), body::float-64>>
+
+  def encode(true), do: <<t_boolean(), 1>>
+  def encode(false), do: <<t_boolean(), 0>>
+
+  def encode(body) when is_binary(body) do
+    l = byte_size(body)
+    <<t_string(), 0x0, l>> <> body
   end
 
-  def new(body, data_type \\ :string) do
-    type_ = get_data_type_code(data_type)
+  def encode(body) when is_map(body) do
+    body =
+      body |> Map.to_list() |> Enum.map(fn {k, v} -> encode(k) <> encode(v) end) |> Enum.join()
 
-    IO.inspect("Type: #{type_}")
-
-    cond do
-      is_binary(body) ->
-        l = byte_size(body)
-        <<type_, 0x0, l>> <> body
-
-      is_integer(body) ->
-        <<type_, 0x0, 2>>
-
-      # TODO: Remove this
-      true ->
-        throw("Not implemented")
-    end
+    <<t_object()::16>> <> body <> <<0::size(8)>>
   end
 
-  defp get_data_type_code(data_type) do
-    @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
+  def encode(nil), do: <<t_null()>>
+
+  def encode([h | _t] = body) when is_number(h) do
+    l = length(body)
+    body = body |> Enum.map(&encode/1) |> Enum.join()
+    <<t_strict_array(), l::32>> <> body
   end
 
-  def decode(<<0x03, msg::binary>>) do
-    decode_message(msg, %{})
+  def encode([_h | _t] = body) do
+    l = length(body)
+    body = body |> Enum.map(&encode/1) |> Enum.join()
+    <<t_ecma_array(), l::32>> <> body
   end
+
+  def encode(_unsupported), do: {:error, :unsupported}
+
+
+  def decode(<<0x2, size::size(16), msg::binary>>) do
+    v = binary_part(msg, 0, size)
+    <<_value::binary-size(size), msg::binary>> = msg
+    {v, msg}
+  end
+  
+  def decode(<<0x8, size::size(32), msg::binary>>) do
+    v = binary_part(msg, 0, size)
+    <<_value::binary-size(size), msg::binary>> = msg
+    size
+  end
+  
+  def decode(<<0x0a, size::size(32), msg::binary>>) do
+    v = binary_part(msg, 0, size)
+    <<_value::binary-size(size), msg::binary>> = msg
+    msg
+  end
+
+  def decode(<<0x3::16, 0x0>>), do: %{}
+  def decode(<<0x3::16, rest::binary>>) do
+    rest
+  end
+  
+  def decode(<<0x0, num::float, rest::binary>>), do: {num, rest}
+  def decode(<<0x1, 0x1, rest::binary>>), do: {true, rest}
+  def decode(<<0x1, 0x0, rest::binary>>), do: {false, rest}
+  def decode(<<0x5, rest::binary>>), do: {nil, rest}
 
   defp decode_message(<<>>, obj), do: Map.delete(obj, nil)
 

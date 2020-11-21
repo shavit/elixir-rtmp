@@ -122,7 +122,7 @@ defmodule ExRTMP.ControlMessage do
 
   defp decode_message_key(<<0x02, l::size(16), b::binary>>) do
   end
-    
+
   defp decode_message_key(<<l::size(16), b::binary>>) do
     key = binary_part(b, 0, l)
     <<_key::binary-size(l), rest::binary>> = b

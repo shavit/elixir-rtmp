@@ -124,9 +124,9 @@ defmodule ExRTMP.Chunk do
 
   def decode(
         <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
-          message_type_id::size(8), message_stream_id::little-size(4)-unit(8), body::binary>> = msg
-  ) do
-
+          message_type_id::size(8), message_stream_id::little-size(4)-unit(8),
+          body::binary>> = msg
+      ) do
     mtype = Message.get_control_message(message_type_id)
     Logger.debug("Type 0 | cs id #{csid} | #{mtype}")
 
@@ -291,9 +291,7 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_value(<<>>), do: {nil, <<>>}
 
-  defp read_chunk_object_value(msg) do
-    {"undefined", <<>>}
-  end
+  defp read_chunk_object_value(msg), do: {"undefined", <<>>}
 
   def acknowledge(stream_id, message_length) do
     # acknowledge
