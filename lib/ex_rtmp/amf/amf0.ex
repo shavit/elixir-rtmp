@@ -135,30 +135,30 @@ defmodule ExRTMP.AMF.AMF0 do
 
   def encode(_unsupported), do: {:error, :unsupported}
 
-
   def decode(<<0x2, size::size(16), msg::binary>>) do
     v = binary_part(msg, 0, size)
     <<_value::binary-size(size), msg::binary>> = msg
     {v, msg}
   end
-  
+
   def decode(<<0x8, size::size(32), msg::binary>>) do
     v = binary_part(msg, 0, size)
     <<_value::binary-size(size), msg::binary>> = msg
     size
   end
-  
-  def decode(<<0x0a, size::size(32), msg::binary>>) do
+
+  def decode(<<0x0A, size::size(32), msg::binary>>) do
     v = binary_part(msg, 0, size)
     <<_value::binary-size(size), msg::binary>> = msg
     msg
   end
 
   def decode(<<0x3::16, 0x0>>), do: %{}
+
   def decode(<<0x3::16, rest::binary>>) do
     rest
   end
-  
+
   def decode(<<0x0, num::float, rest::binary>>), do: {num, rest}
   def decode(<<0x1, 0x1, rest::binary>>), do: {true, rest}
   def decode(<<0x1, 0x0, rest::binary>>), do: {false, rest}

@@ -92,6 +92,10 @@ defmodule ExRTMP.AMF.AMF3 do
     0x11 => :dictionary
   }
 
+  for {k, v} <- @data_types do
+    defp unquote(:"t_#{v}")(), do: unquote(k)
+  end
+
   @doc """
   new/2 create a new AMF3 message
   """
@@ -110,4 +114,41 @@ defmodule ExRTMP.AMF.AMF3 do
     # <<type_, 0x0, l>> <> body <> <<0x9>>
     <<type_, l>> <> body
   end
+
+  @doc """
+  encode/1 encodes a new AMF3 message
+  """
+  def encode(nil), do: <<t_null()>>
+  def encode(false), do: <<t_false()>>
+  def encode(true), do: <<t_true()>>
+  def encode(body) when is_integer(body), do: <<t_integer(), body::32>>
+  def encode(body) when is_float(body), do: <<t_double(), body::float-64>>
+
+  def encode(body) when is_binary(body) do
+    if l = byte_size(body) < 127 do
+      <<t_string(), l::8>> <> body
+    else
+      # TODO: Split into 2 bytes
+      <<t_string(), l::8>> <> body
+    end
+  end
+
+  def encode(body) when is_list(body) do
+    <<t_array(), 0x0>>
+  end
+
+  def encode(body) when is_map(body) do
+    <<t_object(), 0x0>>
+  end
+
+  def encode(_body), do: <<t_undefined()>>
+
+  @doc """
+  decode/1 decodes AMF3 message
+  """
+  def decode(<<0x0, _rest::binary>>), do: {:error, :undefined}
+  def decode(<<0x1, rest::binary>>), do: {nil, rest}
+  def decode(<<0x2, rest::binary>>), do: {false, rest}
+  def decode(<<0x3, rest::binary>>), do: {true, rest}
+  def decode(msg), do: msg
 end
