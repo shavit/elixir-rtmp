@@ -125,7 +125,7 @@ defmodule ExRTMP.AMF.AMF3 do
   def encode(body) when is_float(body), do: <<t_double(), body::float-64>>
 
   def encode(body) when is_binary(body) do
-    if l = byte_size(body) < 127 do
+    if (l = byte_size(body)) < 127 do
       <<t_string(), l::8>> <> body
     else
       # TODO: Split into 2 bytes
