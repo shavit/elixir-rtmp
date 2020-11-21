@@ -39,6 +39,8 @@ defmodule ExRTMP.AMF.AMF3 do
   32 bits                       - message length
   message-length * 8 bits       - amf0 or amf3
   """
+  import Bitwise, only: [<<<: 2, >>>: 2, |||: 2, &&&: 2]
+
   defstruct [:amf, :csid, :body, :command, :length, :marker, :tail, :version]
 
   @type t :: %__MODULE__{
@@ -97,40 +99,34 @@ defmodule ExRTMP.AMF.AMF3 do
   end
 
   @doc """
-  new/2 create a new AMF3 message
-  """
-  def new(m, opts) when is_list(opts) do
-    %__MODULE__{
-      amf: 0,
-      csid: Keyword.get(opts, :csid),
-      body: <<>>
-    }
-  end
-
-  def new(body, data_type \\ :byte_array) do
-    type_ = @data_types |> Enum.filter(fn {k, v} -> v == data_type end) |> List.first() |> elem(0)
-    l = 1 + byte_size(body) * 2
-    # TODO: Encode different types and lengths
-    # <<type_, 0x0, l>> <> body <> <<0x9>>
-    <<type_, l>> <> body
-  end
-
-  @doc """
   encode/1 encodes a new AMF3 message
   """
   def encode(nil), do: <<t_null()>>
   def encode(false), do: <<t_false()>>
   def encode(true), do: <<t_true()>>
-  def encode(body) when is_integer(body), do: <<t_integer(), body::32>>
   def encode(body) when is_float(body), do: <<t_double(), body::float-64>>
 
+  def encode(body) when is_integer(body) do
+    l = if body >= 0, do: body, else: (1 <<< 0x1D) + body
+    head = do_encode_u29(l)
+    <<t_integer(), head::binary>>
+  end
+
   def encode(body) when is_binary(body) do
-    if (l = byte_size(body)) < 127 do
-      <<t_string(), l::8>> <> body
-    else
-      # TODO: Split into 2 bytes
-      <<t_string(), l::8>> <> body
-    end
+    head = do_encode_u29(byte_size(body) <<< 1 ||| 1)
+    <<t_string(), head::binary, body::binary>>
+  end
+
+  def encode([h | _t] = body) when is_integer(h) and h >= 0 do
+    head = do_encode_u29(length(body) <<< 1 ||| 1)
+    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
+    <<t_vector_uint(), head::binary, 0x0, rest::binary>>
+  end
+
+  def encode([h | _t] = body) when is_integer(h) do
+    head = do_encode_u29(length(body) <<< 1 ||| 1)
+    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
+    <<t_vector_int(), head::binary, 0x0, rest::binary>>
   end
 
   def encode(body) when is_list(body) do
@@ -143,12 +139,55 @@ defmodule ExRTMP.AMF.AMF3 do
 
   def encode(_body), do: <<t_undefined()>>
 
+  defp do_encode_u29(length) do
+    case length do
+      l when l in 0..0x7F ->
+        <<l>>
+
+      l when l in 0x80..0x3FFF ->
+        <<l >>> 7 ||| 0x80, l >>> 0 &&& 0x7F>>
+
+      l when l in 0x4000..0x1FFFFF ->
+        <<l >>> 14 ||| 0x80, l >>> 0x7 ||| 0x80, l >>> 0 &&& 0x7F>>
+
+      l when l in 0x200000..0x3FFFFFFF ->
+        <<l >>> 0x16 ||| 0x80, l >>> 0xF ||| 0x80, l >>> 0x8 ||| 0x80, l >>> 0 &&& 0xFF>>
+
+      _ ->
+        :value_too_large
+    end
+  end
+
   @doc """
   decode/1 decodes AMF3 message
   """
   def decode(<<0x0, _rest::binary>>), do: {:error, :undefined}
-  def decode(<<0x1, rest::binary>>), do: {nil, rest}
-  def decode(<<0x2, rest::binary>>), do: {false, rest}
-  def decode(<<0x3, rest::binary>>), do: {true, rest}
-  def decode(msg), do: msg
+  def decode(<<0x1, _rest::binary>>), do: {:ok, nil}
+  def decode(<<0x2, _rest::binary>>), do: {:ok, false}
+  def decode(<<0x3, _rest::binary>>), do: {:ok, true}
+
+  def decode(<<0x4, msg::binary>>), do: {:ok, do_decode_u29(msg)}
+  def decode(<<0x5, msg::float-64, _rest::binary>>), do: {:ok, msg}
+  def decode(<<0x6, msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0x9, msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xD, msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xE, msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xF, msg::binary>>), do: {:error, :not_implemented}
+  def decode(msg), do: {:error, :invalid}
+
+  defp do_decode_u29(data) do
+    case data do
+      <<0::1, b1::7, _rest::binary>> ->
+        b1
+
+      <<0::1, b1::7, 0x0, b2::7, _rest::binary>> ->
+        b1 <<< 7 ||| b2
+
+      <<0::1, b1::7, 0x1, b2::7, 0x0, b3::7, _rest::binary>> ->
+        b1 <<< 14 ||| b2 <<< 7 ||| b3
+
+      <<0::1, b1::7, 0x1, b2::7, 0x1, b3::7, b4::8, rest::binary>> ->
+        b1 <<< 22 ||| b2 <<< 15 ||| b3 <<< 8 ||| b4
+    end
+  end
 end
