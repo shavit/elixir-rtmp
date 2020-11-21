@@ -74,7 +74,7 @@ defmodule ExRTMP.AMF.AMF0 do
     0x3 => :object,
     0x5 => :null,
     0x8 => :ecma_array,
-    #0x9 => :object_end,
+    0x9 => :object_end,
     0xA => :strict_array,
     #0xB => :date,
     0xC => :long_string,
@@ -101,12 +101,12 @@ defmodule ExRTMP.AMF.AMF0 do
   @doc """
   encode/1 encodes a new AMF0 message
   """
-  def encode(body) when is_number(body),
-    do: <<t_number(), body::float-64>>
-
+  def encode(body) when is_number(body), do: <<t_number(), body::float-64>>
   def encode(true), do: <<t_boolean(), 1>>
   def encode(false), do: <<t_boolean(), 0>>
-
+  def encode(nil), do: <<t_null()>>
+  def encode(key) when is_atom(key), do: key |> to_string() |> encode()
+  
   def encode(body) when is_binary(body) do
     if (l = byte_size(body)) > 0xFFFF do
       <<t_long_string(), l::32, body::binary>>
@@ -117,12 +117,9 @@ defmodule ExRTMP.AMF.AMF0 do
 
   def encode(body) when is_map(body) do
     body =
-      body |> Map.to_list() |> Enum.map(fn {k, v} -> encode(k) <> encode(v) end) |> Enum.join()
-
-    <<t_object()::16>> <> body <> <<0::size(8)>>
+      body |> Map.to_list() |> Enum.map(fn {k, v} -> (k |> encode() |> strip_encoded_type()) <> encode(v) end) |> Enum.join()
+    <<t_object(), body::binary, 0x0, 0x0, t_object_end()>>
   end
-
-  def encode(nil), do: <<t_null()>>
 
   def encode([h | _t] = body) when is_number(h) do
     l = length(body)
@@ -138,7 +135,9 @@ defmodule ExRTMP.AMF.AMF0 do
 
   def encode(_unsupported), do: {:error, :unsupported}
 
-  # TODO: Change signature to be able to decode nested objects
+  defp strip_encoded_type(bytes) when is_binary(bytes),
+    do: binary_part(bytes, 1, byte_size(bytes) - 1)
+
   def decode(msg), do: decode(msg, [])
   def decode(<<>>, objects) when is_list(objects), do: objects
 
@@ -156,7 +155,7 @@ defmodule ExRTMP.AMF.AMF0 do
 
   def decode(<<0x0A, size::size(32), rest::binary>>, objects) do
     {value, rest} = decode_array(rest, size, [])
-    decode(rest, [value | objects])
+    decode(rest, value ++ objects)
   end
 
   def decode(<<0x3::8, rest::binary>>, objects), do: decode_object(rest, objects)
@@ -173,16 +172,16 @@ defmodule ExRTMP.AMF.AMF0 do
   defp decode_array(rest, 0, nums) when is_list(nums), 
   do: {Enum.reverse(nums), rest} 
 
-  defp decode_object(:eof, [_h | objects]), do: Enum.reverse(objects)
+  defp decode_object(:eof, [_h | objects]), do: Map.new(objects)
+  defp decode_object(<<0x0, 0x0, 0x9, rest::binary>>, objects), do: decode_object(rest, objects)
   defp decode_object(rest, objects) when is_binary(rest) and is_list(objects) do
       with {k, rest} <- decode_object_key(rest),
-      {v, rest} <- decode_object_value(rest) do
-        decode_object(rest, [%{k => v} | objects])
+      {v, rest} = decode_object_value(rest) do
+        decode_object(rest, [{k, v} | objects])
       end
   end
 
-  # TODO: Should have the same return signature 
-  defp decode_object_key(<<0x0, 0x0, 0x09>>), do: {:error, :eof}
+  defp decode_object_key(<<>>), do: {:error, :eof}
   defp decode_object_key(<<0x0, n::8, rest::binary>>) do
     <<v::binary-size(n), rest::binary>> = rest
     {v, rest}
@@ -192,7 +191,8 @@ defmodule ExRTMP.AMF.AMF0 do
     <<v::binary-size(n), rest::binary>> = rest
     {v, rest}
   end
-
-  defp decode_object_value(<<0, v::float-64, rest::binary>>), do: {v, rest}
+  
+  defp decode_object_value(<<0x3, rest::binary>>), do: {decode_object(rest, []), <<>>}
+  defp decode_object_value(<<0x0, v::float-64, rest::binary>>), do: {v, rest}
   defp decode_object_value(:eof), do: {:error, :eof}
 end
