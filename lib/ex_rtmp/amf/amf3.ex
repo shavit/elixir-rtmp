@@ -81,17 +81,17 @@ defmodule ExRTMP.AMF.AMF3 do
     0x4 => :integer,
     0x5 => :double,
     0x6 => :string,
-    0x7 => :xml,
-    0x8 => :date,
+    #0x7 => :xml,
+    #0x8 => :date,
     0x9 => :array,
     0xA => :object,
-    0xB => :xml_end,
-    0xC => :byte_array,
+    #0xB => :xml_end,
+    #0xC => :byte_array,
     0xD => :vector_int,
     0xE => :vector_uint,
-    0xF => :vector_double,
-    0x10 => :vector_object,
-    0x11 => :dictionary
+    #0xF => :vector_double,
+    #0x10 => :vector_object,
+    #0x11 => :dictionary
   }
 
   for {k, v} <- @data_types do
@@ -168,25 +168,25 @@ defmodule ExRTMP.AMF.AMF3 do
 
   def decode(<<0x4, msg::binary>>), do: {:ok, do_decode_u29(msg)}
   def decode(<<0x5, msg::float-64, _rest::binary>>), do: {:ok, msg}
-  def decode(<<0x6, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0x9, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xD, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xE, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xF, msg::binary>>), do: {:error, :not_implemented}
-  def decode(msg), do: {:error, :invalid}
+  def decode(<<0x6, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0x9, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xD, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xE, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xF, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(_msg), do: {:error, :invalid}
 
   defp do_decode_u29(data) do
     case data do
       <<0::1, b1::7, _rest::binary>> ->
         b1
 
-      <<0::1, b1::7, 0x0, b2::7, _rest::binary>> ->
+      <<0::1, b1::7, 0x0::1, b2::7, _rest::binary>> ->
         b1 <<< 7 ||| b2
 
-      <<0::1, b1::7, 0x1, b2::7, 0x0, b3::7, _rest::binary>> ->
+      <<0::1, b1::7, 0x1::1, b2::7, 0x0::1, b3::7, _rest::binary>> ->
         b1 <<< 14 ||| b2 <<< 7 ||| b3
 
-      <<0::1, b1::7, 0x1, b2::7, 0x1, b3::7, b4::8, rest::binary>> ->
+      <<0::1, b1::7, 0x1::1, b2::7, 0x1::1, b3::7, b4::8, _rest::binary>> ->
         b1 <<< 22 ||| b2 <<< 15 ||| b3 <<< 8 ||| b4
     end
   end

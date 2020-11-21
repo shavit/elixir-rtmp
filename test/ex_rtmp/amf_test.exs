@@ -6,6 +6,15 @@ defmodule ExRTMP.AMFTest do
     assert fun.(input) == expect
   end
 
+  describe "amf decode" do
+    
+    test "decode/1 decodes all" do
+      
+      assert {:ok, [true]} == AMF.decode(<<0x1, 0x1>>)
+      #assert {false, <<>>} == AMF0.decode(<<0x1, 0x0>>)
+    end
+  end
+
   describe "amf" do
     test "encode/1 encodes a message" do
       # [
@@ -86,7 +95,7 @@ defmodule ExRTMP.AMFTest do
 
     test "encode_date/1 encodes date" do
       [
-        {&AMF.encode_date/1, 12345, <<0x0B, 64, 200, 28, 128, 0, 0, 0, 0>>},
+        {&AMF.encode_date/1, 12_345, <<0x0B, 64, 200, 28, 128, 0, 0, 0, 0>>},
         {&AMF.encode_date/1, 1, <<0x0B, 63, 240, 0, 0, 0, 0, 0, 0>>}
       ]
       |> Enum.each(&assert_test_case/1)
