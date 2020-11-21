@@ -4,6 +4,7 @@ defmodule ExRTMP.Server do
   """
   use GenServer
   alias ExRTMP.Connection
+  alias ExRTMP.Handshake
   require Logger
 
   def start_link(opts \\ []) do
@@ -18,7 +19,8 @@ defmodule ExRTMP.Server do
     state = %{
       clients: [],
       port: port,
-      conn: socket
+      conn: socket,
+      handshake: Handshake.new()
     }
 
     {:ok, state, {:continue, :accept_connections}}
@@ -26,20 +28,18 @@ defmodule ExRTMP.Server do
 
   def handle_continue(:accept_connections, state) do
     # This need to be supervised better
-    {:ok, pid} = Connection.start_link(server: self(), socket: state.conn)
-    :ok = :gen_tcp.controlling_process(state.conn, pid)
+     {:ok, pid} = Connection.start_link(server: self(), socket: state.conn)
+     :ok = :gen_tcp.controlling_process(state.conn, pid)
+     {:noreply, state}
 
-    # case :gen_tcp.accept(state.conn) do
-    #   {:error, reason} ->
-    #     {:stop, reason, state}
-
-    #   {:ok, _erl_port} ->
-    #     Logger.info("[Server] Accepting connections on port #{state.port}")
-    #     :gen_tcp.accept(state.conn)
-    #     {:noreply, state}
-    # end
-
-    {:noreply, state}
+    #case :gen_tcp.accept(state.conn) do
+      #{:error, reason} ->
+        #{:stop, reason, state}
+#
+      #{:ok, _erl_port} ->
+        #Logger.info("[Server] Accepting connections on port #{state.port}")
+        #{:noreply, state}
+    #end
   end
 
   def handle_cast({:register_client, client}, state) do
@@ -54,18 +54,45 @@ defmodule ExRTMP.Server do
     {:noreply, Map.put(state, :clients, clients)}
   end
 
+  #def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
+    #Logger.debug("[RTMP] Handshake: #{inspect(msg)}")
+    #handshake = Handshake.buffer(state.handshake, msg)
+#
+    #case Handshake.parse(handshake) do
+      #%Handshake{stage: :c0} = handshake ->
+        #:ok = Handshake.send_s0(from)
+        #:ok = Handshake.send_s1(handshake, from)
+#
+        #{:noreply, state}
+#
+      #%Handshake{stage: :c1} = handshake ->
+        #:ok = Handshake.send_s0(from)
+        #:ok = Handshake.send_s1(handshake, from)
+#
+        #{:noreply, %{state | handshake: handshake}}
+#
+      #%Handshake{stage: :c2, complete: true} = handshake ->
+        #:ok = Handshake.send_s2(handshake, from)
+        #Logger.info("Handshake completed")
+#
+        #{:noreply, %{state | handshake: nil}}
+#
+      #_ ->
+        #Logger.error("Could not parse message: #{inspect(msg)}")
+        #{:noreply, state}
+    #end
+#
+    #{:noreply, state}
+  #end
+
   def handle_info({:tcp, from, message}, state) do
     Logger.debug("[RTMP] Received #{byte_size(message)} bytes")
     Logger.debug("[RTMP] From: #{inspect(from)}")
+    Logger.debug("[RTMP] Message: #{inspect(message)}")
+
 
     {:noreply, state}
   end
-
-  # def handle_info({:tcp_closed, from}, state) do
-  #   Logger.debug("[RTMP] #{from} | Connection closed")
-
-  #   {:noreply, state}
-  # end
 
   def handle_info({_port, {:exit_status, _code}}, state) do
     Logger.info("Exit")

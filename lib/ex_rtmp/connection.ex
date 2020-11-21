@@ -55,19 +55,19 @@ defmodule ExRTMP.Connection do
 
     case Handshake.parse(handshake) do
       %Handshake{stage: :c0} = handshake ->
-        :ok = Handshake.send_s0(from)
-        :ok = Handshake.send_s1(handshake, from)
+        :ok = Handshake.send_s0(from, handshake)
+        :ok = Handshake.send_s1(from, handshake)
 
         {:noreply, state}
 
       %Handshake{stage: :c1} = handshake ->
-        :ok = Handshake.send_s0(from)
-        :ok = Handshake.send_s1(handshake, from)
+        :ok = Handshake.send_s0(from, handshake)
+        :ok = Handshake.send_s1(from, handshake)
 
         {:noreply, %{state | handshake: handshake}}
 
       %Handshake{stage: :c2, complete: true} = handshake ->
-        :ok = Handshake.send_s2(handshake, from)
+        :ok = Handshake.send_s2(from, handshake)
         Logger.info("Handshake completed")
 
         {:noreply, %{state | handshake: nil}}

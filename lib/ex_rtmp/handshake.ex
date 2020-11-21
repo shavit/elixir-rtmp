@@ -36,7 +36,7 @@ defmodule ExRTMP.Handshake do
     * 1 byte 0x03
 
   """
-  def send_c0(socket) do
+  def send_c0(socket, %__MODULE__{}) do
     :gen_tcp.send(socket, <<0x03>>)
   end
 
@@ -46,11 +46,10 @@ defmodule ExRTMP.Handshake do
     * 1536 octets
 
   """
-  def send_c1(socket) do
+  def send_c1(socket, %__MODULE__{time: time, rand: rand} = handshake) do
     # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
-    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
-    zeros = <<0::8*4>>
-    msg = time <> zeros <> rand_bytes()
+    # time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    msg = Integer.to_string(time) <> <<0::32>> <> rand
 
     :gen_tcp.send(socket, msg)
   end
@@ -61,20 +60,20 @@ defmodule ExRTMP.Handshake do
   It must include the timestamp from s1
 
   """
-  def send_c2(socket, time) do
+  def send_c2(socket, %__MODULE__{} = handshake) do
     time2 = :erlang.timestamp() |> elem(0)
-    msg = <<time::size(32), time2::size(32)>> <> rand_bytes()
+    msg = Integer.to_string(handshake.time) <> <<time2::size(32)>> <> handshake.rand
     :gen_tcp.send(socket, msg)
   end
 
   @doc """
-  send_s0/1 Send the s0 message to the client
+  send_s0/2 Send the s0 message to the client
 
     * 1 byte 0x03
 
   Returns an updated state
   """
-  def send_s0(socket) do
+  def send_s0(socket, %__MODULE__{}) do
     :gen_tcp.send(socket, <<0x03>>)
   end
 
@@ -85,8 +84,9 @@ defmodule ExRTMP.Handshake do
     * 4 bytes zero
     * 1528 bytes random
   """
-  def send_s1(%__MODULE__{time: t, rand: rand}, socket) do
-    msg = <<t::32, 0::32, rand::binary>>
+  def send_s1(socket, %__MODULE__{time: time, rand: rand}) do
+    # msg = <<t::32, 0::32, rand::binary>>
+    msg = Integer.to_string(time) <> <<0::32>> <> rand
 
     :gen_tcp.send(socket, msg)
   end
@@ -94,7 +94,7 @@ defmodule ExRTMP.Handshake do
   @doc """
   send_s2/2 Send the s2 message
   """
-  def send_s2(%__MODULE__{time: t, rand: rand, client_time: ct}, socket) do
+  def send_s2(socket, %__MODULE__{time: t, rand: rand, client_time: ct}) do
     msg = <<t::size(32), ct::size(32), rand::binary>>
     :gen_tcp.send(socket, msg)
   end
