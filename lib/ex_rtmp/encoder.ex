@@ -23,4 +23,24 @@ defmodule ExRTMP.Encoder do
 
     {:reply, state, state}
   end
+
+  @doc """
+  detect_file/1 get the file signature for the decoder
+  """
+  def detect_file(<<sz::32, t0::binary-size(4), t1::binary-size(4), _rest::binary>>) do
+    %{
+      size: sz,
+      type: get_type(t0),
+      stype: t1
+    }
+  end
+
+  def detect_file(_data), do: {:error, "unknown file format"}
+
+  defp get_type(code) do
+    case code do
+      "ftyp" -> :quicktime
+      _ -> :unknown
+    end
+  end
 end

@@ -67,6 +67,9 @@ defmodule ExRTMP.ControlMessage do
       %{type: unquote(control_name), timestamp: timestamp}
     end
 
+    @doc """
+    get_type/1 returns the control message type
+    """
     def get_type(unquote(type)), do: unquote(control_name)
   end
 
@@ -92,4 +95,48 @@ defmodule ExRTMP.ControlMessage do
   def decode(msg) do
     {:error, :invalid_format}
   end
+
+  def body(b), do: decode_body(b, %{})
+
+  defp decode_body(<<>>, obj), do: Map.delete(obj, nil)
+
+  defp decode_body(<<0x02, l::16, b::binary>>, obj) do
+    v = binary_part(b, 0, l)
+    <<_v::binary-size(l), msg::binary>> = b
+    decode_body(msg, Map.put(obj, v, v))
+  end
+
+  defp decode_body(<<0, v::float-64, b::binary>>, obj) do
+    <<v::float-64, msg::binary>> = b
+    decode_body(msg, Map.put(obj, v, v))
+  end
+
+  defp decode_body(msg, obj) do
+    {k, msg} = decode_body_key(msg)
+    {v, msg} = decode_body_value(msg)
+
+    decode_body(msg, Enum.into(obj, %{k => v}))
+  end
+
+  defp decode_body_key(<<0x0, 0x0, 0x09>>), do: {nil, ""}
+
+  defp decode_message_key(<<0x02, l::size(16), b::binary>>) do
+  end
+
+  defp decode_message_key(<<l::size(16), b::binary>>) do
+    key = binary_part(b, 0, l)
+    <<_key::binary-size(l), rest::binary>> = b
+    {key, rest}
+  end
+
+  defp decode_body_key(_msg), do: {nil, ""}
+
+  defp decode_body_value(<<0x02, l::16, b::binary>>, m) do
+    v = binary_part(b, 0, l)
+    <<_v::binary-size(l), msg::binary>> = b
+    {v, msg}
+  end
+
+  defp decode_body_value(<<0, v::float-64, msg::binary>>), do: {v, msg}
+  defp decode_body_value(<<>>), do: {nil, <<>>}
 end

@@ -13,15 +13,21 @@ defmodule ExRTMP.Handshake do
         <-----  S2
     C2  ----->
   """
-  defstruct [:stage, :buf, :complete, :time, :client_time]
+  defstruct [:stage, :buf, :complete, :time, :client_time, :rand]
 
   def new do
-    %__MODULE__{stage: :c0, buf: <<>>, complete: false, time: elem(:erlang.timestamp(), 0)}
+    %__MODULE__{
+      stage: :c0,
+      buf: <<>>,
+      complete: false,
+      time: elem(:erlang.timestamp(), 0),
+      client_time: 0,
+      rand: rand_bytes()
+    }
   end
 
   def buffer(%__MODULE__{buf: buf} = handshake, new_buf) do
     %{handshake | buf: buf <> new_buf}
-    # Map.update(handshake, :buf, msg, fn x -> x <> msg end)
   end
 
   @doc """
@@ -30,7 +36,7 @@ defmodule ExRTMP.Handshake do
     * 1 byte 0x03
 
   """
-  def send_c0(socket) do
+  def send_c0(socket, %__MODULE__{}) do
     :gen_tcp.send(socket, <<0x03>>)
   end
 
@@ -40,11 +46,10 @@ defmodule ExRTMP.Handshake do
     * 1536 octets
 
   """
-  def send_c1(socket) do
+  def send_c1(socket, %__MODULE__{time: time, rand: rand} = handshake) do
     # time 4 bytes + 4 bytes zeros + 1528 = 1536 octets
-    time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
-    zeros = <<0::8*4>>
-    msg = time <> zeros <> rand()
+    # time = :erlang.timestamp() |> elem(0) |> Integer.to_string()
+    msg = Integer.to_string(time) <> <<0::32>> <> rand
 
     :gen_tcp.send(socket, msg)
   end
@@ -55,20 +60,20 @@ defmodule ExRTMP.Handshake do
   It must include the timestamp from s1
 
   """
-  def send_c2(socket, time) do
+  def send_c2(socket, %__MODULE__{} = handshake) do
     time2 = :erlang.timestamp() |> elem(0)
-    msg = <<time::size(32), time2::size(32)>> <> rand()
+    msg = Integer.to_string(handshake.time) <> <<time2::size(32)>> <> handshake.rand
     :gen_tcp.send(socket, msg)
   end
 
   @doc """
-  send_s0/1 Send the s0 message to the client
+  send_s0/2 Send the s0 message to the client
 
     * 1 byte 0x03
 
   Returns an updated state
   """
-  def send_s0(socket) do
+  def send_s0(socket, %__MODULE__{}) do
     :gen_tcp.send(socket, <<0x03>>)
   end
 
@@ -79,9 +84,9 @@ defmodule ExRTMP.Handshake do
     * 4 bytes zero
     * 1528 bytes random
   """
-  def send_s1(socket, time) do
-    zeros = <<0::8*4>>
-    msg = <<time::size(32)>> <> zeros <> rand()
+  def send_s1(socket, %__MODULE__{time: time, rand: rand}) do
+    # msg = <<t::32, 0::32, rand::binary>>
+    msg = Integer.to_string(time) <> <<0::32>> <> rand
 
     :gen_tcp.send(socket, msg)
   end
@@ -89,13 +94,13 @@ defmodule ExRTMP.Handshake do
   @doc """
   send_s2/2 Send the s2 message
   """
-  def send_s2(socket, time, client_time) do
-    msg = <<time::size(32), client_time::size(32)>> <> rand()
+  def send_s2(socket, %__MODULE__{time: t, rand: rand, client_time: ct}) do
+    msg = <<t::size(32), ct::size(32), rand::binary>>
     :gen_tcp.send(socket, msg)
   end
 
-  def rand do
-    fn -> Enum.random('abcdefghijklmnopqrstuvwxyz0123456789') end
+  def rand_bytes do
+    fn -> Enum.random(~c"abcdefghijklmnopqrstuvwxyz0123456789") end
     |> Stream.repeatedly()
     |> Enum.take(1528)
     |> to_string
@@ -103,23 +108,26 @@ defmodule ExRTMP.Handshake do
 
   def parse(%__MODULE__{buf: msg} = handshake) do
     case msg do
-      <<0x03::size(8), rest::binary>> ->
-        %{handshake | buf: rest, stage: :c1}
+      <<0x03::size(8), time::size(32), 0::size(32), _garbage::size(1528), rest::binary>> ->
+        %{handshake | stage: :c1, time: time, buf: rest}
 
-      <<time::unsigned-size(32), 0::unsigned-size(32), _garbage::binary-size(1528)>> ->
-        %{handshake | buf: <<>>, stage: :c2}
+      <<0x03::size(8), rest>> ->
+        %{handshake | stage: :c0}
 
-      <<time::unsigned-size(32), time2::unsigned-size(32), _garbage::binary-size(1528),
-        rest::binary>> ->
-        %{handshake | buf: <<>>, stage: :c2, complete: true, client_time: time}
+      <<time::size(32), _time2::size(32), _garbage::size(1528), rest::binary>> ->
+        %{handshake | stage: :c2, complete: true, client_time: time}
 
       _ ->
-        {:invalid, msg}
+        {:error, :invalid}
     end
   end
 
   def parse(msg) do
     case msg do
+      # It need a recursive way to parse both 0 and 1 messages
+      <<0x03::size(8), time::size(32), 0::size(32), _garbage::size(1528), rest::binary>> ->
+        {:s1, time, rest}
+
       <<0x03::size(8), rest::binary>> ->
         {:s0, rest}
 

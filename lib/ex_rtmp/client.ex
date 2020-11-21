@@ -31,7 +31,7 @@ defmodule ExRTMP.Client do
     state = %{
       conn: sock,
       encoder: encoder,
-      handshake: true,
+      handshake: Handshake.new(),
       buf: ""
     }
 
@@ -45,8 +45,8 @@ defmodule ExRTMP.Client do
 
   def handle_continue(:handshake, state) do
     Logger.info("Handshake")
-    :ok = Handshake.send_c0(state.conn)
-    :ok = Handshake.send_c1(state.conn)
+    :ok = Handshake.send_c0(state.conn, state.handshake)
+    :ok = Handshake.send_c1(state.conn, state.handshake)
 
     {:noreply, state}
   end
@@ -56,7 +56,7 @@ defmodule ExRTMP.Client do
     {:reply, res, state}
   end
 
-  def handle_info({:tcp, _from, msg}, %{handshake: true} = state) do
+  def handle_info({:tcp, _from, msg}, %{handshake: %{complete: false}} = state) do
     state = Map.update(state, :buf, msg, fn x -> x <> msg end)
 
     case Handshake.parse(state.buf) do
@@ -64,22 +64,25 @@ defmodule ExRTMP.Client do
         {:noreply, %{state | buf: msg}}
 
       {:s1, time, msg} ->
-        :ok = Handshake.send_c2(state.conn, time)
+        :ok = Handshake.send_c2(state.conn, state.handshake)
         {:noreply, %{state | buf: msg}}
 
-      {:s2, msg} ->
+      {:s2, _msg} ->
         Logger.debug("Handshake completed")
-        {:noreply, %{state | buf: <<>>, handshake: false}}
+        {:noreply, %{state | buf: <<>>, handshake: nil}}
 
       _ ->
         Logger.error("Could not parse message")
+        Process.exit(self(), :error)
         {:noreply, state}
     end
   end
 
-  def handle_info({:tcp, _from, msg}, %{handshake: false} = state) do
+  def handle_info({:tcp, _from, msg}, %{handshake: nil} = state) do
     Logger.info("TCP message: #{inspect(msg)}")
     GenServer.call(state.encoder, {:encode, msg})
+    decoded_chunk = Chunk.decode(msg)
+    Logger.debug("Client.tcp decoded: #{inspect(decoded_chunk)}")
 
     case Chunk.decode(msg) do
       msg ->
@@ -111,7 +114,7 @@ defmodule ExRTMP.Client do
     Logger.info("[Client] Client pinged")
     reply_msg = ControlMessage.client_pinged(1, 2)
 
-    IO.inspect(:gen_tcp.send(state.conn, reply_msg))
+    :ok = :gen_tcp.send(state.conn, reply_msg)
   end
 
   defp handle_sender_message(_msg, _state), do: nil

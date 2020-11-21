@@ -119,17 +119,20 @@ defmodule ExRTMP.Chunk do
 
   defstruct [:version, :basic_header, :message_header, :body]
   alias ExRTMP.ControlMessage
+  alias ExRTMP.Chunk.BasicHeader
   require Logger
 
   def decode(
         <<0::size(2), csid::size(6), timestamp::size(24), message_length::size(24),
-          message_type_id::size(8), message_stream_id::little-size(4)-unit(8), body::binary>>
+          message_type_id::size(8), message_stream_id::little-size(4)-unit(8),
+          body::binary>> = msg
       ) do
     mtype = Message.get_control_message(message_type_id)
     Logger.debug("Type 0 | cs id #{csid} | #{mtype}")
 
     %{
-      basic_header: <<0::size(2), csid::size(6)>>,
+      basic_header_alt: <<0::size(2), csid::size(6)>>,
+      basic_header: BasicHeader.decode(msg),
       chunk_header:
         <<timestamp::size(24), message_length::size(24), message_type_id::size(8),
           message_stream_id::little-size(4)-unit(8)>>,
@@ -288,9 +291,7 @@ defmodule ExRTMP.Chunk do
 
   defp read_chunk_object_value(<<>>), do: {nil, <<>>}
 
-  defp read_chunk_object_value(msg) do
-    {"undefined", <<>>}
-  end
+  defp read_chunk_object_value(msg), do: {"undefined", <<>>}
 
   def acknowledge(stream_id, message_length) do
     # acknowledge

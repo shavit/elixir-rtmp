@@ -10,7 +10,7 @@ defmodule ExRTMP.Chunk.MessageHeader do
   alias ExRTMP.ControlMessage
   defstruct [:timestamp, :message_length, :message_type_id, :message_stream_id]
 
-  @doc"""
+  @doc """
   new/1 creates a new message header
   """
   def new(opts) do
