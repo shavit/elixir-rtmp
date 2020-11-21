@@ -28,7 +28,6 @@ defmodule ExRTMP.Handshake do
 
   def buffer(%__MODULE__{buf: buf} = handshake, new_buf) do
     %{handshake | buf: buf <> new_buf}
-    # Map.update(handshake, :buf, msg, fn x -> x <> msg end)
   end
 
   @doc """
@@ -109,23 +108,26 @@ defmodule ExRTMP.Handshake do
 
   def parse(%__MODULE__{buf: msg} = handshake) do
     case msg do
-      <<0x03::size(8), rest::binary>> ->
-        %{handshake | buf: rest, stage: :c1}
+      <<0x03::size(8), time::size(32), 0::size(32), _garbage::size(1528), rest::binary>> ->
+        %{handshake | stage: :c1, time: time, buf: rest}
 
-      <<time::unsigned-size(32), 0::unsigned-size(32), _garbage::binary-size(1528)>> ->
-        %{handshake | buf: <<>>, stage: :c2}
+      <<0x03::size(8), rest>> ->
+        %{handshake | stage: :c0}
 
-      <<time::unsigned-size(32), time2::unsigned-size(32), _garbage::binary-size(1528),
-        rest::binary>> ->
-        %{handshake | buf: <<>>, stage: :c2, complete: true, client_time: time}
+      <<time::size(32), _time2::size(32), _garbage::size(1528), rest::binary>> ->
+        %{handshake | stage: :c2, complete: true, client_time: time}
 
       _ ->
-        {:invalid, msg}
+        {:error, :invalid}
     end
   end
 
   def parse(msg) do
     case msg do
+      # It need a recursive way to parse both 0 and 1 messages
+      <<0x03::size(8), time::size(32), 0::size(32), _garbage::size(1528), rest::binary>> ->
+        {:s1, time, rest}
+
       <<0x03::size(8), rest::binary>> ->
         {:s0, rest}
 
