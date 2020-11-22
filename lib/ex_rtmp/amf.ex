@@ -20,14 +20,23 @@ defmodule ExRTMP.AMF do
     case Keyword.get(opts, :amf) do
       nil -> AMF0.new(m, opts)
       0 -> AMF0.new(m, opts)
-      3 -> AMF3.new(m, opts)
+      3 -> AMF3.encode(m)
     end
   end
 
   @doc """
   decode/1 decodes a message
   """
-  def decode(msg), do: msg
+  def decode(msg), do: do_decode(msg, [])
+
+  defp do_decode(<<>>, acc) when is_list(acc), do: {:ok, acc}
+
+  defp do_decode(msg, acc) when is_binary(msg) do
+    msg_decoded = AMF0.decode(msg)
+    do_decode(<<>>, [msg_decoded | acc])
+  end
+
+  defp do_decode(_any, _acc), do: {:error, :invalid_message}
 
   @doc """
   encode/1 encodes a message
@@ -42,7 +51,6 @@ defmodule ExRTMP.AMF do
   end
 
   defp encode_header(body, _opts) do
-    # It need ot read it from the struct
     csid = 1
     fmt = <<0::2, csid::6>>
     timestamp = :erlang.timestamp() |> elem(0)

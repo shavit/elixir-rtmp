@@ -81,17 +81,17 @@ defmodule ExRTMP.AMF.AMF3 do
     0x4 => :integer,
     0x5 => :double,
     0x6 => :string,
-    0x7 => :xml,
-    0x8 => :date,
+    # 0x7 => :xml,
+    # 0x8 => :date,
     0x9 => :array,
     0xA => :object,
-    0xB => :xml_end,
-    0xC => :byte_array,
+    # 0xB => :xml_end,
+    # 0xC => :byte_array,
     0xD => :vector_int,
     0xE => :vector_uint,
-    0xF => :vector_double,
-    0x10 => :vector_object,
-    0x11 => :dictionary
+    0xF => :vector_double
+    # 0x10 => :vector_object,
+    # 0x11 => :dictionary
   }
 
   for {k, v} <- @data_types do
@@ -105,6 +105,13 @@ defmodule ExRTMP.AMF.AMF3 do
   def encode(false), do: <<t_false()>>
   def encode(true), do: <<t_true()>>
   def encode(body) when is_float(body), do: <<t_double(), body::float-64>>
+  def encode(k) when is_atom(k), do: k |> Atom.to_string() |> encode()
+
+  def encode(body) when is_integer(body) do
+    l = if body >= 0, do: body, else: (1 <<< 0x1D) + body
+    head = do_encode_u29(l)
+    <<t_integer(), head::binary>>
+  end
 
   def encode(body) when is_integer(body) do
     l = if body >= 0, do: body, else: (1 <<< 0x1D) + body
@@ -117,27 +124,80 @@ defmodule ExRTMP.AMF.AMF3 do
     <<t_string(), head::binary, body::binary>>
   end
 
-  def encode([h | _t] = body) when is_integer(h) and h >= 0 do
+  def encode(body) when is_list(body) do
+    cond do
+      Enum.empty?(body) -> do_encode_array([])
+      Enum.all?(body, &is_map/1) -> do_encode_vector_object(body)
+      Enum.any?(body, &(!is_number(&1))) -> do_encode_array(body)
+      Enum.any?(body, &is_float/1) -> do_encode_vector_double(body)
+      Enum.any?(body, &(&1 < 0)) -> do_encode_vector_int(body)
+      Enum.all?(body, &(&1 >= 0)) -> do_encode_vector_uint(body)
+    end
+  end
+
+  def encode(body) when is_map(body) do
+    n_entries = Enum.count(body)
+
+    body =
+      body
+      |> Map.to_list()
+      |> Enum.map(fn {k, v} -> (k |> encode() |> strip_encoded_type()) <> encode(v) end)
+      |> Enum.join()
+
+    <<t_object(), n_entries::8, body::binary>>
+  end
+
+  def encode(_body), do: <<t_undefined()>>
+  
+  defp do_encode_u29(length) do
+    case length do
+      l when l in 0..0x7F ->
+        <<l>>
+
+      l when l in 0x80..0x3FFF ->
+        <<l >>> 7 ||| 0x80, l >>> 0 &&& 0x7F>>
+
+      l when l in 0x4000..0x1FFFFF ->
+        <<l >>> 14 ||| 0x80, l >>> 0x7 ||| 0x80, l >>> 0 &&& 0x7F>>
+
+      l when l in 0x200000..0x3FFFFFFF ->
+        <<l >>> 0x16 ||| 0x80, l >>> 0xF ||| 0x80, l >>> 0x8 ||| 0x80, l >>> 0 &&& 0xFF>>
+
+      _ ->
+        :value_too_large
+    end
+  end
+ 
+  defp do_encode_vector_object([h | _t]) when is_map(h) do
+    {:error, :not_implemented}
+  end
+
+  defp do_encode_array([]), do: <<t_array(), 0x0>>
+  defp do_encode_array(body) when is_list(body) do
+    l = length(body)
+    body = body |> Enum.map(&encode/1) |> Enum.join()
+    <<t_array(), l::32>> <> body
+  end
+
+  defp do_encode_vector_double([h | _t] = body) when is_number(h) do
+    l = Enum.reduce(body, <<>>, &(&2 <> <<&1::float-64>>))
+    <<t_vector_double(), length(body)::32, l::binary>>
+  end
+
+  defp do_encode_vector_uint([h | _t] = body) when is_integer(h) do
     head = do_encode_u29(length(body) <<< 1 ||| 1)
     rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
     <<t_vector_uint(), head::binary, 0x0, rest::binary>>
   end
 
-  def encode([h | _t] = body) when is_integer(h) do
+  defp do_encode_vector_int([h | _t] = body) when is_integer(h) do
     head = do_encode_u29(length(body) <<< 1 ||| 1)
     rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
     <<t_vector_int(), head::binary, 0x0, rest::binary>>
   end
 
-  def encode(body) when is_list(body) do
-    <<t_array(), 0x0>>
-  end
-
-  def encode(body) when is_map(body) do
-    <<t_object(), 0x0>>
-  end
-
-  def encode(_body), do: <<t_undefined()>>
+  defp strip_encoded_type(bytes) when is_binary(bytes),
+    do: binary_part(bytes, 1, byte_size(bytes) - 1)
 
   defp do_encode_u29(length) do
     case length do
@@ -168,25 +228,25 @@ defmodule ExRTMP.AMF.AMF3 do
 
   def decode(<<0x4, msg::binary>>), do: {:ok, do_decode_u29(msg)}
   def decode(<<0x5, msg::float-64, _rest::binary>>), do: {:ok, msg}
-  def decode(<<0x6, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0x9, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xD, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xE, msg::binary>>), do: {:error, :not_implemented}
-  def decode(<<0xF, msg::binary>>), do: {:error, :not_implemented}
-  def decode(msg), do: {:error, :invalid}
+  def decode(<<0x6, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0x9, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xD, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xE, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(<<0xF, _msg::binary>>), do: {:error, :not_implemented}
+  def decode(_msg), do: {:error, :invalid}
 
   defp do_decode_u29(data) do
     case data do
       <<0::1, b1::7, _rest::binary>> ->
         b1
 
-      <<0::1, b1::7, 0x0, b2::7, _rest::binary>> ->
+     <<0::1, b1::7, 0x0::1, b2::7, _rest::binary>> ->
         b1 <<< 7 ||| b2
 
-      <<0::1, b1::7, 0x1, b2::7, 0x0, b3::7, _rest::binary>> ->
+      <<0::1, b1::7, 0x1::1, b2::7, 0x0::1, b3::7, _rest::binary>> ->
         b1 <<< 14 ||| b2 <<< 7 ||| b3
 
-      <<0::1, b1::7, 0x1, b2::7, 0x1, b3::7, b4::8, rest::binary>> ->
+      <<0::1, b1::7, 0x1::1, b2::7, 0x1::1, b3::7, b4::8, _rest::binary>> ->
         b1 <<< 22 ||| b2 <<< 15 ||| b3 <<< 8 ||| b4
     end
   end
