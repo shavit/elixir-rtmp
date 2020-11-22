@@ -28,12 +28,42 @@ defmodule ExRTMP.AMF.AMF3Test do
       assert <<0x4, 255, 255, 255, 255>> == AMF3.encode(-1)
       assert <<0x4, 255, 255, 255, 155>> == AMF3.encode(-101)
     end
-
-    test "encode/1 vector unsigned integer" do
-      assert <<0xE, 7, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3>> == AMF3.encode([1, 2, 3])
-    end
+    
     test "encode/1 string" do
       assert <<6, 9, 109, 105, 107, 101>> == AMF3.encode("mike")
+    end
+
+    test "encode/1 array" do
+      assert <<0x9, 0, 0, 0, 1, 6, 3, 97>> == AMF3.encode(["a"])
+      assert <<9, 0, 0, 0, 3, 6, 3, 97, 6, 3, 98, 6, 3, 99>> == AMF3.encode(["a", "b", "c"])
+    end
+
+    test "encode/1 vector integer" do
+      assert <<13, 3, 0, 255, 255, 255, 255>> == AMF3.encode([-1])
+      assert <<13, 3, 0, 255, 255, 255, 245>> == AMF3.encode([-11])
+      assert <<0xd, 7, 0, 0, 0, 0, 1, 0, 0, 0, 0, 255, 255, 255, 255>> == AMF3.encode([1, 0, -1])
+    end
+
+    test "encode/1 vector unsigned integer" do
+      assert <<0xe, 3, 0, 0, 0, 0, 0>> == AMF3.encode([-0])
+      assert<<0xe, 5, 0, 0, 0, 0, 0, 0, 0, 0, 1>> == AMF3.encode([0, 1])
+      assert <<0xe, 7, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3>> == AMF3.encode([1, 2, 3])
+      assert <<0xe, 9, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0>> == AMF3.encode([1, 2, 3, -0])
+    end
+    
+    test "encode/1 vector double" do
+      assert <<0xf, 0, 0, 0, 1, 191, 240, 0, 0, 0, 0, 0, 0>> == AMF3.encode([-1.0])
+      assert <<0xf, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 63, 240, 0, 0, 0, 0, 0, 0, 191, 240, 0, 0, 0, 0, 0, 0>> == AMF3.encode([0, 1, -1.0])
+      assert <<15, 0, 0, 0, 3, 63, 240, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 8, 0, 0, 0, 0, 0, 0>> = AMF3.encode([1, 2, 3.0])
+      assert <<15, 0, 0, 0, 1, 63, 239, 174, 20, 122, 225, 71, 174>> == AMF3.encode([0.99])
+    end
+
+    test "encode/1 object" do
+      assert <<0xa, 0>> == AMF3.encode(%{})
+      assert <<0xa, 1, 3, 97, 10, 0>> == AMF3.encode(%{a: %{}})
+      assert <<0xa, 1, 3, 97, 10, 0>> == AMF3.encode(%{"a" => %{}})
+      assert <<0xa, 1, 3, 98, 10, 1, 7, 102, 111, 111, 6, 7, 98, 97, 114>> == AMF3.encode(%{"b" => %{"foo" => "bar"}})
+      assert <<0xa, 1, 3, 98, 10, 1, 7, 102, 111, 111, 6, 7, 98, 97, 114>> == AMF3.encode(%{b: %{foo: "bar"}})
     end
   end
 

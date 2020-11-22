@@ -7,11 +7,9 @@ defmodule ExRTMP.AMFTest do
   end
 
   describe "amf decode" do
-    
     test "decode/1 decodes all" do
-      
-      assert {:ok, [true]} == AMF.decode(<<0x1, 0x1>>)
-      #assert {false, <<>>} == AMF0.decode(<<0x1, 0x0>>)
+      assert {:ok, [[true]]} == AMF.decode(<<0x1, 0x1>>)
+      # assert {false, <<>>} == AMF0.decode(<<0x1, 0x0>>)
     end
   end
 

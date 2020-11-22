@@ -3,7 +3,7 @@ defmodule ExRTMP.Chunk.BasicHeaderTest do
   alias ExRTMP.Chunk.BasicHeader
 
   def assert_expected({m, f, args, expected}) do
-    assert expected == apply(m, f, args)
+    assert apply(m, f, args) == expected
   end
 
   describe "chunk basic header" do

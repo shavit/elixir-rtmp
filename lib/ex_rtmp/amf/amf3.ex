@@ -81,17 +81,17 @@ defmodule ExRTMP.AMF.AMF3 do
     0x4 => :integer,
     0x5 => :double,
     0x6 => :string,
-    #0x7 => :xml,
-    #0x8 => :date,
+    # 0x7 => :xml,
+    # 0x8 => :date,
     0x9 => :array,
     0xA => :object,
-    #0xB => :xml_end,
-    #0xC => :byte_array,
+    # 0xB => :xml_end,
+    # 0xC => :byte_array,
     0xD => :vector_int,
     0xE => :vector_uint,
-    0xF => :vector_double,
-    #0x10 => :vector_object,
-    #0x11 => :dictionary
+    0xF => :vector_double
+    # 0x10 => :vector_object,
+    # 0x11 => :dictionary
   }
 
   for {k, v} <- @data_types do
@@ -105,6 +105,7 @@ defmodule ExRTMP.AMF.AMF3 do
   def encode(false), do: <<t_false()>>
   def encode(true), do: <<t_true()>>
   def encode(body) when is_float(body), do: <<t_double(), body::float-64>>
+  def encode(k) when is_atom(k), do: k |> Atom.to_string() |> encode()
 
   def encode(body) when is_integer(body) do
     l = if body >= 0, do: body, else: (1 <<< 0x1D) + body
@@ -119,6 +120,7 @@ defmodule ExRTMP.AMF.AMF3 do
 
   def encode(body) when is_list(body) do
     cond do
+      Enum.empty?(body) -> do_encode_array([])
       Enum.all?(body, &is_map/1) -> do_encode_vector_object(body)
       Enum.any?(body, &(!is_number(&1))) -> do_encode_array(body)
       Enum.any?(body, &is_float/1) -> do_encode_vector_double(body)
@@ -128,11 +130,19 @@ defmodule ExRTMP.AMF.AMF3 do
   end
 
   def encode(body) when is_map(body) do
-    <<t_object(), 0x0>>
+    n_entries = Enum.count(body)
+
+    body =
+      body
+      |> Map.to_list()
+      |> Enum.map(fn {k, v} -> (k |> encode() |> strip_encoded_type()) <> encode(v) end)
+      |> Enum.join()
+
+    <<t_object(), n_entries::8, body::binary>>
   end
 
   def encode(_body), do: <<t_undefined()>>
-
+  
   defp do_encode_u29(length) do
     case length do
       l when l in 0..0x7F ->
@@ -151,17 +161,18 @@ defmodule ExRTMP.AMF.AMF3 do
         :value_too_large
     end
   end
-
-  defp do_encode_vector_object([h  | _t]) when is_map(h) do
-  {:error, :not_implemented}
+ 
+  defp do_encode_vector_object([h | _t]) when is_map(h) do
+    {:error, :not_implemented}
   end
 
-defp do_encode_array(body) when is_list(body) do
+  defp do_encode_array([]), do: <<t_array(), 0x0>>
+  defp do_encode_array(body) when is_list(body) do
     l = length(body)
     body = body |> Enum.map(&encode/1) |> Enum.join()
     <<t_array(), l::32>> <> body
   end
-  
+
   defp do_encode_vector_double([h | _t] = body) when is_number(h) do
     l = Enum.reduce(body, <<>>, &(&2 <> <<&1::float-64>>))
     <<t_vector_double(), length(body)::32, l::binary>>
@@ -172,12 +183,15 @@ defp do_encode_array(body) when is_list(body) do
     rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
     <<t_vector_uint(), head::binary, 0x0, rest::binary>>
   end
-  
+
   defp do_encode_vector_int([h | _t] = body) when is_integer(h) do
     head = do_encode_u29(length(body) <<< 1 ||| 1)
     rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
     <<t_vector_int(), head::binary, 0x0, rest::binary>>
-  end 
+  end
+
+  defp strip_encoded_type(bytes) when is_binary(bytes),
+    do: binary_part(bytes, 1, byte_size(bytes) - 1)
 
   @doc """
   decode/1 decodes AMF3 message

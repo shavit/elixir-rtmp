@@ -30,10 +30,12 @@ defmodule ExRTMP.AMF do
   def decode(msg), do: do_decode(msg, [])
 
   defp do_decode(<<>>, acc) when is_list(acc), do: {:ok, acc}
+
   defp do_decode(msg, acc) when is_binary(msg) do
     msg_decoded = AMF0.decode(msg)
     do_decode(<<>>, [msg_decoded | acc])
   end
+
   defp do_decode(_any, _acc), do: {:error, :invalid_message}
 
   @doc """
