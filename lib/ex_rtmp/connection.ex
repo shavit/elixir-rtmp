@@ -49,62 +49,32 @@ defmodule ExRTMP.Connection do
     end
   end
 
-  def handle_info({:tcp, from, msg}, %{handshake: %{complete: false}} = state) do
-    handshake = Handshake.buffer(state.handshake, msg)
-    # state = Map.update(state, :buf, msg, fn x -> x <> msg end)    
+  def handle_info({:tcp, _from, msg}, %{handshake: nil} = state) do
+    Logger.debug(
+      "[Connection] Got chunk. Message size: #{inspect(byte_size(msg))} | #{inspect(Chunk)}"
+    )
+    {:ok, _basic_header, rest} = Chunk.decode(state.buf <> msg)
 
-    case Handshake.parse(handshake) do
-      %Handshake{stage: :c0} = handshake ->
-        :ok = Handshake.send_s0(from, handshake)
-        :ok = Handshake.send_s1(from, handshake)
-
-        {:noreply, state}
-
-      %Handshake{stage: :c1} = handshake ->
-        :ok = Handshake.send_s0(from, handshake)
-        :ok = Handshake.send_s1(from, handshake)
-
-        {:noreply, %{state | handshake: handshake}}
-
-      %Handshake{stage: :c2, complete: true} = handshake ->
-        :ok = Handshake.send_s2(from, handshake)
-        Logger.info("Handshake completed")
-
-        {:noreply, %{state | handshake: nil}}
-
-      _ ->
-        Logger.error("Could not parse message: #{inspect(msg)}")
-        {:noreply, state}
-    end
+    {:noreply, %{state | buf: rest}}
   end
+  
+  def handle_info({:tcp, from, msg}, %{handshake: handshake} = state) do
+    case Handshake.parse_client(from, msg, handshake) do
+    {:ok, buf, _handshake} ->
+        Logger.info("[connection] handshake completed")
+        {:noreply, %{state | buf: buf, handshake: nil}}
 
-  def handle_info({:tcp, from, msg}, %{handshake: nil} = state) do
-    IO.inspect("[Connection] Message size: #{byte_size(msg)}")
-    IO.inspect("[Connection] got chunk")
-    chunk = Chunk.decode(msg)
-    IO.inspect(msg)
-    IO.inspect(chunk)
-
-    case chunk do
-      %{command: "connect", stream_id: stream_id, length: length, value: value} ->
-        # reply with ServerBW, ClientBW and SetPackageSize
-        IO.inspect("[connect] value:")
-        IO.inspect(value)
-        IO.inspect("send acknoledge")
-        IO.inspect(Chunk.acknowledge(stream_id, length))
-        IO.inspect(:gen_tcp.send(from, Chunk.acknowledge(stream_id, length)))
-        IO.inspect(Chunk.result(stream_id))
-        IO.inspect(:gen_tcp.send(from, Chunk.result(stream_id)))
-
-      _ ->
-        nil
+      {:empty, _buf, handshake} ->
+        {:noreply, %{state | handshake: handshake}}
+      
+      {:unmatched, buf, handshake} ->
+        Logger.error("[connection] Could not parse message: #{inspect(buf)} | stage: #{handshake.stage}")
+        {:noreply, %{state | handshake: handshake}}
     end
-
-    {:noreply, state}
   end
 
   def handle_info({:tcp_closed, socket}, state) do
-    IO.inspect("[Connection] Closed")
+    Logger.info("[Connection] Closed")
 
     GenServer.cast(state.server, {:unregister_client, socket})
     Process.exit(self(), :normal)
@@ -123,7 +93,7 @@ defmodule ExRTMP.Connection do
   @doc """
   Starts another client
 
-  Thie function will be called after a connection timeout
+  This function will be called after a connection timeout
   """
   def start_another(state) do
     # Kill it later
@@ -136,4 +106,5 @@ defmodule ExRTMP.Connection do
     :ok = :gen_tcp.close(socket)
     reason
   end
+
 end
