@@ -143,7 +143,7 @@ defmodule ExRTMP.AMF.AMF0 do
     do: binary_part(bytes, 1, byte_size(bytes) - 1)
 
   def decode(msg), do: decode(msg, [])
-  def decode(<<>>, objects) when is_list(objects), do: objects
+  def decode(<<>>, objects) when is_list(objects), do: {:ok, objects}
 
   def decode(<<0x2, size::size(16), msg::binary>>, objects) do
     v = binary_part(msg, 0, size)
@@ -163,7 +163,7 @@ defmodule ExRTMP.AMF.AMF0 do
   end
 
   def decode(<<0x3::8, rest::binary>>, objects), do: decode_object(rest, objects)
-
+  def decode(<<0x0, 0x0, 0x9, rest::binary>>, objects), do: decode(rest, [%{} | objects])
   def decode(<<0x0, num::float, rest::binary>>, objects), do: decode(rest, [num | objects])
   def decode(<<0x1, 0x1, rest::binary>>, objects), do: decode(rest, [true | objects])
   def decode(<<0x1, 0x0, rest::binary>>, objects), do: decode(rest, [false | objects])
@@ -179,29 +179,39 @@ defmodule ExRTMP.AMF.AMF0 do
   defp decode_array(rest, 0, nums) when is_list(nums),
     do: {Enum.reverse(nums), rest}
 
-  defp decode_object(:eof, [_h | objects]), do: Map.new(objects)
-  defp decode_object(<<0x0, 0x0, 0x9, rest::binary>>, objects), do: decode_object(rest, objects)
+  defp decode_object(<<0x0, 0x0, 0x9>>, objects), do: {:ok, Map.new(objects)}
+  defp decode_object(<<0x0, 0x0, 0x9, rest::binary>>, objects), do: {:ok, Map.new(objects), rest}
+  defp decode_object(<<>>, objects), do: {:ok, Map.new(objects), <<>>}
 
-  defp decode_object(rest, objects) when is_binary(rest) and is_list(objects) do
-    with {k, rest} <- decode_object_key(rest),
-         {v, rest} = decode_object_value(rest) do
-      decode_object(rest, [{k, v} | objects])
-    end
+  defp decode_object(rest, objects) when is_binary(rest) do
+    {k, rest} = decode_object_key(rest)
+    {v, rest} = decode_object_value(rest)
+    decode_object(rest, [{k, v} | objects])
   end
 
   defp decode_object_key(<<>>), do: {:error, :eof}
 
-  defp decode_object_key(<<0x0, n::8, rest::binary>>) do
-    <<v::binary-size(n), rest::binary>> = rest
-    {v, rest}
+  defp decode_object_key(<<n::16, rest::binary>>) do
+    <<key::binary-size(n), rest::binary>> = rest
+    {key, rest}
   end
 
-  defp decode_object_value(<<0x2, 0x0, n::8, rest::binary>>) do
-    <<v::binary-size(n), rest::binary>> = rest
-    {v, rest}
+  defp decode_object_value(<<0x0, 0x0, 0x9, rest::binary>>), do: {%{}, rest}
+
+  defp decode_object_value(<<0x2, n::16, rest::binary>>) do
+    <<value::binary-size(n), rest::binary>> = rest
+    {value, rest}
   end
 
-  defp decode_object_value(<<0x3, rest::binary>>), do: {decode_object(rest, []), <<>>}
+  defp decode_object_value(<<0x3, rest::binary>>) do
+    case decode_object(rest, []) do
+      {:ok, map, rest_obj} -> {map, rest_obj}
+      error -> error
+    end
+  end
+
   defp decode_object_value(<<0x0, v::float-64, rest::binary>>), do: {v, rest}
+  defp decode_object_value(<<0x1, 0x0, rest::binary>>), do: {false, rest}
+  defp decode_object_value(<<0x1, 0x1, rest::binary>>), do: {true, rest}
   defp decode_object_value(:eof), do: {:error, :eof}
 end

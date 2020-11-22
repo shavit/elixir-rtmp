@@ -55,22 +55,22 @@ defmodule ExRTMP.AMF.AMF0Test do
 
   describe "amf0 decode" do
     test "decode/1 null" do
-      assert [nil] == AMF0.decode(<<0x5>>)
+      assert {:ok, [nil]} == AMF0.decode(<<0x5>>)
     end
 
     test "decode/1 boolean" do
-      assert [true] == AMF0.decode(<<0x1, 0x1>>)
-      assert [false] == AMF0.decode(<<0x1, 0x0>>)
+      assert {:ok, [true]} == AMF0.decode(<<0x1, 0x1>>)
+      assert {:ok, [false]} == AMF0.decode(<<0x1, 0x0>>)
     end
 
     test "decode/1 number" do
       msg = <<0, 63, 240, 0, 0, 0, 0, 0, 0>>
-      assert [1.0] = AMF0.decode(msg)
+      assert {:ok, [1.0]} = AMF0.decode(msg)
     end
 
     test "decode/1 string" do
       msg = <<2, 0, 12, 115, 111, 109, 101, 32, 109, 101, 115, 115, 97, 103, 101>>
-      assert ["some message"] == AMF0.decode(msg)
+      assert {:ok, ["some message"]} == AMF0.decode(msg)
     end
 
     test "decode/1 object" do
@@ -80,18 +80,18 @@ defmodule ExRTMP.AMF.AMF0Test do
           0x00, 0x05, 0x61, 0x6C, 0x69, 0x61, 0x73, 0x02, 0x00, 0x04, 0x4D, 0x69, 0x6B, 0x65,
           0x00, 0x00, 0x09>>
 
-      assert %{"age" => 30.0, "alias" => "Mike", "name" => "Mike"} == AMF0.decode(msg)
+      assert {:ok, %{"age" => 30.0, "alias" => "Mike", "name" => "Mike"}} == AMF0.decode(msg)
     end
 
     test "decode/1 strict array" do
       msg = <<0xA, 0x0, 0x0, 0x0, 0x1, 0x0, 0x40, 0x26, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0>>
-      assert [11.0] == AMF0.decode(msg)
+      assert {:ok, [11.0]} == AMF0.decode(msg)
 
       msg =
         <<10, 0, 0, 0, 3, 0, 64, 8, 0, 0, 0, 0, 0, 0, 0, 64, 16, 0, 0, 0, 0, 0, 0, 0, 64, 20, 0,
           0, 0, 0, 0, 0>>
 
-      assert [3.0, 4.0, 5.0] == AMF0.decode(msg)
+      assert {:ok, [3.0, 4.0, 5.0]} == AMF0.decode(msg)
     end
   end
 
@@ -99,17 +99,17 @@ defmodule ExRTMP.AMF.AMF0Test do
     test "encode decode use atoms" do
       m = %{a: "b", c: "d", e: 5}
       b = AMF0.encode(m)
-      assert AMF0.decode(b) == %{"a" => "b", "c" => "d", "e" => 5.0}
+      assert {:ok, %{"a" => "b", "c" => "d", "e" => 5.0}} == AMF0.decode(b)
     end
 
     test "encode decode nested objects" do
-      m = %{"a" => %{}}
+      m = %{"a" => %{"b" => 1, "c" => true}}
       b = AMF0.encode(m)
-      assert AMF0.decode(b) == %{"a" => %{}}
+      assert {:ok, %{"a" => %{"b" => 1.0, "c" => true}}} == AMF0.decode(b)
 
       m = %{a: %{b: %{}, c: 3}}
       b = AMF0.encode(m)
-      assert AMF0.decode(b) == %{"a" => %{"b" => %{}, "c" => 3.0}}
+      assert {:ok, %{"a" => %{"b" => %{}, "c" => 3.0}}} == AMF0.decode(b)
     end
   end
 end
