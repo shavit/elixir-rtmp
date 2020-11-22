@@ -32,6 +32,15 @@ defmodule ExRTMP.Chunk.BasicHeader do
   def new(_csid, :two), do: {:error, "id out of range"}
   def new(_csid, :three), do: {:error, "id out of range"}
 
-  def decode(<<0::2, csid::6, rest::binary>>), do: new(csid, :one)
-  def decode(_msg), do: nil
+  #def decode(<<0::2, csid::6, rest::binary>>), do: new(csid, :one)
+  def decode(<<0::2, csid::6, rest::binary>>), 
+    do: {:ok, %__MODULE__{stream_id: csid, type: :one}, rest}
+  
+  def decode(<<1::2, 0::6, csid::8, rest::binary>>), 
+    do: {:ok, %__MODULE__{stream_id: csid, type: :two}, rest}
+  
+  def decode(<<1::2, 1::6, csid::8, rest::binary>>), 
+    do: {:ok, %__MODULE__{stream_id: csid, type: :two}, rest}
+    
+  def decode(_msg), do: {:error, :invalid_message}
 end

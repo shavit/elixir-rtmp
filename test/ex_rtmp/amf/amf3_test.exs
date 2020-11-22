@@ -32,6 +32,9 @@ defmodule ExRTMP.AMF.AMF3Test do
     test "encode/1 vector unsigned integer" do
       assert <<0xE, 7, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3>> == AMF3.encode([1, 2, 3])
     end
+    test "encode/1 string" do
+      assert <<6, 9, 109, 105, 107, 101>> == AMF3.encode("mike")
+    end
   end
 
   describe "amf3 decode" do

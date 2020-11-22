@@ -89,7 +89,7 @@ defmodule ExRTMP.AMF.AMF3 do
     #0xC => :byte_array,
     0xD => :vector_int,
     0xE => :vector_uint,
-    #0xF => :vector_double,
+    0xF => :vector_double,
     #0x10 => :vector_object,
     #0x11 => :dictionary
   }
@@ -117,20 +117,14 @@ defmodule ExRTMP.AMF.AMF3 do
     <<t_string(), head::binary, body::binary>>
   end
 
-  def encode([h | _t] = body) when is_integer(h) and h >= 0 do
-    head = do_encode_u29(length(body) <<< 1 ||| 1)
-    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
-    <<t_vector_uint(), head::binary, 0x0, rest::binary>>
-  end
-
-  def encode([h | _t] = body) when is_integer(h) do
-    head = do_encode_u29(length(body) <<< 1 ||| 1)
-    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
-    <<t_vector_int(), head::binary, 0x0, rest::binary>>
-  end
-
   def encode(body) when is_list(body) do
-    <<t_array(), 0x0>>
+    cond do
+      Enum.all?(body, &is_map/1) -> do_encode_vector_object(body)
+      Enum.any?(body, &(!is_number(&1))) -> do_encode_array(body)
+      Enum.any?(body, &is_float/1) -> do_encode_vector_double(body)
+      Enum.any?(body, &(&1 < 0)) -> do_encode_vector_int(body)
+      Enum.all?(body, &(&1 >= 0)) -> do_encode_vector_uint(body)
+    end
   end
 
   def encode(body) when is_map(body) do
@@ -157,6 +151,33 @@ defmodule ExRTMP.AMF.AMF3 do
         :value_too_large
     end
   end
+
+  defp do_encode_vector_object([h  | _t]) when is_map(h) do
+  {:error, :not_implemented}
+  end
+
+defp do_encode_array(body) when is_list(body) do
+    l = length(body)
+    body = body |> Enum.map(&encode/1) |> Enum.join()
+    <<t_array(), l::32>> <> body
+  end
+  
+  defp do_encode_vector_double([h | _t] = body) when is_number(h) do
+    l = Enum.reduce(body, <<>>, &(&2 <> <<&1::float-64>>))
+    <<t_vector_double(), length(body)::32, l::binary>>
+  end
+
+  defp do_encode_vector_uint([h | _t] = body) when is_integer(h) do
+    head = do_encode_u29(length(body) <<< 1 ||| 1)
+    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
+    <<t_vector_uint(), head::binary, 0x0, rest::binary>>
+  end
+  
+  defp do_encode_vector_int([h | _t] = body) when is_integer(h) do
+    head = do_encode_u29(length(body) <<< 1 ||| 1)
+    rest = Enum.reduce(body, <<>>, &(&2 <> <<&1::big-integer-size(32)>>))
+    <<t_vector_int(), head::binary, 0x0, rest::binary>>
+  end 
 
   @doc """
   decode/1 decodes AMF3 message
